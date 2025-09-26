@@ -18,7 +18,7 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
 
 ## Git
 
-1. Initiate and Update to pull latest submodule version
+1. Initiate and Update to pull latest submodule version (DO THIS ONLY THE FIRST TIME)
    ```bash
    git submodule init
    git submodule update
@@ -26,6 +26,7 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
 
 2. Move to needed submodule folder (-b : create new branch if needed)
    ```bash
+   cd <branch name>
    git checkout -b <branch name>
    ```
 
