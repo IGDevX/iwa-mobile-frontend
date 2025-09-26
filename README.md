@@ -15,3 +15,27 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    ```bash
    npx expo start
    ```
+
+## Git
+
+1. Initiate and Update to pull latest submodule version
+   ```bash
+   git submodule init
+   git submodule update
+   ```
+
+2. Move to needed submodule folder (-b : create new branch if needed)
+   ```bash
+   git checkout -b <branch name>
+   ```
+
+3. Add and Commit your modification
+   ```bash
+   git add .
+   git commit -m "<type>: <description>" 
+   ```
+
+4. Push your modifications
+   ```bash
+   git push --set-upstream origin frontend-expo-setup
+   ```
