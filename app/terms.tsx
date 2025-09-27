@@ -1,10 +1,13 @@
 import React from "react";
 import { View, Text, Image, StyleSheet, TouchableOpacity, Dimensions, Alert } from "react-native";
 import Colors from "../constants/Colors";
+import { useTranslation } from "react-i18next";
 
 const { width, height } = Dimensions.get("window");
 
 export default function TermsScreen() {
+  const { t } = useTranslation();
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -16,17 +19,15 @@ export default function TermsScreen() {
       {/* Bottom Sheet */}
       <View style={styles.sheet}>
         <View style={styles.sheetHeader}>
-          <Text style={styles.title}>Termes & Conditions</Text>
+          <Text style={styles.title}>{t("terms")}</Text>
         </View>
 
         <Text style={styles.description}>
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque ac
-          scelerisque libero, sed mollis ipsum. Praesent luctus velit sed
-          dignissim faucibus. In at purus at ante
+          {t("terms_description")}
         </Text>
 
-        <TouchableOpacity style={styles.button} onPress={() => Alert.alert("OUI pressed")}>
-          <Text style={styles.buttonText}>OUI</Text>
+        <TouchableOpacity style={styles.button} onPress={() => Alert.alert(t("accept"))}>
+          <Text style={styles.buttonText}>{t("accept")}</Text>
         </TouchableOpacity>
       </View>
     </View>
