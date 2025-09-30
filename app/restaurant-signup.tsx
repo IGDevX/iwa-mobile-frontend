@@ -8,6 +8,7 @@ import {
   Alert,
   Image,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useAuthContext } from '../components/AuthContext';
 import Button from '../components/Button';
 import { router } from 'expo-router';
@@ -16,12 +17,13 @@ export default function RestaurantSignupScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [restaurantName, setRestaurantName] = useState('');
+  const { t } = useTranslation();
 
   const { register, isLoading } = useAuthContext();
 
   const handleSignup = async () => {
     if (!email || !password || !restaurantName) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert(t('auth.login.error_fill_fields'), t('auth.login.error_fill_fields'));
       return;
     }
 
@@ -30,7 +32,7 @@ export default function RestaurantSignupScreen() {
     if (success) {
       router.replace('/home_page');
     } else {
-      Alert.alert('Error', 'Registration failed');
+      Alert.alert(t('auth.login.error_signup_failed'), t('auth.login.error_signup_failed'));
     }
   };
 
@@ -55,7 +57,7 @@ export default function RestaurantSignupScreen() {
               />
             </TouchableOpacity>
             <View style={styles.heading}>
-              <Text style={styles.title}>Inscription Restaurant</Text>
+              <Text style={styles.title}>{t('auth.login.restaurant_signup_title')}</Text>
             </View>
           </View>
 
@@ -64,14 +66,14 @@ export default function RestaurantSignupScreen() {
             {/* Email Input */}
             <View style={styles.inputGroup}>
               <View style={styles.label}>
-                <Text style={styles.labelText}>Email</Text>
+                <Text style={styles.labelText}>{t('auth.login.email')}</Text>
               </View>
               <View style={styles.inputContainer}>
                 <TextInput
                   style={styles.input}
                   value={email}
                   onChangeText={setEmail}
-                  placeholder="votre.email@exemple.com"
+                  placeholder={t('auth.login.email_placeholder')}
                   placeholderTextColor="rgba(74, 68, 89, 0.5)"
                   keyboardType="email-address"
                   autoCapitalize="none"
@@ -82,14 +84,14 @@ export default function RestaurantSignupScreen() {
             {/* Password Input */}
             <View style={styles.inputGroup}>
               <View style={styles.label}>
-                <Text style={styles.labelText}>Mot de passe</Text>
+                <Text style={styles.labelText}>{t('auth.login.password')}</Text>
               </View>
               <View style={styles.inputContainer}>
                 <TextInput
                   style={styles.input}
                   value={password}
                   onChangeText={setPassword}
-                  placeholder="••••••••"
+                  placeholder={t('auth.login.password_placeholder')}
                   placeholderTextColor="rgba(74, 68, 89, 0.5)"
                   secureTextEntry
                 />
@@ -98,7 +100,7 @@ export default function RestaurantSignupScreen() {
 
             {/* Signup Button */}
             <Button
-              title={isLoading ? 'En cours...' : "S'inscrire"}
+              title={isLoading ? t('auth.login.loading') : t('auth.login.sign_up')}
               onPress={handleSignup}
               disabled={isLoading}
               style={styles.signupButton}
@@ -108,13 +110,13 @@ export default function RestaurantSignupScreen() {
             {/* Divider */}
             <View style={styles.dividerContainer}>
               <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>OU</Text>
+              <Text style={styles.dividerText}>{t('auth.signup_choice.or')}</Text>
               <View style={styles.dividerLine} />
             </View>
 
             {/* Login Button */}
             <Button
-              title="Vous avez déjà un compte ?"
+              title={t('auth.login.already_have_account')}
               onPress={handleLoginPress}
               variant="accent"
               style={styles.loginButton}

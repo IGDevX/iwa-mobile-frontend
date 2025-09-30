@@ -8,6 +8,7 @@ import {
   Alert,
   Image,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useAuthContext } from '../components/AuthContext';
 import Button from '../components/Button';
 import { router } from 'expo-router';
@@ -15,12 +16,13 @@ import { router } from 'expo-router';
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const { t } = useTranslation();
   
   const { login, isLoading } = useAuthContext();
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert(t('auth.login.error_fill_fields'), t('auth.login.error_fill_fields'));
       return;
     }
 
@@ -29,7 +31,7 @@ export default function LoginScreen() {
     if (success) {
       router.replace('/home_page');
     } else {
-      Alert.alert('Error', 'Login failed');
+      Alert.alert(t('auth.login.error_login_failed'), t('auth.login.error_login_failed'));
     }
   };
 
@@ -55,7 +57,7 @@ export default function LoginScreen() {
               />
             </TouchableOpacity>
             <View style={styles.heading}>
-              <Text style={styles.title}>Connexion</Text>
+              <Text style={styles.title}>{t('auth.login.title')}</Text>
             </View>
           </View>
 
@@ -64,14 +66,14 @@ export default function LoginScreen() {
             {/* Email Input */}
             <View style={styles.inputGroup}>
               <View style={styles.label}>
-                <Text style={styles.labelText}>Email</Text>
+                <Text style={styles.labelText}>{t('auth.login.email')}</Text>
               </View>
               <View style={styles.inputContainer}>
                 <TextInput
                   style={styles.input}
                   value={email}
                   onChangeText={setEmail}
-                  placeholder="votre.email@exemple.com"
+                  placeholder={t('auth.login.email_placeholder')}
                   placeholderTextColor="rgba(74, 68, 89, 0.5)"
                   keyboardType="email-address"
                   autoCapitalize="none"
@@ -82,14 +84,14 @@ export default function LoginScreen() {
             {/* Password Input */}
             <View style={styles.inputGroup}>
               <View style={styles.label}>
-                <Text style={styles.labelText}>Mot de passe</Text>
+                <Text style={styles.labelText}>{t('auth.login.password')}</Text>
               </View>
               <View style={styles.inputContainer}>
                 <TextInput
                   style={styles.input}
                   value={password}
                   onChangeText={setPassword}
-                  placeholder="••••••••"
+                  placeholder={t('auth.login.password_placeholder')}
                   placeholderTextColor="rgba(74, 68, 89, 0.5)"
                   secureTextEntry
                 />
@@ -98,7 +100,7 @@ export default function LoginScreen() {
 
             {/* Login Button */}
             <Button
-              title={isLoading ? 'En cours...' : 'Se connecter'}
+              title={isLoading ? t('auth.login.loading') : t('auth.login.sign_in')}
               onPress={handleLogin}
               disabled={isLoading}
               style={styles.loginButton}

@@ -62,7 +62,7 @@ export default function SignupChoiceModal({
                                             title={t("auth.signup_choice.are_you_producer")}
                                             onPress={handleProducerPress}
                                             variant="secondary"
-                                            style={styles.choiceButton}
+                                            style={styles.choiceButton1}
                                             textStyle={styles.choiceButtonText1}
                                         />
                                     </View>
@@ -71,7 +71,7 @@ export default function SignupChoiceModal({
                                             title={t("auth.signup_choice.are_you_restaurant")}
                                             onPress={handleRestaurantPress}
                                             variant="primary"
-                                            style={styles.choiceButton}
+                                            style={styles.choiceButton2}
                                             textStyle={styles.choiceButtonText2}
                                         />
                                         <Image
@@ -165,10 +165,21 @@ const styles = StyleSheet.create({
         width: '100%',
         marginBottom: 25,
     },
-    choiceButton: {
+    choiceButton1: {
         marginBottom: 16,
         paddingVertical: 18,
-        paddingHorizontal: 40,
+        paddingHorizontal: 30,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 10,
+        elevation: 5,
+    },
+    choiceButton2: {
+        marginBottom: 16,
+        marginRight: 10,
+        paddingVertical: 18,
+        paddingHorizontal: 30,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.25,
