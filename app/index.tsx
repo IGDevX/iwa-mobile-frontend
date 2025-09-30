@@ -62,7 +62,7 @@ export default function LanguageSelection() {
         scrollable={true}
       >
         <Text style={styles.description}>{t("terms_description")}</Text>
-        
+
         <Link href="/home_page" asChild>
           <Button
             title={t("accept")}
@@ -98,11 +98,16 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     justifyContent: "center",
     alignItems: "center",
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 5,
   },
   nextButtonText: { color: "#fff", fontSize: 20, fontWeight: "700" },
-  description: { 
-    fontSize: 16, 
-    lineHeight: 24, 
+  description: {
+    fontSize: 16,
+    lineHeight: 24,
     color: Colors.textPrimary,
     marginBottom: 20,
   },
@@ -113,10 +118,15 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 30,
     width: "60%",
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 5,
   },
-  acceptButtonText: { 
-    fontSize: 20, 
-    fontWeight: "700", 
+  acceptButtonText: {
+    fontSize: 20,
+    fontWeight: "700",
     color: "#4A4459",
   },
 });

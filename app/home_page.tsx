@@ -1,19 +1,36 @@
 import React from "react";
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from "react-native";
+import { useAuthContext } from "../components/AuthContext";
+import { useTranslation } from "react-i18next";
+import Button from "../components/Button";
+import { router } from "expo-router";
 
 const { width } = Dimensions.get("window");
 
-const categories = [
-  { label: "Légume", icon: "https://placehold.co/60x60" },
-  { label: "Fruit", icon: "https://placehold.co/60x60" },
-  { label: "Viande", icon: "https://placehold.co/60x60" },
-  { label: "Miel", icon: "https://placehold.co/60x60" },
-  { label: "Vin", icon: "https://placehold.co/60x60" },
-];
-
-const filters = ["Livraison", "Label", "Date"];
-
 export default function HomeScreen() {
+  const { isAuthenticated, user } = useAuthContext();
+
+  const { t } = useTranslation();
+
+  const categories = [
+    { label: t("home.categories.vegetables"), icon: require("../assets/images/icons8-broccoli-96.png") },
+    { label: t("home.categories.fruits"), icon: require("../assets/images/icons8-watermelon-96.png") },
+    { label: t("home.categories.meat"), icon: require("../assets/images/icons8-steak-96.png") },
+    { label: t("home.categories.honey"), icon: require("../assets/images/icons8-honeycombs-96.png") },
+    { label: t("home.categories.wine"), icon: require("../assets/images/icons8-wine-96.png") },
+  ];
+
+  const filters = [
+    t("home.filters.delivery"),
+    t("home.filters.label"),
+    t("home.filters.date")
+  ];
+
+
+  const handleLoginPrompt = () => {
+    router.push('/login');
+  };
+
   return (
     <View style={styles.container}>
       {/* Top Bar */}
@@ -21,22 +38,21 @@ export default function HomeScreen() {
         <Image source={{ uri: "https://placehold.co/30x30" }} style={styles.topIcon} />
         <View style={styles.locationBox}>
           <Image source={{ uri: "https://placehold.co/30x30" }} style={styles.locationIcon} />
-          <Text style={styles.locationText}>Montpellier</Text>
+          <Text style={styles.locationText}>{t("home.location")}</Text>
         </View>
-        <Image source={{ uri: "https://placehold.co/40x40" }} style={styles.topIcon} />
       </View>
 
       {/* Search Bar */}
       <View style={styles.searchBar}>
         <Image source={{ uri: "https://placehold.co/30x30" }} style={styles.searchIcon} />
-        <Text style={styles.searchText}>Chercher....</Text>
+        <Text style={styles.searchText}>{t("home.search_placeholder")}</Text>
       </View>
 
       {/* Categories */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesScroll}>
         {categories.map((cat) => (
           <View key={cat.label} style={styles.categoryCard}>
-            <Image source={{ uri: cat.icon }} style={styles.categoryIcon} />
+            <Image source={cat.icon} style={styles.categoryIcon} />
             <Text style={styles.categoryText}>{cat.label}</Text>
           </View>
         ))}
@@ -59,14 +75,8 @@ export default function HomeScreen() {
             <View style={styles.menuInner} />
           </View>
         ))}
-      </ScrollView>
 
-      {/* Bottom Navigation */}
-      <View style={styles.bottomNav}>
-        <Image source={{ uri: "https://placehold.co/40x40" }} style={styles.navIcon} />
-        <Image source={{ uri: "https://placehold.co/40x40" }} style={styles.navIcon} />
-        <Image source={{ uri: "https://placehold.co/40x40" }} style={styles.navIcon} />
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -75,13 +85,28 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F7F6ED" },
   topBar: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
     alignItems: "center",
-    paddingHorizontal: 15,
     paddingTop: 40,
     paddingBottom: 15,
   },
-  topIcon: { width: 40, height: 40, borderRadius: 8 },
+  topIcon: { width: 20, height: 20, borderRadius: 8 },
+  profileImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#5E5DF0',
+  },
+  welcomeContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  welcomeText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#4A4459',
+  },
   locationBox: {
     flexDirection: "row",
     alignItems: "center",
@@ -136,16 +161,33 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   menuInner: { width: "100%", height: 64 },
-  bottomNav: {
-    position: "absolute",
-    bottom: 0,
-    width: "100%",
-    height: 90,
-    backgroundColor: "#FFFEF4",
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    paddingVertical: 10,
+  loginPromptCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    marginVertical: 10,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  navIcon: { width: 40, height: 40 },
+  loginPromptTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#4A4459',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  loginPromptSubtitle: {
+    fontSize: 14,
+    color: '#6B6B6B',
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 20,
+  },
+  loginPromptButton: {
+    width: '70%',
+  },
 });

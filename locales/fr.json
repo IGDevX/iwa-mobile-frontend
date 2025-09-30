@@ -1,7 +1,67 @@
 {
   "welcome": "Bienvenue",
-  "language_selection":"Sélectionner votre langage",
+  "language_selection": "Sélectionner votre langage",
   "terms": "Termes & Conditions",
   "terms_description": "Lorem ipsum dolor sit amet...",
-  "accept": "Accepter"
+  "accept": "Accepter",
+  
+  "auth": {
+    "signup_choice": {
+      "are_you_producer": "Êtes-vous producteur ?",
+      "are_you_restaurant": "Êtes-vous restaurateur ?",
+      "already_have_account": "Vous avez déjà un compte ?",
+      "or": "OU"
+    },
+    "login": {
+      "title": "Bienvenue",
+      "subtitle": "Connectez-vous pour accéder à votre profil",
+      "signup_title": "Créer un compte",
+      "signup_subtitle": "Rejoignez-nous pour commencer",
+      "producer_signup_title": "Inscription Producteur",
+      "producer_signup_subtitle": "Créez votre compte producteur",
+      "restaurant_signup_title": "Inscription Restaurateur",
+      "restaurant_signup_subtitle": "Créez votre compte restaurateur",
+      "email": "Email",
+      "password": "Mot de passe",
+      "full_name": "Nom complet",
+      "email_placeholder": "Entrez votre email",
+      "password_placeholder": "Entrez votre mot de passe",
+      "name_placeholder": "Entrez votre nom complet",
+      "sign_in": "Se connecter",
+      "sign_up": "S'inscrire",
+      "loading": "Veuillez patienter...",
+      "back": "← Retour",
+      "dont_have_account": "Vous n'avez pas de compte ? ",
+      "already_have_account": "Vous avez déjà un compte ? ",
+      "error_fill_fields": "Veuillez remplir tous les champs",
+      "error_login_failed": "Échec de la connexion",
+      "error_signup_failed": "Échec de l'inscription"
+    }
+  },
+  
+  "home": {
+    "search_placeholder": "Chercher....",
+    "location": "Montpellier",
+    "categories": {
+      "vegetables": "Légumes",
+      "fruits": "Fruits", 
+      "meat": "Viande",
+      "honey": "Miel",
+      "wine": "Vin"
+    },
+    "filters": {
+      "delivery": "Livraison",
+      "label": "Label",
+      "date": "Date"
+    },
+    "welcome_user": "Bonjour, {{name}}!",
+    "guest_welcome": "Bienvenue sur IWA"
+  },
+  
+  "navigation": {
+    "home": "Accueil",
+    "search": "Rechercher",
+    "orders": "Commandes",
+    "profile": "Profil"
+  }
 }

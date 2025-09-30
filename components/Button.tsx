@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
   
   // Variants
   primary: {
-    backgroundColor: '#5E5DF0',
+    backgroundColor: '#E8DFDA',
   },
   secondary: {
     backgroundColor: '#89A083',

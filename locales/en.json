@@ -3,5 +3,65 @@
   "language_selection": "Select your language",
   "terms": "Terms & Conditions",
   "terms_description": "Lorem ipsum dolor sit amet...",
-  "accept": "Accept"
+  "accept": "Accept",
+  
+  "auth": {
+    "signup_choice": {
+      "are_you_producer": "Are you a producer?",
+      "are_you_restaurant": "Are you a restaurant?",
+      "already_have_account": "Already have an account?",
+      "or": "OR"
+    },
+    "login": {
+      "title": "Welcome Back",
+      "subtitle": "Sign in to access your profile",
+      "signup_title": "Create Account",
+      "signup_subtitle": "Join us to get started",
+      "producer_signup_title": "Producer Registration",
+      "producer_signup_subtitle": "Create your producer account",
+      "restaurant_signup_title": "Restaurant Registration",
+      "restaurant_signup_subtitle": "Create your restaurant account",
+      "email": "Email",
+      "password": "Password",
+      "full_name": "Full Name",
+      "email_placeholder": "Enter your email",
+      "password_placeholder": "Enter your password",
+      "name_placeholder": "Enter your full name",
+      "sign_in": "Sign In",
+      "sign_up": "Sign Up",
+      "loading": "Please wait...",
+      "back": "← Back",
+      "dont_have_account": "Don't have an account? ",
+      "already_have_account": "Already have an account? ",
+      "error_fill_fields": "Please fill in all fields",
+      "error_login_failed": "Login failed",
+      "error_signup_failed": "Registration failed"
+    }
+  },
+  
+  "home": {
+    "search_placeholder": "Search....",
+    "location": "Montpellier",
+    "categories": {
+      "vegetables": "Vegetables",
+      "fruits": "Fruits",
+      "meat": "Meat", 
+      "honey": "Honey",
+      "wine": "Wine"
+    },
+    "filters": {
+      "delivery": "Delivery",
+      "label": "Label",
+      "date": "Date"
+    },
+    "welcome_user": "Hello, {{name}}!",
+    "guest_welcome": "Welcome to IWA"
+  },
+  
+  "navigation": {
+    "home": "Home",
+    "search": "Search",
+    "orders": "Orders",
+    "profile": "Profile"
+  }
 }
