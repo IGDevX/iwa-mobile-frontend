@@ -1,9 +1,12 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions, Modal, TouchableWithoutFeedback } from "react-native";
+import { View, Text, StyleSheet, Image, Dimensions } from "react-native";
 import { useTranslation } from "react-i18next";
 import i18n from "../i18n";
 import { Link } from "expo-router";
 import Colors from "../constants/Colors";
+import Button from "../components/Button";
+import BottomModal from "../components/BottomModal";
+import LanguageCard from "../components/LanguageCard";
 
 const { width } = Dimensions.get("window");
 const CARD_SIZE = width * 0.35;
@@ -30,59 +33,46 @@ export default function LanguageSelection() {
       <Text style={styles.subtitle}>{t("language_selection")}</Text>
 
       <View style={styles.languages}>
-        {languages.map((lang) => {
-          const isSelected = selectedLang === lang.code;
-          return (
-            <TouchableOpacity
-              key={lang.code}
-              style={[
-                styles.langCard,
-                isSelected && styles.selectedLangCard,
-                { transform: [{ scale: isSelected ? 1.1 : 1 }] },
-              ]}
-              activeOpacity={0.8}
-              onPress={() => handleSelect(lang.code)}
-            >
-              <Image source={lang.icon} style={styles.langIcon} />
-              <Text style={[styles.langText, isSelected && styles.selectedLangText]}>
-                {lang.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
+        {languages.map((lang) => (
+          <LanguageCard
+            key={lang.code}
+            code={lang.code}
+            label={lang.label}
+            icon={lang.icon}
+            isSelected={selectedLang === lang.code}
+            onPress={handleSelect}
+            size={CARD_SIZE}
+          />
+        ))}
       </View>
 
-      <TouchableOpacity style={styles.nextButton} onPress={() => setModalVisible(true)}>
-        <Text style={styles.nextButtonText}>{t("terms")}</Text>
-      </TouchableOpacity>
+      <Button
+        title={t("terms")}
+        onPress={() => setModalVisible(true)}
+        variant="primary"
+        style={styles.nextButton}
+        textStyle={styles.nextButtonText}
+      />
 
-      {/* Modal for Terms */}
-      <Modal
+      {/* Terms Modal */}
+      <BottomModal
         visible={modalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setModalVisible(false)}
+        onClose={() => setModalVisible(false)}
+        title={t("terms")}
+        scrollable={true}
       >
-        <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
-          <View style={styles.modalOverlay}>
-            <TouchableWithoutFeedback>
-              <View style={styles.modalContent}>
-                <Text style={styles.title}>{t("terms")}</Text>
-                <Text style={styles.description}>{t("terms_description")}</Text>
-
-                <Link href="/home_restaurateur" asChild>
-                  <TouchableOpacity
-                    style={styles.button}
-                    onPress={() => setModalVisible(false)}
-                  >
-                    <Text style={styles.buttonText}>{t("accept")}</Text>
-                  </TouchableOpacity>
-                </Link>
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
+        <Text style={styles.description}>{t("terms_description")}</Text>
+        
+        <Link href="/home_page" asChild>
+          <Button
+            title={t("accept")}
+            onPress={() => setModalVisible(false)}
+            variant="accent"
+            style={styles.acceptButton}
+            textStyle={styles.acceptButtonText}
+          />
+        </Link>
+      </BottomModal>
     </View>
   );
 }
@@ -99,26 +89,6 @@ const styles = StyleSheet.create({
   title: { fontSize: 32, fontWeight: "700", color: "#4A4459", marginBottom: 8 },
   subtitle: { fontSize: 16, color: "#4A4459", marginBottom: 40 },
   languages: { flexDirection: "row", justifyContent: "space-between", width: "100%" },
-  langCard: {
-    width: CARD_SIZE,
-    height: CARD_SIZE,
-    borderRadius: CARD_SIZE / 2,
-    backgroundColor: "#F7F6ED",
-    justifyContent: "center",
-    alignItems: "center",
-    marginHorizontal: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-    borderWidth: 2,
-    borderColor: "transparent",
-  },
-  selectedLangCard: { borderColor: "#89A083", shadowOpacity: 0.25 },
-  langIcon: { width: 60, height: 60, marginBottom: 12 },
-  langText: { fontSize: 18, fontWeight: "500", color: "#4A4459" },
-  selectedLangText: { color: "#89A083", fontWeight: "700" },
   nextButton: {
     position: "absolute",
     bottom: 50,
@@ -128,42 +98,25 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 5,
   },
   nextButtonText: { color: "#fff", fontSize: 20, fontWeight: "700" },
-
-  /* Modal styles */
-  modalOverlay: {
-    flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(0, 0, 0, 0)",
+  description: { 
+    fontSize: 16, 
+    lineHeight: 24, 
+    color: Colors.textPrimary,
+    marginBottom: 20,
   },
-  modalContent: {
-    backgroundColor: Colors.primary,
-    borderTopLeftRadius: 25,
-    borderTopRightRadius: 25,
-    padding: 20,
-    paddingBottom: 30,
-  },
-  description: { marginTop: 20, fontSize: 16, lineHeight: 24, color: Colors.textPrimary },
-  button: {
-    marginTop: 30,
-    width: "60%",
-    backgroundColor: "#F7F6ED",
-    borderRadius: 30,
-    height: 53,
-    justifyContent: "center",
-    alignItems: "center",
+  acceptButton: {
+    marginTop: 20,
+    marginBottom: 10,
     alignSelf: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 5,
+    paddingVertical: 16,
+    borderRadius: 30,
+    width: "60%",
   },
-  buttonText: { fontSize: 20, fontWeight: "700", color: Colors.textPrimary },
+  acceptButtonText: { 
+    fontSize: 20, 
+    fontWeight: "700", 
+    color: "#4A4459",
+  },
 });
