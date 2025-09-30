@@ -63,7 +63,7 @@ export default function LanguageSelection() {
       >
         <Text style={styles.description}>{t("terms_description")}</Text>
 
-        <Link href="/home_page" asChild>
+        <Link href="/home-page" asChild>
           <Button
             title={t("accept")}
             onPress={() => setModalVisible(false)}

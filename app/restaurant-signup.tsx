@@ -30,7 +30,7 @@ export default function RestaurantSignupScreen() {
     const success = await register(email, password, restaurantName);
 
     if (success) {
-      router.replace('/home_page');
+      router.replace('/home-page');
     } else {
       Alert.alert(t('auth.login.error_signup_failed'), t('auth.login.error_signup_failed'));
     }

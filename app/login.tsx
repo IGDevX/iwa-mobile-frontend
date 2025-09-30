@@ -29,7 +29,7 @@ export default function LoginScreen() {
     const success = await login(email, password);
 
     if (success) {
-      router.replace('/home_page');
+      router.replace('/protected-page');
     } else {
       Alert.alert(t('auth.login.error_login_failed'), t('auth.login.error_login_failed'));
     }
@@ -37,11 +37,11 @@ export default function LoginScreen() {
 
   const handleSignupRedirect = () => {
     // Navigate back to home and trigger signup choice modal
-    router.replace('/home_page?showSignup=true');
+    router.replace('/home-page?showSignup=true');
   };
 
   const handleBackPress = () => {
-    router.replace('/home_page');
+    router.replace('/home-page');
   };
 
   return (

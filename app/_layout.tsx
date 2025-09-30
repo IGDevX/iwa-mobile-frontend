@@ -8,10 +8,8 @@ import BottomNavigation from "../components/BottomNavigation";
 
 // Screens that should show the bottom navigation
 const SCREENS_WITH_BOTTOM_NAV = [
-  '/home_page',
-  '/search',
-  '/orders',
-  '/profile',
+  '/home-page',
+  '/protected-page',
 ];
 
 function LayoutContent() {

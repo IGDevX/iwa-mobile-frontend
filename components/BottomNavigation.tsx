@@ -27,12 +27,12 @@ export default function BottomNavigation() {
   const tabs: TabItem[] = [
     {
       nameKey: 'navigation.home',
-      path: '/home_page',
+      path: '/home-page',
       icon: require('../assets/images/icons8-home-96.png'),
     },
     {
       nameKey: 'navigation.profile',
-      path: '/profile',
+      path: '/protected-page',
       icon: require('../assets/images/icons8-name-96.png'),
     },
   ];
@@ -65,9 +65,9 @@ export default function BottomNavigation() {
 
   const handleLoginSuccess = () => {
     handleCloseModals();
-    // Navigate to profile if that's what they clicked
-    if (pathname !== '/profile') {
-        //router.push('/profile'); --- IGNORE ---
+    // Navigate to protected-page if that's what they clicked
+    if (pathname !== '/protected-page') {
+        router.push('/protected-page');
     }
   };
 

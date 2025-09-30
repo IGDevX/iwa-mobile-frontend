@@ -30,7 +30,7 @@ export default function ProducerSignupScreen() {
     const success = await register(email, password, name);
 
     if (success) {
-      router.replace('/home_page');
+      router.replace('/home-page');
     } else {
       Alert.alert(t('auth.login.error_signup_failed'), t('auth.login.error_signup_failed'));
     }

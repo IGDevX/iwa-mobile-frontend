@@ -8,7 +8,6 @@ import { router } from "expo-router";
 const { width } = Dimensions.get("window");
 
 export default function HomeScreen() {
-  const { isAuthenticated, user } = useAuthContext();
 
   const { t } = useTranslation();
 
@@ -25,11 +24,6 @@ export default function HomeScreen() {
     t("home.filters.label"),
     t("home.filters.date")
   ];
-
-
-  const handleLoginPrompt = () => {
-    router.push('/login');
-  };
 
   return (
     <View style={styles.container}>
