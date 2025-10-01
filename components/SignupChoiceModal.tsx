@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import {
     View,
     Text,
@@ -6,16 +6,20 @@ import {
     Modal,
     TouchableWithoutFeedback,
     Image,
+    Alert
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
 import Button from './Button';
+import { AuthContext } from '../components/AuthContext';
 
 interface SignupChoiceModalProps {
     visible: boolean;
     onClose: () => void;
     onExistingUser: () => void;
 }
+
+
 
 export default function SignupChoiceModal({
     visible,
@@ -34,9 +38,31 @@ export default function SignupChoiceModal({
         router.push('/restaurant-signup');
     };
 
-    const handleLoginPress = () => {
-        onClose();
-        router.replace('/login');
+    const { signIn, state } = useContext(AuthContext);
+
+    // Handle Keycloak OAuth login
+    const handleKeycloakLogin = async () => {
+        try {
+            // The signIn function from AuthContext triggers the Keycloak OAuth flow
+            // This will:
+            // 1. Open the Keycloak login page in a browser/webview
+            // 2. User authenticates with their Keycloak credentials
+            // 3. Keycloak redirects back to the app with authorization code
+            // 4. AuthContext exchanges the code for access tokens
+            // 5. User info is fetched and stored in the auth state
+            signIn();
+            onClose();
+            // Note: The loading state will be reset by useEffect when authentication completes
+        } catch (error) {
+            console.error('Keycloak login error:', error);
+            Alert.alert(
+                t('auth.login.error_login_failed'),
+                'Failed to authenticate with Keycloak. Please try again.',
+                [
+                    { text: 'OK', style: 'default' }
+                ]
+            );
+        }
     };
 
     return (
@@ -92,10 +118,10 @@ export default function SignupChoiceModal({
                                 {/* Login Button */}
                                 <Button
                                     title={t("auth.signup_choice.already_have_account")}
-                                    onPress={handleLoginPress}
-                                    variant="accent"
+                                    onPress={handleKeycloakLogin}
                                     style={styles.loginButton}
                                     textStyle={styles.loginButtonText}
+                                    variant="primary"
                                 />
 
                                 {/* Decorative Images */}

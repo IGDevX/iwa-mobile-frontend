@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   View,
   Text,
@@ -9,9 +9,9 @@ import {
   Image,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useAuthContext } from '../components/AuthContext';
 import Button from '../components/Button';
 import { router } from 'expo-router';
+import { AuthContext } from '../components/AuthContext';
 
 export default function RestaurantSignupScreen() {
   const [email, setEmail] = useState('');
@@ -19,20 +19,10 @@ export default function RestaurantSignupScreen() {
   const [restaurantName, setRestaurantName] = useState('');
   const { t } = useTranslation();
 
-  const { register, isLoading } = useAuthContext();
-
   const handleSignup = async () => {
     if (!email || !password || !restaurantName) {
       Alert.alert(t('auth.login.error_fill_fields'), t('auth.login.error_fill_fields'));
       return;
-    }
-
-    const success = await register(email, password, restaurantName);
-
-    if (success) {
-      router.replace('/home-page');
-    } else {
-      Alert.alert(t('auth.login.error_signup_failed'), t('auth.login.error_signup_failed'));
     }
   };
 
@@ -40,8 +30,35 @@ export default function RestaurantSignupScreen() {
     router.back();
   };
 
-  const handleLoginPress = () => {
-    router.push('/login');
+  const { signIn, state } = useContext(AuthContext);
+
+  const [isKeycloakLoading, setIsKeycloakLoading] = useState(false);
+
+  // Handle Keycloak OAuth login
+  const handleKeycloakLogin = async () => {
+    try {
+      setIsKeycloakLoading(true);
+      // The signIn function from AuthContext triggers the Keycloak OAuth flow
+      // This will:
+      // 1. Open the Keycloak login page in a browser/webview
+      // 2. User authenticates with their Keycloak credentials
+      // 3. Keycloak redirects back to the app with authorization code
+      // 4. AuthContext exchanges the code for access tokens
+      // 5. User info is fetched and stored in the auth state
+      signIn();
+      // Note: The loading state will be reset by useEffect when authentication completes
+      router.push('/home-page');
+    } catch (error) {
+      console.error('Keycloak login error:', error);
+      setIsKeycloakLoading(false);
+      Alert.alert(
+        t('auth.login.error_login_failed'),
+        'Failed to authenticate with Keycloak. Please try again.',
+        [
+          { text: 'OK', style: 'default' }
+        ]
+      );
+    }
   };
 
   return (
@@ -100,9 +117,8 @@ export default function RestaurantSignupScreen() {
 
             {/* Signup Button */}
             <Button
-              title={isLoading ? t('auth.login.loading') : t('auth.login.sign_up')}
+              title={t('auth.login.sign_up')}
               onPress={handleSignup}
-              disabled={isLoading}
               style={styles.signupButton}
               textStyle={styles.signupButtonText}
               variant="secondary"
@@ -117,7 +133,7 @@ export default function RestaurantSignupScreen() {
             {/* Login Button */}
             <Button
               title={t('auth.login.already_have_account')}
-              onPress={handleLoginPress}
+              onPress={handleKeycloakLogin}
               variant="accent"
               style={styles.loginButton}
               textStyle={styles.loginButtonText}

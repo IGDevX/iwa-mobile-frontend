@@ -33,9 +33,26 @@
       "back": "← Retour",
       "dont_have_account": "Vous n'avez pas de compte ? ",
       "already_have_account": "Vous avez déjà un compte ? ",
+      "or": "ou",
+      "keycloak_login": "Se connecter avec Keycloak",
+      "info": "Information",
       "error_fill_fields": "Veuillez remplir tous les champs",
       "error_login_failed": "Échec de la connexion",
       "error_signup_failed": "Échec de l'inscription"
+    }
+  },
+  
+  "protected": {
+    "title": "Page Protégée",
+    "welcome": "Bienvenue, {{name}} !",
+    "access_denied": "Accès Refusé",
+    "login_required": "Vous devez être connecté pour voir cette page",
+    "go_to_login": "Aller à la Connexion",
+    "logout": "Se Déconnecter",
+    "user_info": {
+      "email": "Email",
+      "full_name": "Nom Complet",
+      "roles": "Rôles"
     }
   },
   

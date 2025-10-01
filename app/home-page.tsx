@@ -1,6 +1,5 @@
 import React from "react";
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from "react-native";
-import { useAuthContext } from "../components/AuthContext";
 import { useTranslation } from "react-i18next";
 import Button from "../components/Button";
 import { router } from "expo-router";

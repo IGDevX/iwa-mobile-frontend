@@ -1,82 +1,187 @@
-import React, { createContext, useContext, ReactNode, useMemo, useEffect } from 'react';
-import { makeRedirectUri, useAuthRequest, useAutoDiscovery } from 'expo-auth-session';
-import { useAuth, User } from '../hooks/useAuth';
+import React, { createContext, useMemo, useReducer, useEffect, ReactNode } from 'react'
+import { makeRedirectUri, useAuthRequest, useAutoDiscovery } from 'expo-auth-session'
+
+interface UserInfo {
+  username: string
+  givenName: string
+  familyName: string
+  email: string
+  roles: string[]
+}
+
+interface AuthState {
+  isSignedIn: boolean
+  accessToken: string | null
+  idToken: string | null
+  userInfo: UserInfo | null
+}
 
 interface AuthContextType {
-  user: User | null;
-  isLoading: boolean;
-  isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  logout: () => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<boolean>;
-  checkAuthState: () => Promise<void>;
-  signInWithKeycloak: () => void;
-  keycloakRequest: any;
+  state: AuthState
+  signIn: () => void
+  signOut: () => Promise<void>
+  hasRole: (role: string) => boolean
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-interface AuthProviderProps {
-  children: ReactNode;
+interface AuthAction {
+  type: 'SIGN_IN' | 'USER_INFO' | 'SIGN_OUT'
+  payload?: any
 }
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const auth = useAuth();
-  
-  // Keycloak configuration
-  const keycloakUrl = process.env.EXPO_PUBLIC_KEYCLOAK_URL;
-  const keycloakClientId = process.env.EXPO_PUBLIC_KEYCLOAK_CLIENT_ID;
-  
-  const discovery = useAutoDiscovery(keycloakUrl || '');
-  const redirectUri = makeRedirectUri();
+const initialState: AuthState = {
+  isSignedIn: false,
+  accessToken: null,
+  idToken: null,
+  userInfo: null,
+}
+
+const AuthContext = createContext<AuthContextType>({
+  state: initialState,
+  signIn: () => { },
+  signOut: async () => { },
+  hasRole: (role: string) => false
+})
+
+const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const discovery = useAutoDiscovery(process.env.EXPO_PUBLIC_KEYCLOAK_URL || '')
+  const redirectUri = makeRedirectUri()
   const [request, response, promptAsync] = useAuthRequest(
     {
-      clientId: keycloakClientId || '',
+      clientId: process.env.EXPO_PUBLIC_KEYCLOAK_CLIENT_ID || '',
       redirectUri: redirectUri,
       scopes: ['openid', 'profile'],
     },
     discovery
-  );
-
-  // Handle Keycloak authentication response
-  useEffect(() => {
-    if (response?.type === 'success') {
-      // Handle successful Keycloak authentication
-      console.log('Keycloak auth success:', response);
-      // TODO: Process the tokens and user info from Keycloak
-      // You might want to call a function to exchange the code for tokens
-      // and then update your auth state accordingly
-    } else if (response?.type === 'error') {
-      console.error('Keycloak auth error:', response.error);
+  )
+  const [authState, dispatch] = useReducer((previousState: AuthState, action: AuthAction): AuthState => {
+    switch (action.type) {
+      case 'SIGN_IN':
+        return {
+          ...previousState,
+          isSignedIn: true,
+          accessToken: action.payload.access_token,
+          idToken: action.payload.id_token,
+        }
+      case 'USER_INFO':
+        return {
+          ...previousState,
+          userInfo: {
+            username: action.payload.preferred_username,
+            givenName: action.payload.given_name,
+            familyName: action.payload.family_name,
+            email: action.payload.email,
+            roles: action.payload.roles || []
+          },
+        }
+      case 'SIGN_OUT':
+        return initialState
+      default:
+        return previousState
     }
-  }, [response]);
+  }, initialState)
 
-  const authContextValue = useMemo(
+  useEffect(() => {
+    const getToken = async ({ code, codeVerifier, redirectUri }: { 
+      code: string
+      codeVerifier: string
+      redirectUri: string 
+    }) => {
+      try {
+        const formData: Record<string, string> = {
+          grant_type: 'authorization_code',
+          client_id: process.env.EXPO_PUBLIC_KEYCLOAK_CLIENT_ID || '',
+          code: code,
+          code_verifier: codeVerifier,
+          redirect_uri: redirectUri,
+        }
+        const formBody: string[] = []
+        for (const property in formData) {
+          const encodedKey = encodeURIComponent(property)
+          const encodedValue = encodeURIComponent(formData[property])
+          formBody.push(encodedKey + '=' + encodedValue)
+        }
+
+        const response = await fetch(
+          `${process.env.EXPO_PUBLIC_KEYCLOAK_URL}/protocol/openid-connect/token`,
+          {
+            method: 'POST',
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: formBody.join('&'),
+          }
+        )
+        if (response.ok) {
+          const payload = await response.json()
+          dispatch({ type: 'SIGN_IN', payload })
+        }
+      } catch (e) {
+        console.warn(e)
+      }
+    }
+    if (response?.type === 'success') {
+      const { code } = response.params
+      getToken({
+        code,
+        codeVerifier: request?.codeVerifier || '',
+        redirectUri,
+      })
+    } else if (response?.type === 'error') {
+      console.warn('Authentication error: ', response.error)
+    }
+  }, [response, request?.codeVerifier, redirectUri])
+
+  useEffect(() => {
+    const getUserInfo = async () => {
+      try {
+        const accessToken = authState.accessToken
+        const response = await fetch(
+          `${process.env.EXPO_PUBLIC_KEYCLOAK_URL}/protocol/openid-connect/userinfo`,
+          {
+            method: 'GET',
+            headers: {
+              Authorization: 'Bearer ' + accessToken,
+              Accept: 'application/json',
+            },
+          }
+        )
+        if (response.ok) {
+          const payload = await response.json()
+          dispatch({ type: 'USER_INFO', payload })
+        }
+      } catch (e) {
+        console.warn(e)
+      }
+    }
+    if (authState.isSignedIn) {
+      getUserInfo()
+    }
+  }, [authState.accessToken, authState.isSignedIn])
+
+  const authContext = useMemo(
     () => ({
-      ...auth,
-      signInWithKeycloak: () => {
-        if (keycloakUrl && keycloakClientId) {
-          promptAsync();
-        } else {
-          console.error('Keycloak configuration missing. Please set EXPO_PUBLIC_KEYCLOAK_URL and EXPO_PUBLIC_KEYCLOAK_CLIENT_ID');
+      state: authState,
+      signIn: () => { promptAsync() },
+      signOut: async () => {
+        try {
+          const idToken = authState.idToken
+          await fetch(
+            `${process.env.EXPO_PUBLIC_KEYCLOAK_URL}/protocol/openid-connect/logout?id_token_hint=${idToken}`
+          )
+          dispatch({ type: 'SIGN_OUT' })
+        } catch (e) {
+          console.warn(e)
         }
       },
-      keycloakRequest: request,
+      hasRole: (role: string) => authState.userInfo?.roles.indexOf(role) !== -1,
     }),
-    [auth, promptAsync, request, keycloakUrl, keycloakClientId]
-  );
+    [authState, promptAsync]
+  )
 
   return (
-    <AuthContext.Provider value={authContextValue}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
+    <AuthContext.Provider value={authContext}>{children}</AuthContext.Provider>
+  )
+}
 
-export const useAuthContext = (): AuthContextType => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuthContext must be used within an AuthProvider');
-  }
-  return context;
-};
+export { AuthContext, AuthProvider }

@@ -33,9 +33,26 @@
       "back": "← Back",
       "dont_have_account": "Don't have an account? ",
       "already_have_account": "Already have an account? ",
+      "or": "or",
+      "keycloak_login": "Login with Keycloak",
+      "info": "Information",
       "error_fill_fields": "Please fill in all fields",
       "error_login_failed": "Login failed",
       "error_signup_failed": "Registration failed"
+    }
+  },
+  
+  "protected": {
+    "title": "Protected Page",
+    "welcome": "Welcome, {{name}}!",
+    "access_denied": "Access Denied",
+    "login_required": "You need to be logged in to view this page",
+    "go_to_login": "Go to Login",
+    "logout": "Logout",
+    "user_info": {
+      "email": "Email",
+      "full_name": "Full Name",
+      "roles": "Roles"
     }
   },
   

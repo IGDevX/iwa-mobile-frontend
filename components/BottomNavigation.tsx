@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -8,7 +8,7 @@ import {
   Image,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useAuthContext } from './AuthContext';
+import { AuthContext } from './AuthContext';
 import { router, usePathname } from 'expo-router';
 import SignupChoiceModal from './SignupChoiceModal';
 
@@ -21,7 +21,8 @@ interface TabItem {
 
 export default function BottomNavigation() {
   const { t } = useTranslation();
-  const { isAuthenticated } = useAuthContext();
+  const { state } = useContext(AuthContext);
+  const isAuthenticated = state.isSignedIn;
   const pathname = usePathname();
 
   const tabs: TabItem[] = [
@@ -61,14 +62,6 @@ export default function BottomNavigation() {
 
   const handleCloseModals = () => {
     setShowSignupChoice(false);
-  };
-
-  const handleLoginSuccess = () => {
-    handleCloseModals();
-    // Navigate to protected-page if that's what they clicked
-    if (pathname !== '/protected-page') {
-        router.push('/protected-page');
-    }
   };
 
   const getVisibleTabs = () => {

@@ -116,8 +116,7 @@ export const useAuth = () => {
       const user: User = {
         id: '1',
         email: email,
-        name: name,
-        avatar: 'https://placehold.co/100x100',
+        name: name
       };
       
       // Store token and user data
