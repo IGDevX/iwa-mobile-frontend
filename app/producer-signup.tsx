@@ -9,57 +9,83 @@ import {
   Image,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import Button from '../components/Button';
-import { router } from 'expo-router';
 import { AuthContext } from '../components/AuthContext';
+import Button from '../components/Button';
+import EmailVerificationModal from '../components/EmailVerificationModal';
+import { router } from 'expo-router';
 
 export default function ProducerSignupScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [showEmailVerification, setShowEmailVerification] = useState(false);
   const { t } = useTranslation();
+  
+  const { signUpWithCredentials } = useContext(AuthContext);
 
   const handleSignup = async () => {
-    if (!email || !password || !name) {
+    if (!email || !password ) {
       Alert.alert(t('auth.login.error_fill_fields'), t('auth.login.error_fill_fields'));
       return;
     }
 
+    setIsLoading(true);
+
+    try {
+      const result = await signUpWithCredentials(email, password, 'Producer');
+
+      if (result.success) {
+        setShowEmailVerification(true);
+        // Also show a success message
+        Alert.alert(
+          t('auth.signup.success_title', 'Registration Successful!'),
+          result.message || t('auth.signup.success_message', 'Please check your email for verification.'),
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                // Keep the email verification modal open
+              }
+            }
+          ]
+        );
+      } else {
+        Alert.alert(
+          t('auth.signup.error_signup_failed', 'Signup Failed'),
+          result.error || 'Please try again later.'
+        );
+      }
+    } catch (error) {
+      console.error('Signup error:', error);
+      Alert.alert(
+        t('auth.signup.error_signup_failed', 'Signup Failed'),
+        'An unexpected error occurred. Please try again.'
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendEmail = () => {
+    // TODO: Implement resend functionality
+    Alert.alert(
+      t('auth.email_verification.resend_success', 'Email Sent'),
+      t('auth.email_verification.resend_message', 'Verification email has been resent.')
+    );
+  };
+
+  const handleEmailVerificationClose = () => {
+    setShowEmailVerification(false);
+    // Navigate back to home or login
+    router.replace('/home-page');
+  };
+
+  const handleLoginPress = () => {
+    router.push('/login-page');
   };
 
   const handleBackPress = () => {
     router.back();
-  };
-
-  const { signIn, state } = useContext(AuthContext);
-
-  const [isKeycloakLoading, setIsKeycloakLoading] = useState(false);
-
-  // Handle Keycloak OAuth login
-  const handleKeycloakLogin = async () => {
-    try {
-      setIsKeycloakLoading(true);
-      // The signIn function from AuthContext triggers the Keycloak OAuth flow
-      // This will:
-      // 1. Open the Keycloak login page in a browser/webview
-      // 2. User authenticates with their Keycloak credentials
-      // 3. Keycloak redirects back to the app with authorization code
-      // 4. AuthContext exchanges the code for access tokens
-      // 5. User info is fetched and stored in the auth state
-      signIn();
-      // Note: The loading state will be reset by useEffect when authentication completes
-      router.push('/home-page');
-    } catch (error) {
-      console.error('Keycloak login error:', error);
-      setIsKeycloakLoading(false);
-      Alert.alert(
-        t('auth.login.error_login_failed'),
-        'Failed to authenticate with Keycloak. Please try again.',
-        [
-          { text: 'OK', style: 'default' }
-        ]
-      );
-    }
   };
 
   return (
@@ -118,8 +144,9 @@ export default function ProducerSignupScreen() {
 
             {/* Signup Button */}
             <Button
-              title={t('auth.login.sign_up')}
+              title={isLoading ? t('auth.login.loading', 'Loading...') : t('auth.login.sign_up')}
               onPress={handleSignup}
+              disabled={isLoading}
               style={styles.signupButton}
               textStyle={styles.signupButtonText}
               variant="secondary"
@@ -135,7 +162,7 @@ export default function ProducerSignupScreen() {
             {/* Login Button */}
             <Button
               title={t('auth.login.already_have_account')}
-              onPress={handleKeycloakLogin}
+              onPress={handleLoginPress}
               variant="accent"
               style={styles.loginButton}
               textStyle={styles.loginButtonText}
@@ -143,6 +170,14 @@ export default function ProducerSignupScreen() {
           </View>
         </View>
       </View>
+      
+      {/* Email Verification Modal */}
+      <EmailVerificationModal
+        visible={showEmailVerification}
+        email={email}
+        onResend={handleResendEmail}
+        onClose={handleEmailVerificationClose}
+      />
     </View>
   );
 }

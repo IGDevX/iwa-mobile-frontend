@@ -11,20 +11,79 @@ import {
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../components/AuthContext';
 import Button from '../components/Button';
-import EmailVerificationModal from '../components/EmailVerificationModal';
 import { router } from 'expo-router';
 
-export default function RestaurantSignupScreen() {
+export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showEmailVerification, setShowEmailVerification] = useState(false);
   const { t } = useTranslation();
   
-  const { signUpWithCredentials } = useContext(AuthContext);
+  const { state, signInWithCredentials } = useContext(AuthContext);
 
-  const handleSignup = async () => {
-    if (!email || !password ) {
+  // Direct Keycloak login using username/password
+  const handleKeycloakDirectLogin = async (username: string, password: string) => {
+    try {
+      const formData = new URLSearchParams();
+      formData.append('grant_type', 'password');
+      formData.append('client_id', process.env.EXPO_PUBLIC_KEYCLOAK_CLIENT_ID || '');
+      formData.append('username', username);
+      formData.append('password', password);
+      formData.append('scope', 'openid profile email');
+
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_KEYCLOAK_URL}/protocol/openid-connect/token`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Accept': 'application/json',
+          },
+          body: formData.toString(),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error_description || 'Authentication failed');
+      }
+
+      const tokenData = await response.json();
+      
+      // Get user info using the access token
+      const userInfoResponse = await fetch(
+        `${process.env.EXPO_PUBLIC_KEYCLOAK_URL}/protocol/openid-connect/userinfo`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${tokenData.access_token}`,
+            'Accept': 'application/json',
+          },
+        }
+      );
+
+      if (!userInfoResponse.ok) {
+        throw new Error('Failed to get user information');
+      }
+
+      const userInfo = await userInfoResponse.json();
+      
+      return {
+        success: true,
+        tokens: tokenData,
+        userInfo: userInfo
+      };
+    } catch (error) {
+      console.error('Direct Keycloak login error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
+      };
+    }
+  };
+
+  const handleLogin = async () => {
+    if (!email || !password) {
       Alert.alert(t('auth.login.error_fill_fields'), t('auth.login.error_fill_fields'));
       return;
     }
@@ -32,33 +91,21 @@ export default function RestaurantSignupScreen() {
     setIsLoading(true);
 
     try {
-      const result = await signUpWithCredentials(email, password, 'Restaurant Owner');
+      const result = await handleKeycloakDirectLogin(email, password);
 
       if (result.success) {
-        setShowEmailVerification(true);
-        // Also show a success message
-        Alert.alert(
-          t('auth.signup.success_title', 'Registration Successful!'),
-          result.message || t('auth.signup.success_message', 'Please check your email for verification.'),
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                // Keep the email verification modal open
-              }
-            }
-          ]
-        );
+        // Update AuthContext state with the authentication data
+        signInWithCredentials(result.tokens, result.userInfo);
       } else {
         Alert.alert(
-          t('auth.signup.error_signup_failed', 'Signup Failed'),
-          result.error || 'Please try again later.'
+          t('auth.login.error_login_failed'),
+          result.error || 'Please check your credentials and try again.'
         );
       }
     } catch (error) {
-      console.error('Signup error:', error);
+      console.error('Login error:', error);
       Alert.alert(
-        t('auth.signup.error_signup_failed', 'Signup Failed'),
+        t('auth.login.error_login_failed'),
         'An unexpected error occurred. Please try again.'
       );
     } finally {
@@ -66,31 +113,25 @@ export default function RestaurantSignupScreen() {
     }
   };
 
-  const handleResendEmail = () => {
-    // TODO: Implement resend functionality
-    Alert.alert(
-      t('auth.email_verification.resend_success', 'Email Sent'),
-      t('auth.email_verification.resend_message', 'Verification email has been resent.')
-    );
-  };
+  // Check if user is already authenticated and redirect
+  React.useEffect(() => {
+    if (state.isSignedIn) {
+      router.replace('/protected-page');
+    }
+  }, [state.isSignedIn]);
 
-  const handleEmailVerificationClose = () => {
-    setShowEmailVerification(false);
-    // Navigate back to home or login
-    router.replace('/home-page');
+  const handleSignupRedirect = () => {
+    // Navigate back to home and trigger signup choice modal
+    router.replace('/home-page?showSignup=true');
   };
 
   const handleBackPress = () => {
     router.back();
   };
 
-  const handleLoginPress = () => {
-    router.push('/login-page');
-  };
-
   return (
     <View style={styles.container}>
-      <View style={styles.restaurantRegistration}>
+      <View style={styles.loginForm}>
         <View style={styles.content}>
           {/* Header */}
           <View style={styles.header}>
@@ -101,7 +142,7 @@ export default function RestaurantSignupScreen() {
               />
             </TouchableOpacity>
             <View style={styles.heading}>
-              <Text style={styles.title}>{t('auth.login.restaurant_signup_title')}</Text>
+              <Text style={styles.title}>{t('auth.login.title')}</Text>
             </View>
           </View>
 
@@ -121,6 +162,7 @@ export default function RestaurantSignupScreen() {
                   placeholderTextColor="rgba(74, 68, 89, 0.5)"
                   keyboardType="email-address"
                   autoCapitalize="none"
+                  editable={!isLoading}
                 />
               </View>
             </View>
@@ -138,45 +180,23 @@ export default function RestaurantSignupScreen() {
                   placeholder={t('auth.login.password_placeholder')}
                   placeholderTextColor="rgba(74, 68, 89, 0.5)"
                   secureTextEntry
+                  editable={!isLoading}
                 />
               </View>
             </View>
 
-            {/* Signup Button */}
-            <Button
-              title={isLoading ? t('auth.login.loading', 'Loading...') : t('auth.login.sign_up')}
-              onPress={handleSignup}
-              disabled={isLoading}
-              style={styles.signupButton}
-              textStyle={styles.signupButtonText}
-              variant="secondary"
-            />
-            {/* Divider */}
-            <View style={styles.dividerContainer}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>{t('auth.signup_choice.or')}</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
             {/* Login Button */}
             <Button
-              title={t('auth.login.already_have_account')}
-              onPress={handleLoginPress}
-              variant="accent"
-              style={styles.loginButton}
+              title={isLoading ? t('auth.login.loading') : t('auth.login.sign_in')}
+              onPress={handleLogin}
+              disabled={isLoading}
+              style={isLoading ? styles.disabledButton : styles.loginButton}
               textStyle={styles.loginButtonText}
+              variant="secondary"
             />
           </View>
         </View>
       </View>
-      
-      {/* Email Verification Modal */}
-      <EmailVerificationModal
-        visible={showEmailVerification}
-        email={email}
-        onResend={handleResendEmail}
-        onClose={handleEmailVerificationClose}
-      />
     </View>
   );
 }
@@ -187,7 +207,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFEF4',
     paddingTop: 50
   },
-  restaurantRegistration: {
+  loginForm: {
     flex: 1,
     backgroundColor: '#FFFEF4',
   },
@@ -259,7 +279,7 @@ const styles = StyleSheet.create({
     color: '#4A4459',
     flex: 1,
   },
-  signupButton: {
+  loginButton: {
     marginTop: 70,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -267,36 +287,39 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 5,
     borderRadius: 16,
-    backgroundColor: '#E8DFDA',
+    backgroundColor: '#89A083',
     height: 60,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20
   },
-  signupButtonText: {
+  loginButtonText: {
     fontSize: 20,
     lineHeight: 30,
-    color: '#4A4459',
+    color: '#FFFEF4',
     fontWeight: '600',
   },
-  loginLink: {
-    alignSelf: 'center',
-    marginTop: 16,
-    paddingVertical: 8,
+  disabledButton: {
+    marginTop: 70,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 5,
+    borderRadius: 16,
+    backgroundColor: '#CCCCCC',
+    height: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20
   },
-  loginLinkText: {
-    fontSize: 15,
-    lineHeight: 22.5,
-    color: '#4A4459',
-    textDecorationLine: 'underline',
-  },
-  loginButton: {
+  signupButton: {
     width: '100%',
     backgroundColor: '#f6f5e9ff',
     shadowOpacity: 0,
     elevation: 0,
   },
-  loginButtonText: {
+  signupButtonText: {
     color: '#4A4459',
     fontSize: 16,
     fontWeight: '600',

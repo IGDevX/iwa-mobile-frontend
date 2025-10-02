@@ -19,8 +19,6 @@ interface SignupChoiceModalProps {
     onExistingUser: () => void;
 }
 
-
-
 export default function SignupChoiceModal({
     visible,
     onClose,
@@ -36,6 +34,11 @@ export default function SignupChoiceModal({
     const handleRestaurantPress = () => {
         onClose();
         router.push('/restaurant-signup');
+    };
+
+    const handleLoginPress = () => {
+        onClose();
+        router.push('/login-page');
     };
 
     const { signIn, state } = useContext(AuthContext);
@@ -118,7 +121,7 @@ export default function SignupChoiceModal({
                                 {/* Login Button */}
                                 <Button
                                     title={t("auth.signup_choice.already_have_account")}
-                                    onPress={handleKeycloakLogin}
+                                    onPress={handleLoginPress}
                                     style={styles.loginButton}
                                     textStyle={styles.loginButtonText}
                                     variant="primary"
@@ -129,7 +132,7 @@ export default function SignupChoiceModal({
                                     <Image
                                         source={{ uri: 'https://placehold.co/80x80' }}
                                         style={styles.decorativeImage1}
-                                    />
+                                />
                                     <Image
                                         source={{ uri: 'https://placehold.co/60x60' }}
                                         style={styles.decorativeImage2}
