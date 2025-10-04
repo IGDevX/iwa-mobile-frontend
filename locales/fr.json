@@ -39,6 +39,18 @@
       "error_fill_fields": "Veuillez remplir tous les champs",
       "error_login_failed": "Échec de la connexion",
       "error_signup_failed": "Échec de l'inscription"
+    },
+    "signup": {
+      "success_title": "Inscription réussie !",
+      "success_message": "Veuillez vérifier votre email pour la vérification, puis connectez-vous avec vos identifiants.",
+      "error_signup_failed": "Échec de l'inscription",
+      "go_to_login": "Aller à la connexion",
+      "unexpected_error": "Une erreur inattendue s'est produite. Veuillez réessayer.",
+      "try_again_later": "Veuillez réessayer plus tard."
+    },
+    "email_verification": {
+      "resend_success": "Email envoyé",
+      "resend_message": "L'email de vérification a été renvoyé."
     }
   },
   
@@ -80,5 +92,63 @@
     "search": "Rechercher",
     "orders": "Commandes",
     "profile": "Profil"
+  },
+  
+  "profile": {
+    "title": "Mon Profil",
+    "loading": "Chargement du profil...",
+    "edit_button": "Modifier mes informations",
+    "general_info": "Informations générales",
+    "not_provided": "Non renseigné",
+    "signout": {
+      "title": "Se déconnecter",
+      "message": "Êtes-vous sûr de vouloir vous déconnecter ?",
+      "cancel": "Annuler",
+      "confirm": "Se déconnecter",
+      "button": "Se déconnecter"
+    },
+    "complete": {
+      "title": "Complétez votre profil",
+      "subtitle_producer": "Obligatoire avant de continuer",
+      "subtitle_restaurant": "Ces informations sont essentielles pour continuer",
+      "display_name": "Nom d'affichage",
+      "display_name_placeholder_producer": "Nom de votre exploitation",
+      "display_name_placeholder_restaurant": "Nom de votre restaurant",
+      "responsible_name": "Nom du responsable",
+      "responsible_name_placeholder_producer": "Prénom et nom",
+      "responsible_name_placeholder_restaurant": "Prénom et nom du gérant",
+      "phone_number": "Numéro de téléphone",
+      "phone_placeholder_producer": "+33 6 12 34 56 78",
+      "phone_placeholder_restaurant": "+33 4 67 12 34 56",
+      "address": "Adresse",
+      "address_placeholder_producer": "123 Rue de la Ferme, 34000 Montpellier",
+      "address_placeholder_restaurant": "123 Rue du Commerce, 34000 Montpellier",
+      "profession": "Métier",
+      "profession_placeholder": "Ex: Apiculteur, Maraîcher, Éleveur…",
+      "save": "Enregistrer",
+      "skip": "Passer cette étape",
+      "validation": {
+        "fill_all_fields": "Veuillez remplir tous les champs obligatoires",
+        "profession_required": "Veuillez renseigner votre métier"
+      },
+      "success": {
+        "title": "Profil enregistré",
+        "message": "Votre profil a été enregistré avec succès !"
+      },
+      "error": {
+        "save_failed": "Erreur lors de l'enregistrement du profil"
+      },
+      "skip_confirmation": {
+        "title": "Passer cette étape",
+        "message": "Vous pourrez compléter votre profil plus tard dans les paramètres.",
+        "cancel": "Annuler",
+        "continue": "Continuer"
+      }
+    }
+  },
+  
+  "common": {
+    "error": "Erreur",
+    "ok": "OK"
   }
 }

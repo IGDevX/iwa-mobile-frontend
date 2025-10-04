@@ -1,5 +1,6 @@
 import React, { createContext, useMemo, useReducer, useEffect, ReactNode } from 'react'
 import { makeRedirectUri, useAuthRequest, useAutoDiscovery } from 'expo-auth-session'
+import { isUserProfileComplete, convertKeycloakAttributesToProfile, getMissingProfileFields } from '../utils/profileUtils'
 
 interface UserInfo {
   username: string
@@ -7,6 +8,7 @@ interface UserInfo {
   familyName: string
   email: string
   roles: string[]
+  sub?: string // Keycloak user ID
 }
 
 interface AuthState {
@@ -23,6 +25,7 @@ interface AuthContextType {
   signUpWithCredentials: (email: string, password: string, role: string) => Promise<{success: boolean, error?: string, message?: string, userId?: string}>
   signOut: () => Promise<void>
   hasRole: (role: string) => boolean
+  checkProfileCompletion: () => Promise<{isComplete: boolean, missingFields: string[]}>
 }
 
 interface AuthAction {
@@ -43,23 +46,17 @@ const AuthContext = createContext<AuthContextType>({
   signInWithCredentials: () => { },
   signUpWithCredentials: async () => ({ success: false }),
   signOut: async () => { },
-  hasRole: (role: string) => false
+  hasRole: (role: string) => false,
+  checkProfileCompletion: async () => ({ isComplete: false, missingFields: [] })
 })
 
 // Helper function to get Keycloak admin token
-const getKeycloakAdminToken = async (): Promise<string | null> => {
-  try {
-    const adminUsername = process.env.EXPO_PUBLIC_KEYCLOAK_ADMIN_USERNAME || 'admin';
-    const adminPassword = process.env.EXPO_PUBLIC_KEYCLOAK_ADMIN_PASSWORD || 'admin';
-    const adminRealm = process.env.EXPO_PUBLIC_KEYCLOAK_ADMIN_REALM || 'master';
-    const baseUrl = process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG;
-    
-    console.log('Getting admin token for Keycloak...');
-    console.log('URL:', `${baseUrl}/realms/${adminRealm}/protocol/openid-connect/token`);
-    console.log('Username:', adminUsername);
-    console.log('Realm:', adminRealm);
-
-    const formData = new URLSearchParams();
+  const getKeycloakAdminToken = async (): Promise<string | null> => {
+    try {
+      const adminUsername = process.env.EXPO_PUBLIC_KEYCLOAK_ADMIN_USERNAME || 'admin';
+      const adminPassword = process.env.EXPO_PUBLIC_KEYCLOAK_ADMIN_PASSWORD || 'admin';
+      const adminRealm = process.env.EXPO_PUBLIC_KEYCLOAK_ADMIN_REALM || 'master';
+      const baseUrl = process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG;    const formData = new URLSearchParams();
     formData.append('grant_type', 'password');
     formData.append('client_id', 'admin-cli');
     formData.append('username', adminUsername);
@@ -85,7 +82,6 @@ const getKeycloakAdminToken = async (): Promise<string | null> => {
     }
 
     const tokenData = await response.json();
-    console.log('Admin token obtained successfully');
     return tokenData.access_token;
   } catch (error) {
     console.error('Error getting admin token:', error);
@@ -119,7 +115,8 @@ const getKeycloakAdminToken = async (): Promise<string | null> => {
             givenName: action.payload.given_name,
             familyName: action.payload.family_name,
             email: action.payload.email,
-            roles: action.payload.roles || []
+            roles: action.payload.roles || [],
+            sub: action.payload.sub // Keycloak user ID
           },
         }
       case 'SIGN_OUT':
@@ -220,8 +217,6 @@ const getKeycloakAdminToken = async (): Promise<string | null> => {
       },
       signUpWithCredentials: async (email: string, password: string, role: string) => {
         try {
-          console.log('Starting direct Keycloak registration for:', email, 'as', role);
-          
           // Step 1: Get admin token
           const adminToken = await getKeycloakAdminToken();
           if (!adminToken) {
@@ -271,8 +266,6 @@ const getKeycloakAdminToken = async (): Promise<string | null> => {
             }
           }
 
-          console.log('User created successfully in Keycloak');
-
           // Step 3: Get the created user ID from Location header or by searching
           const locationHeader = createUserResponse.headers.get('location');
           let userId = null;
@@ -302,8 +295,6 @@ const getKeycloakAdminToken = async (): Promise<string | null> => {
           // Step 4: Assign role to user (if userId is available)
           if (userId) {
             try {
-              console.log(`Assigning ${role} role to user...`);
-              
               // First, get the client's internal ID using its clientId
               const clientId = process.env.EXPO_PUBLIC_KEYCLOAK_CLIENT_ID || 'rn-expo-app';
               const clientsResponse = await fetch(
@@ -328,7 +319,6 @@ const getKeycloakAdminToken = async (): Promise<string | null> => {
               }
 
               const clientUUID = clients[0].id; // This is the internal UUID
-              console.log(`Found client ${clientId} with UUID: ${clientUUID}`);
 
               // Get available client roles for rn-expo-app
               const clientRolesResponse = await fetch(
@@ -343,7 +333,6 @@ const getKeycloakAdminToken = async (): Promise<string | null> => {
 
               if (clientRolesResponse.ok) {
                 const availableRoles = await clientRolesResponse.json();
-                console.log('Available client roles:', availableRoles.map((r: any) => r.name));
                 const targetRole = availableRoles.find((r: any) => r.name === role);
                 
                 if (targetRole) {
@@ -361,7 +350,7 @@ const getKeycloakAdminToken = async (): Promise<string | null> => {
                   );
 
                   if (assignRoleResponse.ok) {
-                    console.log(`Client role ${role} assigned successfully`);
+                    // Role assigned successfully
                   } else {
                     const errorText = await assignRoleResponse.text();
                     console.warn(`Failed to assign client role ${role}:`, errorText);
@@ -381,7 +370,6 @@ const getKeycloakAdminToken = async (): Promise<string | null> => {
 
           // Step 5: Send verification email
           if (userId) {
-            console.log('Sending verification email...');
             const emailResponse = await fetch(
               `${process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG}/admin/realms/${targetRealm}/users/${userId}/send-verify-email`,
               {
@@ -394,7 +382,7 @@ const getKeycloakAdminToken = async (): Promise<string | null> => {
             );
 
             if (emailResponse.ok) {
-              console.log('Verification email sent successfully');
+              // Verification email sent successfully
             } else {
               console.warn('Failed to send verification email, but user was created');
             }
@@ -426,6 +414,50 @@ const getKeycloakAdminToken = async (): Promise<string | null> => {
         }
       },
       hasRole: (role: string) => authState.userInfo?.roles.indexOf(role) !== -1,
+      checkProfileCompletion: async () => {
+        try {
+          if (!authState.userInfo?.sub) {
+            return { isComplete: false, missingFields: ['User not authenticated'] };
+          }
+
+          const adminToken = await getKeycloakAdminToken();
+          if (!adminToken) {
+            console.warn('Could not get admin token to check profile');
+            return { isComplete: false, missingFields: ['Unable to check profile'] };
+          }
+
+          const targetRealm = process.env.EXPO_PUBLIC_KEYCLOAK_REALM || 'marche-conclu';
+          const userId = authState.userInfo.sub;
+          const userRole = authState.userInfo.roles?.[0] || 'Producer';
+
+          const response = await fetch(
+            `${process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG}/admin/realms/${targetRealm}/users/${userId}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${adminToken}`,
+                'Accept': 'application/json',
+              }
+            }
+          );
+
+          if (response.ok) {
+            const userData = await response.json();
+            const attributes = userData.attributes || {};
+            const profileData = convertKeycloakAttributesToProfile(attributes);
+            
+            const isComplete = isUserProfileComplete(profileData, userRole);
+            const missingFields = getMissingProfileFields(profileData, userRole);
+            
+            return { isComplete, missingFields };
+          } else {
+            console.warn('Failed to load user profile data for completion check');
+            return { isComplete: false, missingFields: ['Unable to check profile'] };
+          }
+        } catch (error) {
+          console.error('Error checking profile completion:', error);
+          return { isComplete: false, missingFields: ['Error checking profile'] };
+        }
+      },
     }),
     [authState, promptAsync]
   )

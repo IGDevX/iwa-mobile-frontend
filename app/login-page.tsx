@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Alert,
   Image,
+  Keyboard,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../components/AuthContext';
@@ -19,7 +20,7 @@ export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const { t } = useTranslation();
   
-  const { state, signInWithCredentials } = useContext(AuthContext);
+  const { state, signInWithCredentials, checkProfileCompletion } = useContext(AuthContext);
 
   // Direct Keycloak login using username/password
   const handleKeycloakDirectLogin = async (username: string, password: string) => {
@@ -83,6 +84,9 @@ export default function LoginScreen() {
   };
 
   const handleLogin = async () => {
+    // Dismiss keyboard and remove focus from text inputs
+    Keyboard.dismiss();
+    
     if (!email || !password) {
       Alert.alert(t('auth.login.error_fill_fields'), t('auth.login.error_fill_fields'));
       return;
@@ -116,9 +120,28 @@ export default function LoginScreen() {
   // Check if user is already authenticated and redirect
   React.useEffect(() => {
     if (state.isSignedIn) {
-      router.replace('/protected-page');
+      // Check profile completion and redirect accordingly
+      checkProfileAndRedirect();
     }
   }, [state.isSignedIn]);
+
+  const checkProfileAndRedirect = async () => {
+    try {
+      const profileStatus = await checkProfileCompletion();
+      
+      if (profileStatus.isComplete) {
+        // Profile is complete, redirect to home page
+        router.replace('/home-page');
+      } else {
+        // Profile is incomplete, redirect to complete profile
+        router.replace('/complete-profile');
+      }
+    } catch (error) {
+      console.error('Error checking profile completion:', error);
+      // Default to complete profile page if there's an error
+      router.replace('/complete-profile');
+    }
+  };
 
   const handleSignupRedirect = () => {
     // Navigate back to home and trigger signup choice modal
@@ -180,6 +203,7 @@ export default function LoginScreen() {
                   placeholder={t('auth.login.password_placeholder')}
                   placeholderTextColor="rgba(74, 68, 89, 0.5)"
                   secureTextEntry
+                  autoCapitalize="none"
                   editable={!isLoading}
                 />
               </View>
@@ -226,7 +250,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#EAE9E1',
     justifyContent: 'center',
     alignItems: 'center',
   },

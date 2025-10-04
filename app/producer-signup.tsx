@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Alert,
   Image,
+  Keyboard,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../components/AuthContext';
@@ -24,6 +25,9 @@ export default function ProducerSignupScreen() {
   const { signUpWithCredentials } = useContext(AuthContext);
 
   const handleSignup = async () => {
+    // Dismiss keyboard and remove focus from text inputs
+    Keyboard.dismiss();
+    
     if (!email || !password ) {
       Alert.alert(t('auth.login.error_fill_fields'), t('auth.login.error_fill_fields'));
       return;
@@ -36,15 +40,15 @@ export default function ProducerSignupScreen() {
 
       if (result.success) {
         setShowEmailVerification(true);
-        // Also show a success message
         Alert.alert(
           t('auth.signup.success_title', 'Registration Successful!'),
-          result.message || t('auth.signup.success_message', 'Please check your email for verification.'),
+          t('auth.signup.success_message', 'Please check your email for verification, then login with your credentials.'),
           [
             {
-              text: 'OK',
+              text: t('auth.signup.go_to_login', 'Go to Login'),
               onPress: () => {
-                // Keep the email verification modal open
+                setShowEmailVerification(false);
+                router.replace('/login-page');
               }
             }
           ]
@@ -52,14 +56,14 @@ export default function ProducerSignupScreen() {
       } else {
         Alert.alert(
           t('auth.signup.error_signup_failed', 'Signup Failed'),
-          result.error || 'Please try again later.'
+          result.error || t('auth.signup.try_again_later', 'Please try again later.')
         );
       }
     } catch (error) {
       console.error('Signup error:', error);
       Alert.alert(
         t('auth.signup.error_signup_failed', 'Signup Failed'),
-        'An unexpected error occurred. Please try again.'
+        t('auth.signup.unexpected_error', 'An unexpected error occurred. Please try again.')
       );
     } finally {
       setIsLoading(false);
@@ -68,10 +72,7 @@ export default function ProducerSignupScreen() {
 
   const handleResendEmail = () => {
     // TODO: Implement resend functionality
-    Alert.alert(
-      t('auth.email_verification.resend_success', 'Email Sent'),
-      t('auth.email_verification.resend_message', 'Verification email has been resent.')
-    );
+
   };
 
   const handleEmailVerificationClose = () => {
@@ -138,6 +139,7 @@ export default function ProducerSignupScreen() {
                   placeholder={t('auth.login.password_placeholder')}
                   placeholderTextColor="rgba(74, 68, 89, 0.5)"
                   secureTextEntry
+                  autoCapitalize="none"
                 />
               </View>
             </View>
@@ -207,7 +209,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#EAE9E1',
     justifyContent: 'center',
     alignItems: 'center',
   },

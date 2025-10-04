@@ -39,6 +39,18 @@
       "error_fill_fields": "Please fill in all fields",
       "error_login_failed": "Login failed",
       "error_signup_failed": "Registration failed"
+    },
+    "signup": {
+      "success_title": "Registration Successful!",
+      "success_message": "Please check your email for verification, then login with your credentials.",
+      "error_signup_failed": "Signup Failed",
+      "go_to_login": "Go to Login",
+      "unexpected_error": "An unexpected error occurred. Please try again.",
+      "try_again_later": "Please try again later."
+    },
+    "email_verification": {
+      "resend_success": "Email Sent",
+      "resend_message": "Verification email has been resent."
     }
   },
   
@@ -80,5 +92,63 @@
     "search": "Search",
     "orders": "Orders",
     "profile": "Profile"
+  },
+  
+  "profile": {
+    "title": "My Profile",
+    "loading": "Loading profile...",
+    "edit_button": "Edit my information",
+    "general_info": "General Information",
+    "not_provided": "Not provided",
+    "signout": {
+      "title": "Sign Out",
+      "message": "Are you sure you want to sign out?",
+      "cancel": "Cancel",
+      "confirm": "Sign Out",
+      "button": "Sign Out"
+    },
+    "complete": {
+      "title": "Complete your profile",
+      "subtitle_producer": "Required before continuing",
+      "subtitle_restaurant": "This information is essential to continue",
+      "display_name": "Display name",
+      "display_name_placeholder_producer": "Name of your farm",
+      "display_name_placeholder_restaurant": "Name of your restaurant",
+      "responsible_name": "Responsible name",
+      "responsible_name_placeholder_producer": "First and last name",
+      "responsible_name_placeholder_restaurant": "Manager's first and last name",
+      "phone_number": "Phone number",
+      "phone_placeholder_producer": "+33 6 12 34 56 78",
+      "phone_placeholder_restaurant": "+33 4 67 12 34 56",
+      "address": "Address",
+      "address_placeholder_producer": "123 Farm Street, 34000 Montpellier",
+      "address_placeholder_restaurant": "123 Commerce Street, 34000 Montpellier",
+      "profession": "Profession",
+      "profession_placeholder": "Ex: Beekeeper, Market gardener, Breeder…",
+      "save": "Save",
+      "skip": "Skip this step",
+      "validation": {
+        "fill_all_fields": "Please fill in all required fields",
+        "profession_required": "Please specify your profession"
+      },
+      "success": {
+        "title": "Profile saved",
+        "message": "Your profile has been saved successfully!"
+      },
+      "error": {
+        "save_failed": "Error saving profile"
+      },
+      "skip_confirmation": {
+        "title": "Skip this step",
+        "message": "You can complete your profile later in settings.",
+        "cancel": "Cancel",
+        "continue": "Continue"
+      }
+    }
+  },
+  
+  "common": {
+    "error": "Error",
+    "ok": "OK"
   }
 }

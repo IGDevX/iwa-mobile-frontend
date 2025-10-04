@@ -21,7 +21,7 @@ interface TabItem {
 
 export default function BottomNavigation() {
   const { t } = useTranslation();
-  const { state } = useContext(AuthContext);
+  const { state, checkProfileCompletion } = useContext(AuthContext);
   const isAuthenticated = state.isSignedIn;
   const pathname = usePathname();
 
@@ -33,7 +33,7 @@ export default function BottomNavigation() {
     },
     {
       nameKey: 'navigation.profile',
-      path: '/protected-page',
+      path: '/profile-page', // Will be dynamically determined
       icon: require('../assets/images/icons8-name-96.png'),
     },
   ];
@@ -41,11 +41,29 @@ export default function BottomNavigation() {
   // Modal states
   const [showSignupChoice, setShowSignupChoice] = useState(false);
 
-  const handleTabPress = (tab: TabItem) => {
+  const handleTabPress = async (tab: TabItem) => {
     // Special handling for profile tab when not authenticated
     if (tab.nameKey === 'navigation.profile' && !isAuthenticated) {
       setShowSignupChoice(true);
       return;
+    }
+    
+    // Special handling for profile tab when authenticated - check profile completion
+    if (tab.nameKey === 'navigation.profile' && isAuthenticated) {
+      try {
+        const profileStatus = await checkProfileCompletion();
+        if (profileStatus.isComplete) {
+          router.push('/profile-page');
+        } else {
+          router.push('/complete-profile');
+        }
+        return;
+      } catch (error) {
+        console.error('Error checking profile completion:', error);
+        // Default to complete profile on error
+        router.push('/complete-profile');
+        return;
+      }
     }
     
     if (tab.requiresAuth && !isAuthenticated) {
