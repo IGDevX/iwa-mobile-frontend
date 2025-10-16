@@ -102,7 +102,7 @@ export default function CompletePage() {
                 Alert.alert(
                     t('profile.complete.success.title'),
                     t('profile.complete.success.message'),
-                    [{ text: t('common.ok'), onPress: () => router.replace('/home-page') }]
+                    [{ text: t('common.ok'), onPress: () => router.replace('/restaurant-home-page') }]
                 );
             } else {
                 Alert.alert(t('common.error'), t('profile.complete.error.save_failed'));
@@ -247,7 +247,7 @@ export default function CompletePage() {
             t('profile.complete.skip_confirmation.message'),
             [
                 { text: t('profile.complete.skip_confirmation.cancel'), style: 'cancel' },
-                { text: t('profile.complete.skip_confirmation.continue'), onPress: () => router.replace('/home-page') }
+                { text: t('profile.complete.skip_confirmation.continue'), onPress: () => router.replace('/restaurant-home-page') }
             ]
         );
     };

@@ -82,7 +82,7 @@ export default function RestaurantSignupScreen() {
   const handleEmailVerificationClose = () => {
     setShowEmailVerification(false);
     // Navigate back to home or login
-    router.replace('/home-page');
+    router.replace('/restaurant-home-page');
   };
 
   const handleBackPress = () => {

@@ -131,7 +131,7 @@ export default function LoginScreen() {
       
       if (profileStatus.isComplete) {
         // Profile is complete, redirect to home page
-        router.replace('/home-page');
+        router.replace('/restaurant-home-page');
       } else {
         // Profile is incomplete, redirect to complete profile
         router.replace('/complete-profile');
@@ -145,7 +145,7 @@ export default function LoginScreen() {
 
   const handleSignupRedirect = () => {
     // Navigate back to home and trigger signup choice modal
-    router.replace('/home-page?showSignup=true');
+    router.replace('/restaurant-home-page?showSignup=true');
   };
 
   const handleBackPress = () => {
