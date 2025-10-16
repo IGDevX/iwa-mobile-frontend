@@ -7,10 +7,10 @@ import { useCart } from "../../../components/CartContext";
 // Mock producer data
 const mockProducer = {
   name: "Ferme Bio Laurent",
-  responsibleName: "Nom responsable",
+  responsibleName: "Laurent Dupont",
   description: "Ferme responsable située à Loupian. Large variété de fruits et légumes issues de l'agriculture biologique.",
-  bannerImage: "https://placehold.co/430x120/89A083/FFFFFF?text=Ferme+Bio",
-  profileImage: "https://placehold.co/80x80/89A083/FFFFFF?text=FB"
+  bannerImage: "https://www.pretajardiner.com/modules/ph_simpleblog/featured/12.jpg",
+  profileImage: "https://photo-cdn2.icons8.com/vVsONpHf7-sTgM9mNbSkmX0iCJP6YF9_Ux93NilJJkY/rs:fit:576:384/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvNTA1L2NkNjhm/ODcwLWVjMmMtNDU2/OC1hNmE5LTk3ZGQw/NWE3Mjc3Mi5qcGc.webp"
 };
 
 // Mock products data organized by category
@@ -19,21 +19,19 @@ const mockProducts = {
     {
       id: 1,
       name: "Tomates",
-      emoji: "🍅",
+      image: "https://photo-cdn2.icons8.com/6-T_VL6CNAS2Ye_pJTjt3Ng2XCJizRvKF6QbAJQCif4/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvOTU5L2NlNjZj/YTIxLTE4MmItNGI0/My1hMzY1LTI0YjA0/M2EyYjI5My5qcGc.webp",
       price: 3.50,
       priceDisplay: "3.50€/kg",
       unit: "kg",
-      stock: "Stock: 10 kg",
       category: "Légumes"
     },
     {
       id: 2,
       name: "Carottes",
-      emoji: "🥕",
+      image: "https://photo-cdn2.icons8.com/b17y6AdWPJxou6nd6LjjL4z6QztACk3sOJn512kpyaQ/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvMjY5L2UzN2Qz/ZmFkLWQ4MDctNDEz/ZC1hYzFhLWVjZjJl/YmM4YjE5ZS5qcGc.webp",
       price: 2.20,
-      priceDisplay: "2.20€/kg", 
+      priceDisplay: "2.20€/kg",
       unit: "kg",
-      stock: "Stock: 8 kg",
       category: "Légumes"
     }
   ],
@@ -41,21 +39,19 @@ const mockProducts = {
     {
       id: 3,
       name: "Pommes",
-      emoji: "🍎",
+      image: "https://photo-cdn2.icons8.com/V6OT-875dhasusUM-3l7Z4sCZuyC5koCOwIw7Cu4NC4/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvMjQxLzdiZWM5/ODU5LTFhNTgtNGNi/NC04ZTJhLThjNTNm/Nzk3MGNkZi5qcGc.webp",
       price: 2.80,
       priceDisplay: "2.80€/kg",
       unit: "kg",
-      stock: "Stock: 15 kg",
       category: "Fruits"
     },
     {
       id: 4,
-      name: "Poires",
-      emoji: "🍐",
+      name: "Citrons",
+      image: "https://photo-cdn2.icons8.com/V7Lh4btN4b-LJhjd0nAMbdX-ZPI-1I-IaB-G7tSvERA/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvNDkvYjY1OTNj/M2YtZGMzNC00MTg1/LWEzOTctMjVlYzYz/ZmIyZTEzLmpwZw.webp",
       price: 3.20,
       priceDisplay: "3.20€/kg",
       unit: "kg",
-      stock: "Stock: 6 kg",
       category: "Fruits"
     }
   ]
@@ -76,8 +72,8 @@ export default function ProducerShopScreen() {
 
   const handleProductPress = (product: any) => {
     router.push({
-      pathname: '../order/product-detail',
-      params: { 
+      pathname: '../../restaurant/order/product-detail',
+      params: {
         productId: product.id,
         productName: product.name,
         productPrice: product.priceDisplay
@@ -86,17 +82,16 @@ export default function ProducerShopScreen() {
   };
 
   const renderProductCard = (product: any) => (
-    <TouchableOpacity 
-      key={product.id} 
+    <TouchableOpacity
+      key={product.id}
       style={styles.productCard}
       onPress={() => handleProductPress(product)}
     >
-      <View style={styles.productEmoji}>
-        <Text style={styles.emojiText}>{product.emoji}</Text>
+      <View style={styles.productImageContainer}>
+        <Image source={{ uri: product.image }} style={styles.productImage} />
       </View>
       <Text style={styles.productName}>{product.name}</Text>
       <Text style={styles.productPrice}>{product.priceDisplay}</Text>
-      <Text style={styles.productStock}>{product.stock}</Text>
     </TouchableOpacity>
   );
 
@@ -108,7 +103,7 @@ export default function ProducerShopScreen() {
           <Text style={styles.categoryBadgeText}>{products.length}</Text>
         </View>
       </View>
-      
+
       <View style={styles.productsGrid}>
         {products.map(renderProductCard)}
       </View>
@@ -120,20 +115,22 @@ export default function ProducerShopScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <Text style={styles.backButtonText}>←</Text>
+          <Image
+            source={require('../../../assets/images/icons8-arrow-96.png')}
+            style={styles.backButtonIcon}
+          />
         </TouchableOpacity>
-        
+
         <TouchableOpacity style={styles.cartButton} onPress={handleCartPress}>
-          <Text style={styles.cartIcon}>🛒</Text>
+          <Image
+            source={require('../../../assets/images/icons8-cart-96.png')}
+            style={styles.cartIcon}
+          />
           {state.totalItems > 0 && (
             <View style={styles.cartBadge}>
               <Text style={styles.cartBadgeText}>{state.totalItems}</Text>
             </View>
           )}
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.menuButton}>
-          <Text style={styles.menuButtonText}>⋯</Text>
         </TouchableOpacity>
       </View>
 
@@ -144,7 +141,7 @@ export default function ProducerShopScreen() {
         {/* Producer Info */}
         <View style={styles.producerSection}>
           <Image source={{ uri: mockProducer.profileImage }} style={styles.profileImage} />
-          
+
           <View style={styles.producerInfo}>
             <Text style={styles.producerName}>{mockProducer.name}</Text>
             <Text style={styles.responsibleName}>{mockProducer.responsibleName}</Text>
@@ -156,7 +153,7 @@ export default function ProducerShopScreen() {
 
         {/* Products and Categories */}
         <View style={styles.productsSection}>
-          {Object.entries(mockProducts).map(([categoryName, products]) => 
+          {Object.entries(mockProducts).map(([categoryName, products]) =>
             renderCategory(categoryName, products)
           )}
         </View>
@@ -171,6 +168,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F7F6ED",
+    paddingTop: 40
   },
 
   // Header styles
@@ -178,18 +176,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 11,
-    paddingTop: 17,
-    paddingBottom: 17,
+    paddingHorizontal: 19,
+    paddingVertical: 21,
     backgroundColor: "#F7F6ED",
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 15,
-    backgroundColor: "#EAE9E1",
     alignItems: "center",
     justifyContent: "center",
+  },
+  backButtonIcon: {
+    width: 20,
+    height: 20
   },
   backButtonText: {
     fontSize: 20,
@@ -199,14 +199,13 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 15,
-    backgroundColor: "#89A083",
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
   },
   cartIcon: {
-    fontSize: 20,
-    color: "#FFFFFF",
+    width: 30,
+    height: 30,
   },
   cartBadge: {
     position: "absolute",
@@ -215,7 +214,7 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: "#FB2C36",
+    backgroundColor: "#b55d62ff",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -242,10 +241,10 @@ const styles = StyleSheet.create({
 
   // Banner and producer info
   bannerImage: {
-    width: "100%",
+    width: "95%",
     height: 120,
-    borderBottomLeftRadius: 25,
-    borderBottomRightRadius: 25,
+    borderRadius: 25,
+    alignSelf: "center",
   },
   producerSection: {
     flexDirection: "row",
@@ -255,13 +254,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   profileImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 90,
+    height: 90,
+    borderRadius: 50,
     marginRight: 20,
   },
   producerInfo: {
     flex: 1,
+    marginTop: 55,
   },
   producerName: {
     fontSize: 25,
@@ -337,16 +337,19 @@ const styles = StyleSheet.create({
     elevation: 8,
     paddingVertical: 16,
   },
-  productEmoji: {
-    width: 147,
+  productImageContainer: {
+    width: 60,
     height: 60,
+    borderRadius: 30,
+    backgroundColor: "#EAE9E1",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 8,
+    marginBottom: 12,
   },
-  emojiText: {
-    fontSize: 40,
-    letterSpacing: 0.37,
+  productImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
   },
   productName: {
     fontSize: 14,
@@ -361,10 +364,5 @@ const styles = StyleSheet.create({
     color: "#89A083",
     marginBottom: 4,
     textAlign: "center",
-  },
-  productStock: {
-    fontSize: 12,
-    color: "rgba(74, 68, 89, 0.7)",
-    textAlign: "center",
-  },
+  }
 });

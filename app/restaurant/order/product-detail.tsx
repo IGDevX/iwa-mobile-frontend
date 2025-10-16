@@ -11,7 +11,7 @@ const mockProducer = {
   rating: 4.8,
   address: "123 Route de Montpellier, 34000",
   badges: ["Bio", "Local", "Éco-responsable"],
-  image: "https://placehold.co/60x60/89A083/FFFFFF?text=FB"
+  image: "https://photo-cdn2.icons8.com/vVsONpHf7-sTgM9mNbSkmX0iCJP6YF9_Ux93NilJJkY/rs:fit:576:384/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvNTA1L2NkNjhm/ODcwLWVjMmMtNDU2/OC1hNmE5LTk3ZGQw/NWE3Mjc3Mi5qcGc.webp"
 };
 
 // Mock product data (this would normally come from navigation params)
@@ -21,17 +21,16 @@ const mockProductDetails = {
   price: 3.50, // Price as number for calculations
   priceDisplay: "3.50€/kg",
   unit: "kg",
-  stock: "Stock disponible: 15 kg",
   category: "Légumes",
   emoji: "🍅",
   description: "Tomates bio cultivées localement dans notre ferme. Variété ancienne, goût authentique et savoureux. Idéales pour vos préparations culinaires.",
   characteristicKeys: [
     "product.agriculture_bio",
-    "product.no_pesticides", 
+    "product.no_pesticides",
     "product.heritage_variety",
     "product.daily_harvest"
   ],
-  image: "https://placehold.co/433x300/89A083/FFFFFF?text=Tomates"
+  image: "https://photo-cdn2.icons8.com/6-T_VL6CNAS2Ye_pJTjt3Ng2XCJizRvKF6QbAJQCif4/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvOTU5L2NlNjZj/YTIxLTE4MmItNGI0/My1hMzY1LTI0YjA0/M2EyYjI5My5qcGc.webp"
 };
 
 export default function ProductDetailScreen() {
@@ -72,7 +71,7 @@ export default function ProductDetailScreen() {
     // Navigate to producer's shop
     router.push({
       pathname: '/producer/home/producer-shop',
-      params: { 
+      params: {
         producerId: 1,
         producerName: mockProducer.name
       }
@@ -88,47 +87,47 @@ export default function ProductDetailScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <Text style={styles.backButtonText}>←</Text>
+          <Image
+            source={require('../../../assets/images/icons8-arrow-96.png')}
+            style={styles.backButtonIcon}
+          />
         </TouchableOpacity>
-        
+
         <TouchableOpacity style={styles.cartButton} onPress={handleCartPress}>
-          <Text style={styles.cartIcon}>🛒</Text>
+          <Image
+            source={require('../../../assets/images/icons8-cart-96.png')}
+            style={styles.cartIcon}
+          />
           {cartQuantity > 0 && (
             <View style={styles.cartBadge}>
               <Text style={styles.cartBadgeText}>{cartQuantity}</Text>
             </View>
           )}
         </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.shareButton}>
-          <Text style={styles.shareButtonText}>⋯</Text>
-        </TouchableOpacity>
       </View>
 
-      {/* Product Image */}
-      <Image source={{ uri: mockProductDetails.image }} style={styles.productImage} />
-
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Product Image */}
+        <Image source={{ uri: mockProductDetails.image }} style={styles.productImage} />
         {/* Product Info Card */}
         <View style={styles.productCard}>
           <Text style={styles.productTitle}>{mockProductDetails.name}</Text>
-          
+
           <View style={styles.priceContainer}>
             <View style={styles.priceInfo}>
               <Text style={styles.price}>{mockProductDetails.priceDisplay}</Text>
-              <Text style={styles.stock}>{mockProductDetails.stock}</Text>
             </View>
-            
+
             <View style={styles.quantityContainer}>
-              <TouchableOpacity 
-                style={styles.quantityButton} 
+              <TouchableOpacity
+                style={styles.quantityButton}
                 onPress={() => handleQuantityChange(-1)}
               >
                 <Text style={styles.quantityButtonText}>−</Text>
               </TouchableOpacity>
               <Text style={styles.quantityText}>{quantity}</Text>
-              <TouchableOpacity 
-                style={styles.quantityButton} 
+              <TouchableOpacity
+                style={styles.quantityButton}
                 onPress={() => handleQuantityChange(1)}
               >
                 <Text style={styles.quantityButtonText}>+</Text>
@@ -157,24 +156,24 @@ export default function ProductDetailScreen() {
         {/* Producer Card */}
         <View style={styles.producerCard}>
           <Text style={styles.producerTitle}>{t('product.producer_section')}</Text>
-          
+
           <View style={styles.producerInfo}>
             <Image source={{ uri: mockProducer.image }} style={styles.producerImage} />
-            
+
             <View style={styles.producerDetails}>
               <Text style={styles.producerName}>{mockProducer.name}</Text>
               <Text style={styles.producerType}>{mockProducer.type}</Text>
-              
+
               <View style={styles.ratingContainer}>
-                <Text style={styles.ratingIcon}>★</Text>
+                <Image source={require('../../../assets/images/icons8-star-96.png')} style={styles.ratingIcon} />
                 <Text style={styles.rating}>{mockProducer.rating}</Text>
               </View>
-              
+
               <View style={styles.addressContainer}>
-                <Text style={styles.addressIcon}>📍</Text>
+                <Image source={require('../../../assets/images/icons8-map-pin-96.png')} style={styles.ratingIcon} />
                 <Text style={styles.address}>{mockProducer.address}</Text>
               </View>
-              
+
               <View style={styles.badgesContainer}>
                 {mockProducer.badges.map((badge, index) => (
                   <View key={index} style={styles.badge}>
@@ -184,7 +183,7 @@ export default function ProductDetailScreen() {
               </View>
             </View>
           </View>
-          
+
           <TouchableOpacity style={styles.shopButton} onPress={handleViewShop}>
             <Text style={styles.shopButtonText}>{t('product.view_shop')}</Text>
           </TouchableOpacity>
@@ -199,7 +198,7 @@ export default function ProductDetailScreen() {
           <Text style={styles.totalLabel}>{t('product.total')} ({quantity} {mockProductDetails.unit})</Text>
           <Text style={styles.totalPrice}>{(mockProductDetails.price * quantity).toFixed(2)}€</Text>
         </View>
-        
+
         <TouchableOpacity style={styles.addToCartButton} onPress={handleAddToCart}>
           <Text style={styles.addToCartText}>
             {t('product.add_to_cart')}
@@ -214,8 +213,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F7F6ED",
+    paddingTop: 40
   },
-  
+
   // Header styles
   header: {
     flexDirection: "row",
@@ -228,10 +228,12 @@ const styles = StyleSheet.create({
   backButton: {
     width: 40,
     height: 40,
-    borderRadius: 15,
-    backgroundColor: "#EAE9E1",
     alignItems: "center",
     justifyContent: "center",
+  },
+  backButtonIcon: {
+    width: 20,
+    height: 20
   },
   backButtonText: {
     fontSize: 20,
@@ -251,14 +253,13 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 15,
-    backgroundColor: "#89A083",
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
   },
   cartIcon: {
-    fontSize: 20,
-    color: "#FFFFFF",
+    width: 30,
+    height: 30,
   },
   cartBadge: {
     position: "absolute",
@@ -267,7 +268,7 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: "#FB2C36",
+    backgroundColor: "#b55d62ff",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -282,6 +283,7 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 300,
     resizeMode: "cover",
+    borderRadius: 20,
   },
 
   // Content
@@ -395,7 +397,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderRadius: 20,
     padding: 24,
-    marginTop: 16,
+    marginTop: 26,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
@@ -439,8 +441,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   ratingIcon: {
-    fontSize: 16,
-    color: "#FFD700",
+    width: 16,
+    height: 16
   },
   rating: {
     fontSize: 14,
@@ -504,6 +506,7 @@ const styles = StyleSheet.create({
   },
   totalContainer: {
     marginBottom: 16,
+    alignItems: "flex-end",
   },
   totalLabel: {
     fontSize: 14,

@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFEF4',
-    paddingTop: 50
+    paddingTop: 40
   },
   loginForm: {
     flex: 1,

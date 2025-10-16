@@ -16,7 +16,8 @@ const mockProducts = [
     price: "4.50€/kg",
     distance: "3 km",
     badges: ["Bio", "Local"],
-    image: "https://placehold.co/150x150/89A083/FFFFFF?text=Tomates"
+    image: "https://photo-cdn2.icons8.com/6-T_VL6CNAS2Ye_pJTjt3Ng2XCJizRvKF6QbAJQCif4/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvOTU5L2NlNjZj/YTIxLTE4MmItNGI0/My1hMzY1LTI0YjA0/M2EyYjI5My5qcGc.webp",
+    pickupMode: "Both"
   },
   {
     id: 2,
@@ -26,7 +27,8 @@ const mockProducts = [
     price: "11.50€/kg",
     distance: "6 km",
     badges: ["Local"],
-    image: "https://placehold.co/150x150/E8DFDA/4A4459?text=Miel"
+    image: "https://photo-cdn2.icons8.com/nNIReTJu1PtvM-SzNMkYt3ofHtYPHnMhMisoc4IoFIo/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvNTA4LzFjOGRi/NzU5LWUyNTctNDA1/Yy1iMmU3LTc1ZDdl/ZjdhZGNkNy5qcGc.webp",
+    pickupMode: "Domicile"
   },
   {
     id: 3,
@@ -36,12 +38,40 @@ const mockProducts = [
     price: "9.0€/kg",
     distance: "3 km",
     badges: ["Bio", "Local"],
-    image: "https://placehold.co/150x150/81B29A/FFFFFF?text=Fromage"
+    image: "https://photo-cdn2.icons8.com/FrhVLQsz0DqYKwdDxVIrFoyDSuXqaL7rUZl7H9XJ18I/rs:fit:576:384/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvOTM3L2NiM2Ux/ZDZiLWI1MjctNDY5/Ni1hZDU0LWZkYTI4/N2YzZDc0MS5qcGc.webp",
+    pickupMode: "Livraison"
   }
 ];
 
 export default function RestaurantHomeScreen() {
   const { t } = useTranslation();
+
+  // Optimized function to render pickup mode icons
+  const renderPickupModeIcons = (pickupMode: string, distance: string) => {
+    const iconStyle = { width: 14, height: 14, marginRight: 8 };
+    const deliveryIcon = require("../../../assets/images/icons8-delivery-96.png");
+    const homeIcon = require("../../../assets/images/icons8-home-96.png");
+
+    const iconComponents = {
+      Livraison: [
+        <Image key="delivery" source={deliveryIcon} style={iconStyle} />
+      ],
+      Domicile: [
+        <Image key="home" source={homeIcon} style={iconStyle} />
+      ],
+      Both: [
+        <Image key="delivery" source={deliveryIcon} style={iconStyle} />,
+        <Image key="home" source={homeIcon} style={iconStyle} />
+      ]
+    };
+
+    return (
+      <>
+        {iconComponents[pickupMode as keyof typeof iconComponents] || iconComponents.Both}
+        <Text style={styles.distanceText}>{distance}</Text>
+      </>
+    );
+  };
 
   const categories = [
     { label: "Vin", icon: require("../../../assets/images/icons8-wine-96.png") },
@@ -86,7 +116,7 @@ export default function RestaurantHomeScreen() {
         {/* Bottom info: distance and price */}
         <View style={styles.productFooter}>
           <View style={styles.distanceContainer}>
-            <Text style={styles.distanceText}>{product.distance}</Text>
+            {renderPickupModeIcons(product.pickupMode, product.distance)}
           </View>
           <Text style={styles.priceText}>{product.price}</Text>
         </View>
@@ -105,13 +135,20 @@ export default function RestaurantHomeScreen() {
         <Image source={{ uri: "https://placehold.co/50x50" }} style={styles.profileImage} />
         
         <TouchableOpacity style={styles.notificationButton}>
-          <View style={styles.notificationDot} />
+          <Image 
+            source={require("../../../assets/images/icons8-bell-96.png")} 
+            style={{ width: 30, height: 30, marginRight: 8 }} 
+          />
         </TouchableOpacity>
       </View>
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
         <View style={styles.searchBar}>
+          <Image 
+            source={require("../../../assets/images/icons8-search-96.png")} 
+            style={{ width: 20, height: 20, marginRight: 8 }} 
+          />
           <Text style={styles.searchText}>Search products or producers…</Text>
         </View>
       </View>
@@ -133,7 +170,10 @@ export default function RestaurantHomeScreen() {
         {filters.map((filter) => (
           <TouchableOpacity key={filter} style={styles.filterButton}>
             <Text style={styles.filterText}>{filter}</Text>
-            <Text style={styles.filterIcon}>⌄</Text>
+            <Image 
+              source={require("../../../assets/images/icons8-dropdown-96.png")} 
+              style={{ width: 12, height: 12 }} 
+            />
           </TouchableOpacity>
         ))}
       </View>
@@ -182,10 +222,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   notificationButton: {
-    width: 36,
-    height: 36,
     borderRadius: 18,
-    backgroundColor: "#EAE9E1",
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
@@ -203,17 +240,19 @@ const styles = StyleSheet.create({
   // Search styles
   searchContainer: {
     paddingHorizontal: 16,
-    marginBottom: 16,
+
   },
   searchBar: {
-    backgroundColor: "#f3f3f583",
-    borderColor: "#EAE9E1",
+    backgroundColor: "#f3f3f54b",
+    borderColor: "#eae9e1",
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: 15,
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    height: 46,
-    justifyContent: "center",
+    paddingVertical: 15,
+    height: 55,
+    justifyContent: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
   },
   searchText: { 
     fontSize: 14, 
@@ -222,16 +261,17 @@ const styles = StyleSheet.create({
 
   // Categories styles
   categoriesScroll: { 
-    marginBottom: 16, 
-    paddingLeft: 16 
+    marginBottom: 30, 
+    paddingLeft: 16,
   },
   categoriesContainer: {
     flexDirection: "row",
-    gap: 26,
+    gap: 28,
+    paddingRight: 20,
   },
   categoryCard: {
     width: 70,
-    height: 128,
+    height: 138,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#F7F6ED",
@@ -254,7 +294,7 @@ const styles = StyleSheet.create({
     flexDirection: "row", 
     justifyContent: "space-around", 
     marginHorizontal: 16, 
-    marginBottom: 16 
+    marginBottom: 10,
   },
   filterButton: {
     width: 120,
@@ -267,7 +307,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   filterText: { 
-    fontSize: 14, 
+    fontSize: 15, 
     color: "#4A4459" 
   },
   filterIcon: { 
@@ -277,7 +317,8 @@ const styles = StyleSheet.create({
 
   // Products list styles
   productsList: { 
-    paddingHorizontal: 16 
+    paddingHorizontal: 16,
+    paddingTop: 10,
   },
 
   // Product card styles

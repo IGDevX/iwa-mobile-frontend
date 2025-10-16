@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   activeLabel: {
-    color: '#5E5DF0',
+    color: '#89A083',
     fontWeight: '600',
   },
 });

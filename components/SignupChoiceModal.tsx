@@ -28,12 +28,12 @@ export default function SignupChoiceModal({
 
     const handleProducerPress = () => {
         onClose();
-        router.push('/producer-signup');
+        router.push('/producer/profile/producer-signup');
     };
 
     const handleRestaurantPress = () => {
         onClose();
-        router.push('/restaurant-signup');
+        router.push('/restaurant/profile/restaurant-signup');
     };
 
     const handleLoginPress = () => {
