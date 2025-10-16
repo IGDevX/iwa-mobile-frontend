@@ -28,16 +28,22 @@ export default function BottomNavigation() {
   const tabs: TabItem[] = [
     {
       nameKey: 'navigation.home',
-      path: '/home-page',
+      path: '/restaurant/home/restaurant-home',
       icon: require('../assets/images/icons8-home-96.png'),
     },
     {
+      nameKey: 'navigation.orders',
+      path: '/restaurant/order/orders-list',
+      icon: require('../assets/images/icons8-name-96.png'),
+      requiresAuth: true,
+    },
+    {
       nameKey: 'navigation.profile',
-      path: '/profile-page', // Will be dynamically determined
+      path: '/profile', // Will be dynamically determined
       icon: require('../assets/images/icons8-name-96.png'),
     },
   ];
-  
+
   // Modal states
   const [showSignupChoice, setShowSignupChoice] = useState(false);
 
@@ -47,13 +53,13 @@ export default function BottomNavigation() {
       setShowSignupChoice(true);
       return;
     }
-    
+
     // Special handling for profile tab when authenticated - check profile completion
     if (tab.nameKey === 'navigation.profile' && isAuthenticated) {
       try {
         const profileStatus = await checkProfileCompletion();
         if (profileStatus.isComplete) {
-          router.push('/profile-page');
+          router.push('/profile');
         } else {
           router.push('/complete-profile');
         }
@@ -65,12 +71,12 @@ export default function BottomNavigation() {
         return;
       }
     }
-    
+
     if (tab.requiresAuth && !isAuthenticated) {
       setShowSignupChoice(true);
       return;
     }
-    
+
     router.push(tab.path as any);
   };
 
@@ -97,7 +103,7 @@ export default function BottomNavigation() {
       <View style={styles.tabContainer}>
         {visibleTabs.map((tab) => {
           const isActive = pathname === tab.path;
-          
+
           return (
             <TouchableOpacity
               key={tab.nameKey}
@@ -105,10 +111,13 @@ export default function BottomNavigation() {
               onPress={() => handleTabPress(tab)}
               activeOpacity={0.7}
             >
-              <Image 
-                source={tab.icon} 
-                style={[styles.icon]} 
+              <Image
+                source={tab.icon}
+                style={[styles.icon]}
               />
+              <Text style={[styles.label, isActive && styles.activeLabel]}>
+                {t(tab.nameKey)}
+              </Text>
             </TouchableOpacity>
           );
         })}
@@ -146,6 +155,16 @@ const styles = StyleSheet.create({
     width: 35,
     height: 35,
     marginBottom: 4,
+  },
+  ordersIconContainer: {
+    width: 35,
+    height: 35,
+    marginBottom: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ordersIcon: {
+    fontSize: 28,
   },
   label: {
     fontSize: 12,

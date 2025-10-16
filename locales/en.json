@@ -91,7 +91,8 @@
     "home": "Home",
     "search": "Search",
     "orders": "Orders",
-    "profile": "Profile"
+    "profile": "Profile",
+    "cart": "Cart"
   },
   
   "profile": {
@@ -145,6 +146,119 @@
         "continue": "Continue"
       }
     }
+  },
+  
+  "cart": {
+    "title": "My Cart",
+    "empty": {
+      "title": "Your cart is empty",
+      "continue_shopping": "Continue shopping"
+    },
+    "producer_section": "Producer",
+    "remove_item": "Remove item",
+    "quantity": {
+      "increase": "Increase quantity",
+      "decrease": "Decrease quantity"
+    },
+    "price_per_unit": "per",
+    "subtotal": "Subtotal:",
+    "total_items": "Total",
+    "articles": "articles",
+    "order_total": "Order total",
+    "next": "Next",
+    "delivery_note": "You will choose the delivery method in the next step",
+    "checkout": "Proceed to checkout"
+  },
+  
+  "delivery": {
+    "title": "Delivery Mode",
+    "order_from": "Order from {{producerName}}",
+    "total": "Total: {{amount}}€",
+    "pickup": {
+      "title": "Pickup on site",
+      "price": "Free"
+    },
+    "delivery": {
+      "title": "Delivery to restaurant",
+      "price": "Delivery fee: {{amount}}€"
+    },
+    "payment_note": "💳 Payment will be made directly with the producer according to their terms",
+    "confirm_order": "Confirm order"
+  },
+  
+  "product": {
+    "add_to_cart": "Add to cart",
+    "add_to_cart_with_quantity": "Add to cart ({{quantity}} already)",
+    "added_to_cart": "Added to cart",
+    "added_message": "{{quantity}} {{unit}} of {{name}} added to cart",
+    "continue": "Continue",
+    "view_cart": "View cart",
+    "total": "Total",
+    "description": "Description",
+    "characteristics": "Characteristics",
+    "producer_section": "Producer",
+    "view_shop": "View shop",
+    "stock_available": "Stock available:",
+    "agriculture_bio": "Certified organic farming",
+    "no_pesticides": "Grown without pesticides",
+    "heritage_variety": "Heritage variety",
+    "daily_harvest": "Daily harvest"
+  },
+  
+  "confirmation": {
+    "title": "Order Confirmation",
+    "producer": "Producer",
+    "ordered_products": "Ordered Products",
+    "delivery": "Delivery",
+    "payment": "Payment",
+    "address": "Address",
+    "subtotal": "Subtotal",
+    "delivery_fee": "Delivery fee",
+    "total": "Total",
+    "payment_method": "Payment method:",
+    "payment_due": "To pay: Before {{date}}",
+    "place_order": "Place order",
+    "terms_acceptance": "By confirming, you accept the producer's conditions",
+    "order_placed_success": "Order placed successfully!"
+  },
+  
+  "orders": {
+    "my_orders": "My Orders",
+    "search_placeholder": "Search orders…",
+    "filters": "Filters",
+    "total": "Total: {{amount}} €",
+    "at": "at",
+    "pickup_at_farm": "Pickup at farm",
+    "at_restaurant": "At restaurant",
+    "status": {
+      "accepted": "Accepted",
+      "pending": "Pending",
+      "delivered": "Delivered",
+      "paid": "Paid",
+      "unpaid": "Unpaid",
+      "not_delivered": "Not delivered"
+    }
+  },
+  
+  "order_detail": {
+    "title": "Order Details",
+    "payment_information": "Payment Information",
+    "order_information": "Order Information",
+    "order_content": "Order Content",
+    "quick_actions": "Quick Actions",
+    "payment_due": "Payment due: {{date}}",
+    "pay_now": "Pay Now",
+    "order_placed_on": "Order placed on",
+    "order_accepted_on": "Order accepted on",
+    "delivery_date_time": "Delivery date/time",
+    "delivery_mode": "Delivery mode",
+    "order_status": "Order status",
+    "delivery_fees": "Delivery fees",
+    "grand_total": "Grand Total",
+    "call_producer": "Call Producer",
+    "email_producer": "Email Producer",
+    "payment_title": "Payment",
+    "payment_message": "Payment functionality would be implemented here."
   },
   
   "common": {

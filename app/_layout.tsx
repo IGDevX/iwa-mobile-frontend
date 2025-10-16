@@ -4,12 +4,17 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { View } from "react-native";
 import { usePathname } from "expo-router";
 import { AuthProvider } from "../components/AuthContext";
+import { CartProvider } from "../components/CartContext";
 import BottomNavigation from "../components/BottomNavigation";
 
 // Screens that should show the bottom navigation
 const SCREENS_WITH_BOTTOM_NAV = [
-  '/home-page',
-  '/protected-page',
+  '/home',
+  '/protected',
+  '/restaurant-home',
+  '/restaurant/home/restaurant-home',
+  '/restaurant/order/orders-list',
+  '/profile',
 ];
 
 function LayoutContent() {
@@ -27,11 +32,13 @@ function LayoutContent() {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <SafeAreaProvider>
-          <LayoutContent />
-        </SafeAreaProvider>
-      </GestureHandlerRootView>
+      <CartProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <SafeAreaProvider>
+            <LayoutContent />
+          </SafeAreaProvider>
+        </GestureHandlerRootView>
+      </CartProvider>
     </AuthProvider>
   );
 }

@@ -89,9 +89,10 @@
   
   "navigation": {
     "home": "Accueil",
-    "search": "Rechercher",
+    "search": "Recherche",
     "orders": "Commandes",
-    "profile": "Profil"
+    "profile": "Profil",
+    "cart": "Panier"
   },
   
   "profile": {
@@ -145,6 +146,119 @@
         "continue": "Continuer"
       }
     }
+  },
+  
+  "cart": {
+    "title": "Mon panier",
+    "empty": {
+      "title": "Votre panier est vide",
+      "continue_shopping": "Continuer mes achats"
+    },
+    "producer_section": "Le producteur",
+    "remove_item": "Supprimer l'article",
+    "quantity": {
+      "increase": "Augmenter la quantité",
+      "decrease": "Diminuer la quantité"
+    },
+    "price_per_unit": "par",
+    "subtotal": "Sous-total :",
+    "total_items": "Total",
+    "articles": "articles",
+    "order_total": "Total de la commande",
+    "next": "Suivant",
+    "delivery_note": "Vous choisirez le mode de livraison à l'étape suivante",
+    "checkout": "Procéder au checkout"
+  },
+  
+  "delivery": {
+    "title": "Mode de livraison",
+    "order_from": "Commande chez {{producerName}}",
+    "total": "Total : {{amount}}€",
+    "pickup": {
+      "title": "Retrait sur place",
+      "price": "Gratuit"
+    },
+    "delivery": {
+      "title": "Livraison au restaurant", 
+      "price": "Frais de livraison : {{amount}}€"
+    },
+    "payment_note": "💳 Le paiement se fera directement avec le producteur selon ses conditions",
+    "confirm_order": "Confirmer la commande"
+  },
+  
+  "product": {
+    "add_to_cart": "Ajouter au panier",
+    "add_to_cart_with_quantity": "Ajouter au panier ({{quantity}} déjà)",
+    "added_to_cart": "Ajouté au panier",
+    "added_message": "{{quantity}} {{unit}} de {{name}} ajouté(s) au panier",
+    "continue": "Continuer",
+    "view_cart": "Voir le panier",
+    "total": "Total",
+    "description": "Description",
+    "characteristics": "Caractéristiques",
+    "producer_section": "Le producteur",
+    "view_shop": "Voir la boutique",
+    "stock_available": "Stock disponible :",
+    "agriculture_bio": "Agriculture biologique certifiée",
+    "no_pesticides": "Cultivé sans pesticides",
+    "heritage_variety": "Variété ancienne",
+    "daily_harvest": "Récolte du jour"
+  },
+  
+  "confirmation": {
+    "title": "Confirmation de commande",
+    "producer": "Producteur",
+    "ordered_products": "Produits commandés",
+    "delivery": "Livraison",
+    "payment": "Paiement",
+    "address": "Adresse",
+    "subtotal": "Sous-total",
+    "delivery_fee": "Frais de livraison",
+    "total": "Total",
+    "payment_method": "Mode de paiement :",
+    "payment_due": "À régler : Avant le {{date}}",
+    "place_order": "Passer la commande",
+    "terms_acceptance": "En confirmant, vous acceptez les conditions du producteur",
+    "order_placed_success": "Commande passée avec succès !"
+  },
+  
+  "orders": {
+    "my_orders": "Mes Commandes",
+    "search_placeholder": "Rechercher des commandes…",
+    "filters": "Filtres",
+    "total": "Total : {{amount}} €",
+    "at": "à",
+    "pickup_at_farm": "Retrait à la ferme",
+    "at_restaurant": "Au restaurant",
+    "status": {
+      "accepted": "Acceptée",
+      "pending": "En attente",
+      "delivered": "Livrée",
+      "paid": "Payée",
+      "unpaid": "Non payée",
+      "not_delivered": "Non livrée"
+    }
+  },
+  
+  "order_detail": {
+    "title": "Détails de la commande",
+    "payment_information": "Informations de paiement",
+    "order_information": "Informations de commande",
+    "order_content": "Contenu de la commande",
+    "quick_actions": "Actions rapides",
+    "payment_due": "Paiement dû : {{date}}",
+    "pay_now": "Payer maintenant",
+    "order_placed_on": "Commande passée le",
+    "order_accepted_on": "Commande acceptée le",
+    "delivery_date_time": "Date/heure de livraison",
+    "delivery_mode": "Mode de livraison",
+    "order_status": "Statut de la commande",
+    "delivery_fees": "Frais de livraison",
+    "grand_total": "Total général",
+    "call_producer": "Appeler le producteur",
+    "email_producer": "Contacter par email",
+    "payment_title": "Paiement",
+    "payment_message": "La fonctionnalité de paiement sera implémentée ici."
   },
   
   "common": {

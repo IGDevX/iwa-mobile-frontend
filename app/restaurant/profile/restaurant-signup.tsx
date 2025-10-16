@@ -10,12 +10,12 @@ import {
   Keyboard,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { AuthContext } from '../components/AuthContext';
-import Button from '../components/Button';
-import EmailVerificationModal from '../components/EmailVerificationModal';
+import { AuthContext } from '../../../components/AuthContext';
+import Button from '../../../components/Button';
+import EmailVerificationModal from '../../../components/EmailVerificationModal';
 import { router } from 'expo-router';
 
-export default function ProducerSignupScreen() {
+export default function RestaurantSignupScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -36,10 +36,11 @@ export default function ProducerSignupScreen() {
     setIsLoading(true);
 
     try {
-      const result = await signUpWithCredentials(email, password, 'Producer');
+      const result = await signUpWithCredentials(email, password, 'Restaurant Owner');
 
       if (result.success) {
         setShowEmailVerification(true);
+        // Show success message and redirect to login
         Alert.alert(
           t('auth.signup.success_title', 'Registration Successful!'),
           t('auth.signup.success_message', 'Please check your email for verification, then login with your credentials.'),
@@ -48,7 +49,7 @@ export default function ProducerSignupScreen() {
               text: t('auth.signup.go_to_login', 'Go to Login'),
               onPress: () => {
                 setShowEmailVerification(false);
-                router.replace('/login-page');
+                router.replace('/login');
               }
             }
           ]
@@ -72,37 +73,40 @@ export default function ProducerSignupScreen() {
 
   const handleResendEmail = () => {
     // TODO: Implement resend functionality
-
+    Alert.alert(
+      t('auth.email_verification.resend_success', 'Email Sent'),
+      t('auth.email_verification.resend_message', 'Verification email has been resent.')
+    );
   };
 
   const handleEmailVerificationClose = () => {
     setShowEmailVerification(false);
     // Navigate back to home or login
-    router.replace('/restaurant-home-page');
-  };
-
-  const handleLoginPress = () => {
-    router.push('/login-page');
+    router.replace('/restaurant/home/restaurant-home');
   };
 
   const handleBackPress = () => {
     router.back();
   };
 
+  const handleLoginPress = () => {
+    router.push('/login');
+  };
+
   return (
     <View style={styles.container}>
-      <View style={styles.producerRegistration}>
+      <View style={styles.restaurantRegistration}>
         <View style={styles.content}>
           {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
               <Image
-                source={require('../assets/images/icons8-arrow-96.png')}
+                source={require('../../../assets/images/icons8-arrow-96.png')}
                 style={styles.backButtonIcon}
               />
             </TouchableOpacity>
             <View style={styles.heading}>
-              <Text style={styles.title}>{t('auth.login.producer_signup_title')}</Text>
+              <Text style={styles.title}>{t('auth.login.restaurant_signup_title')}</Text>
             </View>
           </View>
 
@@ -153,7 +157,6 @@ export default function ProducerSignupScreen() {
               textStyle={styles.signupButtonText}
               variant="secondary"
             />
-
             {/* Divider */}
             <View style={styles.dividerContainer}>
               <View style={styles.dividerLine} />
@@ -190,7 +193,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFEF4',
     paddingTop: 50
   },
-  producerRegistration: {
+  restaurantRegistration: {
     flex: 1,
     backgroundColor: '#FFFEF4',
   },
@@ -269,7 +272,7 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 5,
     borderRadius: 16,
-    backgroundColor: '#89A083',
+    backgroundColor: '#E8DFDA',
     height: 60,
     justifyContent: 'center',
     alignItems: 'center',
@@ -278,18 +281,7 @@ const styles = StyleSheet.create({
   signupButtonText: {
     fontSize: 20,
     lineHeight: 30,
-    color: '#FFFEF4',
-    fontWeight: '600',
-  },
-  loginButton: {
-    width: '100%',
-    backgroundColor: '#f6f5e9ff',
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  loginButtonText: {
     color: '#4A4459',
-    fontSize: 16,
     fontWeight: '600',
   },
   loginLink: {
@@ -302,6 +294,17 @@ const styles = StyleSheet.create({
     lineHeight: 22.5,
     color: '#4A4459',
     textDecorationLine: 'underline',
+  },
+  loginButton: {
+    width: '100%',
+    backgroundColor: '#f6f5e9ff',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  loginButtonText: {
+    color: '#4A4459',
+    fontSize: 16,
+    fontWeight: '600',
   },
   dividerContainer: {
     flexDirection: 'row',

@@ -140,7 +140,7 @@ export default function ProfilePage() {
                     style: 'destructive',
                     onPress: async () => {
                         await signOut();
-                        router.replace('/restaurant-home-page');
+                        router.replace('/restaurant/home/restaurant-home');
                     }
                 }
             ]

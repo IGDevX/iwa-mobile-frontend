@@ -10,84 +10,25 @@ import {
   Keyboard,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { AuthContext } from '../components/AuthContext';
-import Button from '../components/Button';
+import { AuthContext } from '../../../components/AuthContext';
+import Button from '../../../components/Button';
+import EmailVerificationModal from '../../../components/EmailVerificationModal';
 import { router } from 'expo-router';
 
-export default function LoginScreen() {
+export default function ProducerSignupScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showEmailVerification, setShowEmailVerification] = useState(false);
   const { t } = useTranslation();
   
-  const { state, signInWithCredentials, checkProfileCompletion } = useContext(AuthContext);
+  const { signUpWithCredentials } = useContext(AuthContext);
 
-  // Direct Keycloak login using username/password
-  const handleKeycloakDirectLogin = async (username: string, password: string) => {
-    try {
-      const formData = new URLSearchParams();
-      formData.append('grant_type', 'password');
-      formData.append('client_id', process.env.EXPO_PUBLIC_KEYCLOAK_CLIENT_ID || '');
-      formData.append('username', username);
-      formData.append('password', password);
-      formData.append('scope', 'openid profile email');
-
-      const response = await fetch(
-        `${process.env.EXPO_PUBLIC_KEYCLOAK_URL}/protocol/openid-connect/token`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Accept': 'application/json',
-          },
-          body: formData.toString(),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error_description || 'Authentication failed');
-      }
-
-      const tokenData = await response.json();
-      
-      // Get user info using the access token
-      const userInfoResponse = await fetch(
-        `${process.env.EXPO_PUBLIC_KEYCLOAK_URL}/protocol/openid-connect/userinfo`,
-        {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${tokenData.access_token}`,
-            'Accept': 'application/json',
-          },
-        }
-      );
-
-      if (!userInfoResponse.ok) {
-        throw new Error('Failed to get user information');
-      }
-
-      const userInfo = await userInfoResponse.json();
-      
-      return {
-        success: true,
-        tokens: tokenData,
-        userInfo: userInfo
-      };
-    } catch (error) {
-      console.error('Direct Keycloak login error:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
-      };
-    }
-  };
-
-  const handleLogin = async () => {
+  const handleSignup = async () => {
     // Dismiss keyboard and remove focus from text inputs
     Keyboard.dismiss();
     
-    if (!email || !password) {
+    if (!email || !password ) {
       Alert.alert(t('auth.login.error_fill_fields'), t('auth.login.error_fill_fields'));
       return;
     }
@@ -95,57 +36,53 @@ export default function LoginScreen() {
     setIsLoading(true);
 
     try {
-      const result = await handleKeycloakDirectLogin(email, password);
+      const result = await signUpWithCredentials(email, password, 'Producer');
 
       if (result.success) {
-        // Update AuthContext state with the authentication data
-        signInWithCredentials(result.tokens, result.userInfo);
+        setShowEmailVerification(true);
+        Alert.alert(
+          t('auth.signup.success_title', 'Registration Successful!'),
+          t('auth.signup.success_message', 'Please check your email for verification, then login with your credentials.'),
+          [
+            {
+              text: t('auth.signup.go_to_login', 'Go to Login'),
+              onPress: () => {
+                setShowEmailVerification(false);
+                router.replace('/login');
+              }
+            }
+          ]
+        );
       } else {
         Alert.alert(
-          t('auth.login.error_login_failed'),
-          result.error || 'Please check your credentials and try again.'
+          t('auth.signup.error_signup_failed', 'Signup Failed'),
+          result.error || t('auth.signup.try_again_later', 'Please try again later.')
         );
       }
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('Signup error:', error);
       Alert.alert(
-        t('auth.login.error_login_failed'),
-        'An unexpected error occurred. Please try again.'
+        t('auth.signup.error_signup_failed', 'Signup Failed'),
+        t('auth.signup.unexpected_error', 'An unexpected error occurred. Please try again.')
       );
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Check if user is already authenticated and redirect
-  React.useEffect(() => {
-    if (state.isSignedIn) {
-      // Check profile completion and redirect accordingly
-      checkProfileAndRedirect();
-    }
-  }, [state.isSignedIn]);
+  const handleResendEmail = () => {
+    // TODO: Implement resend functionality
 
-  const checkProfileAndRedirect = async () => {
-    try {
-      const profileStatus = await checkProfileCompletion();
-      
-      if (profileStatus.isComplete) {
-        // Profile is complete, redirect to home page
-        router.replace('/restaurant-home-page');
-      } else {
-        // Profile is incomplete, redirect to complete profile
-        router.replace('/complete-profile');
-      }
-    } catch (error) {
-      console.error('Error checking profile completion:', error);
-      // Default to complete profile page if there's an error
-      router.replace('/complete-profile');
-    }
   };
 
-  const handleSignupRedirect = () => {
-    // Navigate back to home and trigger signup choice modal
-    router.replace('/restaurant-home-page?showSignup=true');
+  const handleEmailVerificationClose = () => {
+    setShowEmailVerification(false);
+    // Navigate back to home or login
+    router.replace('/restaurant/home/restaurant-home');
+  };
+
+  const handleLoginPress = () => {
+    router.push('/login');
   };
 
   const handleBackPress = () => {
@@ -154,18 +91,18 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.loginForm}>
+      <View style={styles.producerRegistration}>
         <View style={styles.content}>
           {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
               <Image
-                source={require('../assets/images/icons8-arrow-96.png')}
+                source={require('../../../assets/images/icons8-arrow-96.png')}
                 style={styles.backButtonIcon}
               />
             </TouchableOpacity>
             <View style={styles.heading}>
-              <Text style={styles.title}>{t('auth.login.title')}</Text>
+              <Text style={styles.title}>{t('auth.login.producer_signup_title')}</Text>
             </View>
           </View>
 
@@ -185,7 +122,6 @@ export default function LoginScreen() {
                   placeholderTextColor="rgba(74, 68, 89, 0.5)"
                   keyboardType="email-address"
                   autoCapitalize="none"
-                  editable={!isLoading}
                 />
               </View>
             </View>
@@ -204,23 +140,46 @@ export default function LoginScreen() {
                   placeholderTextColor="rgba(74, 68, 89, 0.5)"
                   secureTextEntry
                   autoCapitalize="none"
-                  editable={!isLoading}
                 />
               </View>
             </View>
 
+            {/* Signup Button */}
+            <Button
+              title={isLoading ? t('auth.login.loading', 'Loading...') : t('auth.login.sign_up')}
+              onPress={handleSignup}
+              disabled={isLoading}
+              style={styles.signupButton}
+              textStyle={styles.signupButtonText}
+              variant="secondary"
+            />
+
+            {/* Divider */}
+            <View style={styles.dividerContainer}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>{t('auth.signup_choice.or')}</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
             {/* Login Button */}
             <Button
-              title={isLoading ? t('auth.login.loading') : t('auth.login.sign_in')}
-              onPress={handleLogin}
-              disabled={isLoading}
-              style={isLoading ? styles.disabledButton : styles.loginButton}
+              title={t('auth.login.already_have_account')}
+              onPress={handleLoginPress}
+              variant="accent"
+              style={styles.loginButton}
               textStyle={styles.loginButtonText}
-              variant="secondary"
             />
           </View>
         </View>
       </View>
+      
+      {/* Email Verification Modal */}
+      <EmailVerificationModal
+        visible={showEmailVerification}
+        email={email}
+        onResend={handleResendEmail}
+        onClose={handleEmailVerificationClose}
+      />
     </View>
   );
 }
@@ -231,7 +190,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFEF4',
     paddingTop: 50
   },
-  loginForm: {
+  producerRegistration: {
     flex: 1,
     backgroundColor: '#FFFEF4',
   },
@@ -302,7 +261,7 @@ const styles = StyleSheet.create({
     color: '#4A4459',
     flex: 1,
   },
-  loginButton: {
+  signupButton: {
     marginTop: 70,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -316,36 +275,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20
   },
-  loginButtonText: {
+  signupButtonText: {
     fontSize: 20,
     lineHeight: 30,
     color: '#FFFEF4',
     fontWeight: '600',
   },
-  disabledButton: {
-    marginTop: 70,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 5,
-    borderRadius: 16,
-    backgroundColor: '#CCCCCC',
-    height: 60,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20
-  },
-  signupButton: {
+  loginButton: {
     width: '100%',
     backgroundColor: '#f6f5e9ff',
     shadowOpacity: 0,
     elevation: 0,
   },
-  signupButtonText: {
+  loginButtonText: {
     color: '#4A4459',
     fontSize: 16,
     fontWeight: '600',
+  },
+  loginLink: {
+    alignSelf: 'center',
+    marginTop: 16,
+    paddingVertical: 8,
+  },
+  loginLinkText: {
+    fontSize: 15,
+    lineHeight: 22.5,
+    color: '#4A4459',
+    textDecorationLine: 'underline',
   },
   dividerContainer: {
     flexDirection: 'row',

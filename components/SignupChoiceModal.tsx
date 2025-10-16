@@ -38,7 +38,7 @@ export default function SignupChoiceModal({
 
     const handleLoginPress = () => {
         onClose();
-        router.push('/login-page');
+        router.push('/login');
     };
 
     const { signIn, state } = useContext(AuthContext);
