@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, Keyboard, Image } from 'react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../components/AuthContext';
@@ -255,7 +255,8 @@ export default function CompletePage() {
     if (initialLoading) {
         return (
             <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-                <Text style={styles.title}>Loading profile...</Text>
+                <Image source={require('../assets/images/icons8-loading-96.png')} style={[styles.icon]}/>
+                <Text style={styles.title}>{t('profile.loading', 'Loading profile...')}</Text>
             </View>
         );
     }
@@ -362,6 +363,12 @@ export default function CompletePage() {
 }
 
 const styles = StyleSheet.create({
+    icon: {
+        width: 96,
+        height: 96,
+        marginBottom: 24,
+        alignSelf: 'center',
+    },
     container: {
         flex: 1,
         backgroundColor: '#f7f6ed',
@@ -371,7 +378,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 24,
         paddingTop: 24,
         paddingBottom: 16,
-        alignItems: 'center',   
+        alignItems: 'center',
     },
     title: {
         fontSize: 18,
