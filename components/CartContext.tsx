@@ -7,7 +7,7 @@ export interface CartItem {
   unit: string; // 'kg', 'pièce', etc.
   quantity: number;
   category: string;
-  emoji: string;
+  image: string;
   producerId: number;
   producerName: string;
   subtotal: number;

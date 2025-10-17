@@ -40,7 +40,7 @@ export default function CartScreen() {
       return {
         name: state.items[0].producerName,
         type: "Maraîcher bio",
-        image: "https://placehold.co/50x50/89A083/FFFFFF?text=FB"
+        image: "https://photo-cdn2.icons8.com/vVsONpHf7-sTgM9mNbSkmX0iCJP6YF9_Ux93NilJJkY/rs:fit:576:384/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvNTA1L2NkNjhm/ODcwLWVjMmMtNDU2/OC1hNmE5LTk3ZGQw/NWE3Mjc3Mi5qcGc.webp"
       };
     }
     return null;
@@ -54,7 +54,10 @@ export default function CartScreen() {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-            <Text style={styles.backButtonText}>←</Text>
+            <Image
+            source={require('../../../assets/images/icons8-arrow-96.png')}
+            style={styles.backButtonIcon}
+          />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t('cart.title')}</Text>
           <View style={styles.menuButton} />
@@ -75,7 +78,10 @@ export default function CartScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <Text style={styles.backButtonText}>←</Text>
+          <Image
+            source={require('../../../assets/images/icons8-arrow-96.png')}
+            style={styles.backButtonIcon}
+          />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('cart.title')}</Text>
         <View style={styles.menuButton} />
@@ -102,7 +108,7 @@ export default function CartScreen() {
               <View style={styles.itemContent}>
                 {/* Product Icon */}
                 <View style={styles.productIcon}>
-                  <Text style={styles.productEmoji}>{item.emoji}</Text>
+                   <Image source={{ uri: item.image }} style={styles.productImage} />
                 </View>
 
                 {/* Product Info */}
@@ -113,7 +119,7 @@ export default function CartScreen() {
                       <Text style={styles.productName}>{item.name}</Text>
                       <Text style={styles.productCategory}>{item.category}</Text>
                     </View>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       style={styles.removeButton}
                       onPress={() => removeItem(item.id)}
                     >
@@ -130,16 +136,16 @@ export default function CartScreen() {
 
                     {/* Quantity Controls */}
                     <View style={styles.quantityControls}>
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         style={styles.quantityButton}
                         onPress={() => handleQuantityChange(item.id, -1)}
                       >
                         <Text style={styles.quantityButtonText}>−</Text>
                       </TouchableOpacity>
-                      
+
                       <Text style={styles.quantityText}>{item.quantity}</Text>
-                      
-                      <TouchableOpacity 
+
+                      <TouchableOpacity
                         style={styles.quantityButton}
                         onPress={() => handleQuantityChange(item.id, 1)}
                       >
@@ -163,7 +169,7 @@ export default function CartScreen() {
             <Text style={styles.totalLabel}>{t('cart.total_items')} ({state.totalItems} {t('cart.articles')})</Text>
             <Text style={styles.totalAmount}>{formatPrice(state.totalPrice)}</Text>
           </View>
-          
+
           <View style={styles.finalTotalRow}>
             <Text style={styles.finalTotalLabel}>{t('cart.order_total')}</Text>
             <Text style={styles.finalTotalAmount}>{formatPrice(state.totalPrice)}</Text>
@@ -182,10 +188,11 @@ export default function CartScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+export const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F7F6ED",
+    paddingTop: 40,
   },
 
   // Header styles
@@ -200,19 +207,23 @@ const styles = StyleSheet.create({
   backButton: {
     width: 40,
     height: 40,
-    borderRadius: 15,
-    backgroundColor: "#EAE9E1",
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
+  },
+  backButtonIcon: {
+    width: 20,
+    height: 20
   },
   backButtonText: {
     fontSize: 20,
     color: "#4A4459",
   },
   headerTitle: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#4A4459",
+    fontSize: 18,
+    lineHeight: 27,
+    color: '#4A4459',
+    fontWeight: '600',
   },
   menuButton: {
     width: 40,
@@ -247,6 +258,12 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
+  },
+  productImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 10,
+    resizeMode: 'cover',
   },
   producerDetails: {
     flex: 1,
@@ -287,6 +304,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8F8F8",
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
   },
   productEmoji: {
     fontSize: 30,

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from "react-native";
 import { useTranslation } from "react-i18next";
 import { router } from "expo-router";
 import { useCart } from "../../../components/CartContext";
@@ -22,7 +22,7 @@ const deliveryOptions: DeliveryOption[] = [
   },
   {
     id: 'delivery',
-    titleKey: 'delivery.delivery.title', 
+    titleKey: 'delivery.delivery.title',
     priceKey: 'delivery.delivery.price',
     price: 5.00
   }
@@ -60,7 +60,7 @@ export default function DeliveryModeScreen() {
 
   const renderDeliveryOption = (option: DeliveryOption) => {
     const isSelected = selectedDeliveryMode === option.id;
-    
+
     return (
       <TouchableOpacity
         key={option.id}
@@ -71,17 +71,20 @@ export default function DeliveryModeScreen() {
           <View style={[styles.radioButton, isSelected && styles.radioButtonSelected]}>
             {isSelected && <View style={styles.radioButtonInner} />}
           </View>
-          
+
           <View style={styles.optionIcon}>
-            <Text style={styles.iconText}>
-              {option.id === 'pickup' ? '📍' : '🚚'}
-            </Text>
+            <Image
+              source={option.id === 'pickup'
+                ? require('../../../assets/images/icons8-delivery-96.png')
+                : require('../../../assets/images/icons8-home-96.png')}
+              style={styles.iconImage}
+            />
           </View>
-          
+
           <View style={styles.optionDetails}>
             <Text style={styles.optionTitle}>{t(option.titleKey)}</Text>
             <Text style={styles.optionPrice}>
-              {option.isFree 
+              {option.isFree
                 ? t(option.priceKey)
                 : t(option.priceKey, { amount: option.price.toFixed(2) })
               }
@@ -97,7 +100,10 @@ export default function DeliveryModeScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <Text style={styles.backButtonText}>←</Text>
+          <Image
+            source={require('../../../assets/images/icons8-arrow-96.png')}
+            style={styles.backButtonIcon}
+          />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('delivery.title')}</Text>
         <View style={styles.headerSpacer} />
@@ -145,12 +151,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F7F6ED",
+    paddingTop: 40,
   },
 
   // Header styles
   header: {
     flexDirection: "row",
-    justifyContent: "space-between", 
+    justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 19,
     paddingVertical: 21,
@@ -159,8 +166,7 @@ const styles = StyleSheet.create({
   backButton: {
     width: 40,
     height: 40,
-    borderRadius: 15,
-    backgroundColor: "#EAE9E1",
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -169,9 +175,10 @@ const styles = StyleSheet.create({
     color: "#4A4459",
   },
   headerTitle: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#4A4459",
+    fontSize: 18,
+    lineHeight: 27,
+    color: '#4A4459',
+    fontWeight: '600',
   },
   headerSpacer: {
     width: 40,
@@ -226,6 +233,10 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "transparent",
   },
+  iconImage: {
+    width: 24,
+    height: 24,
+  },
   deliveryOptionSelected: {
     borderColor: "#89A083",
     backgroundColor: "#F8FBF8",
@@ -278,10 +289,14 @@ const styles = StyleSheet.create({
     color: "#89A083",
     fontWeight: "500",
   },
+  backButtonIcon: {
+    width: 20,
+    height: 20
+  },
 
   // Payment note
   paymentNote: {
-    backgroundColor: "#FFF7ED",
+    backgroundColor: "#f6dfc3ff",
     borderRadius: 12,
     padding: 16,
     borderLeftWidth: 4,
@@ -297,7 +312,7 @@ const styles = StyleSheet.create({
   bottomSection: {
     backgroundColor: "#FFFFFF",
     borderTopWidth: 1,
-    borderTopColor: "#F3F4F6", 
+    borderTopColor: "#F3F4F6",
     paddingHorizontal: 24,
     paddingTop: 24,
     paddingBottom: 40,

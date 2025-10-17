@@ -34,7 +34,7 @@ export default function BottomNavigation() {
     {
       nameKey: 'navigation.orders',
       path: '/restaurant/order/orders-list',
-      icon: require('../assets/images/icons8-name-96.png'),
+      icon: require('../assets/images/icons8-order-96.png'),
       requiresAuth: true,
     },
     {

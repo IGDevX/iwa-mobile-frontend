@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from "react-native";
 import { useTranslation } from "react-i18next";
 import { router } from "expo-router";
 import { useCart } from "../../../components/CartContext";
@@ -14,7 +14,7 @@ export default function OrderConfirmationScreen() {
 
   const handleConfirmOrder = () => {
     // Process the order confirmation
-    alert(t('confirmation.order_placed_success'));
+
     // Navigate back to home and clear cart
     router.push('../home/restaurant-home');
   };
@@ -40,10 +40,10 @@ export default function OrderConfirmationScreen() {
 
   const getCurrentDate = (): string => {
     const today = new Date();
-    const options: Intl.DateTimeFormatOptions = { 
-      weekday: 'long', 
-      day: 'numeric', 
-      month: 'long' 
+    const options: Intl.DateTimeFormatOptions = {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long'
     };
     return today.toLocaleDateString('fr-FR', options);
   };
@@ -63,7 +63,10 @@ export default function OrderConfirmationScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <Text style={styles.backButtonText}>←</Text>
+          <Image
+            source={require('../../../assets/images/icons8-arrow-96.png')}
+            style={styles.backButtonIcon}
+          />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('confirmation.title')}</Text>
         <View style={styles.headerSpacer} />
@@ -71,17 +74,23 @@ export default function OrderConfirmationScreen() {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Producer Section */}
-        <View style={styles.section}>
+        <View style={[styles.section, { marginTop: 15 }]}>
           <View style={styles.sectionHeader}>
             <View style={styles.sectionIcon}>
-              <Text style={styles.iconText}>👨‍🌾</Text>
+              <Image
+                source={require('../../../assets/images/icons8-farmer-96.png')}
+                style={styles.logo}
+              />
             </View>
             <Text style={styles.sectionTitle}>{t('confirmation.producer')}</Text>
           </View>
-          
+
           <View style={styles.producerInfo}>
             <View style={styles.producerAvatar}>
-              <Text style={styles.avatarText}>🧑‍🌾</Text>
+              <Image
+                source={{ uri: 'https://photo-cdn2.icons8.com/vVsONpHf7-sTgM9mNbSkmX0iCJP6YF9_Ux93NilJJkY/rs:fit:576:384/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvNTA1L2NkNjhm/ODcwLWVjMmMtNDU2/OC1hNmE5LTk3ZGQw/NWE3Mjc3Mi5qcGc.webp' }}
+                style={styles.producerAvatar}
+              />
             </View>
             <View style={styles.producerDetails}>
               <Text style={styles.producerName}>{getProducerName()}</Text>
@@ -94,17 +103,24 @@ export default function OrderConfirmationScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View style={styles.sectionIcon}>
-              <Text style={styles.iconText}>📦</Text>
+              <Image
+                source={require('../../../assets/images/icons8-cardboard-box-96.png')}
+                style={styles.logo}
+              />
             </View>
             <Text style={styles.sectionTitle}>{t('confirmation.ordered_products')}</Text>
           </View>
-          
+
           <View style={styles.productsList}>
             {state.items.map((item, index) => (
               <View key={index} style={[styles.productItem, index < state.items.length - 1 && styles.productItemBorder]}>
                 <View style={styles.productInfo}>
                   <View style={styles.productIcon}>
-                    <Text style={styles.productEmoji}>{item.emoji}</Text>
+                    <Image
+                      source={{ uri: item.image }}
+                      style={styles.productIconImage}
+                      resizeMode="cover"
+                    />
                   </View>
                   <View style={styles.productDetails}>
                     <Text style={styles.productName}>{item.name}</Text>
@@ -124,25 +140,34 @@ export default function OrderConfirmationScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View style={styles.sectionIcon}>
-              <Text style={styles.iconText}>🚚</Text>
+              <Image
+                source={require('../../../assets/images/icons8-delivery-96.png')}
+                style={styles.logo}
+              />
             </View>
             <Text style={styles.sectionTitle}>{t('confirmation.delivery')}</Text>
           </View>
-          
+
           <View style={styles.deliveryInfo}>
             <View style={styles.deliveryItem}>
               <View style={styles.deliveryIcon}>
-                <Text style={styles.deliveryIconText}>📅</Text>
+                <Image
+                  source={require('../../../assets/images/icons8-date-96.png')}
+                  style={styles.logoSmall}
+                />
               </View>
               <View style={styles.deliveryDetails}>
                 <Text style={styles.deliveryDate}>{getCurrentDate()}</Text>
                 <Text style={styles.deliveryTime}>9h00 - 12h00</Text>
               </View>
             </View>
-            
+
             <View style={styles.deliveryItem}>
               <View style={styles.deliveryIcon}>
-                <Text style={styles.deliveryIconText}>📍</Text>
+                <Image
+                  source={require('../../../assets/images/icons8-map-pin-96.png')}
+                  style={styles.logoSmall}
+                />
               </View>
               <View style={styles.deliveryDetails}>
                 <Text style={styles.deliveryAddressTitle}>{t('confirmation.address')}</Text>
@@ -158,22 +183,25 @@ export default function OrderConfirmationScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View style={styles.sectionIcon}>
-              <Text style={styles.iconText}>💳</Text>
+              <Image
+                source={require('../../../assets/images/icons8-card-96.png')}
+                style={styles.logo}
+              />
             </View>
             <Text style={styles.sectionTitle}>{t('confirmation.payment')}</Text>
           </View>
-          
+
           <View style={styles.paymentDetails}>
             <View style={styles.paymentRow}>
               <Text style={styles.paymentLabel}>{t('confirmation.subtotal')}</Text>
               <Text style={styles.paymentAmount}>{state.totalPrice.toFixed(2)}€</Text>
             </View>
-            
+
             <View style={styles.paymentRow}>
               <Text style={styles.paymentLabel}>{t('confirmation.delivery_fee')}</Text>
               <Text style={styles.paymentAmount}>{getDeliveryFee().toFixed(2)}€</Text>
             </View>
-            
+
             <View style={[styles.paymentRow, styles.paymentTotal]}>
               <Text style={styles.paymentTotalLabel}>{t('confirmation.total')}</Text>
               <Text style={styles.paymentTotalAmount}>{getTotalWithDelivery().toFixed(2)}€</Text>
@@ -210,12 +238,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F7F6ED",
+    paddingTop: 40
   },
 
   // Header styles
   header: {
     flexDirection: "row",
-    justifyContent: "space-between", 
+    justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 19,
     paddingVertical: 21,
@@ -224,19 +253,23 @@ const styles = StyleSheet.create({
   backButton: {
     width: 40,
     height: 40,
-    borderRadius: 15,
-    backgroundColor: "#EAE9E1",
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
+  },
+  backButtonIcon: {
+    width: 20,
+    height: 20
   },
   backButtonText: {
     fontSize: 20,
     color: "#4A4459",
   },
   headerTitle: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#4A4459",
+    fontSize: 18,
+    lineHeight: 27,
+    color: '#16131dff',
+    fontWeight: '600',
   },
   headerSpacer: {
     width: 40,
@@ -276,9 +309,21 @@ const styles = StyleSheet.create({
   iconText: {
     fontSize: 16,
   },
+  logo: {
+    width: 25,
+    height: 25,
+    borderRadius: 0,
+  },
+  logoSmall: {
+    width: 20,
+    height: 20,
+    borderRadius: 0,
+  },
+
   sectionTitle: {
+    marginLeft: 4,
     fontSize: 16,
-    fontWeight: "500",
+    fontWeight: "700",
     color: "#4A4459",
   },
 
@@ -289,10 +334,9 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   producerAvatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: "#F8F8F8",
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -342,6 +386,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8F8F8",
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
+  },
+  productIconImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
   },
   productEmoji: {
     fontSize: 20,
@@ -475,7 +525,7 @@ const styles = StyleSheet.create({
   bottomSection: {
     backgroundColor: "#FFFFFF",
     borderTopWidth: 1,
-    borderTopColor: "#F3F4F6", 
+    borderTopColor: "#F3F4F6",
     paddingHorizontal: 24,
     paddingTop: 24,
     paddingBottom: 40,

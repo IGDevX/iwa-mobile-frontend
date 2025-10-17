@@ -60,7 +60,7 @@ export default function ProductDetailScreen() {
       unit: mockProductDetails.unit,
       quantity: quantity,
       category: mockProductDetails.category,
-      emoji: mockProductDetails.emoji,
+      image: mockProductDetails.image,
       producerId: 1,
       producerName: mockProducer.name
     });
