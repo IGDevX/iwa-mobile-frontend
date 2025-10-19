@@ -82,6 +82,7 @@ export default function SignupChoiceModal({
                             <View style={styles.modalContent}>
                                 {/* Main Buttons */}
                                 <View style={styles.buttonsContainer}>
+                                    <Text style={styles.modalTitle}>{t("auth.signup_choice.join_us")}</Text>
                                     <View style={styles.rowContainer1}>
                                         <Image
                                             source={require('../assets/images/icons8-farmer-96.png')}
@@ -132,7 +133,7 @@ export default function SignupChoiceModal({
                                     <Image
                                         source={{ uri: 'https://placehold.co/80x80' }}
                                         style={styles.decorativeImage1}
-                                />
+                                    />
                                     <Image
                                         source={{ uri: 'https://placehold.co/60x60' }}
                                         style={styles.decorativeImage2}
@@ -169,7 +170,15 @@ const styles = StyleSheet.create({
         shadowRadius: 20,
         elevation: 10,
         alignItems: 'center',
-        paddingTop: 60,
+        paddingTop: 30,
+    },
+    modalTitle: {
+        fontSize: 18,
+        lineHeight: 27,
+        color: '#4A4459',
+        fontWeight: '600',
+        marginBottom: 40,
+        alignSelf: 'center',
     },
     rowContainer1: {
         flexDirection: 'row',

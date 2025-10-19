@@ -3,6 +3,7 @@ import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, Dimensions
 import { useTranslation } from "react-i18next";
 import Button from "../../../components/Button";
 import { router } from "expo-router";
+import Ionicons from "@expo/vector-icons/build/Ionicons";
 
 const { width } = Dimensions.get("window");
 
@@ -170,10 +171,7 @@ export default function RestaurantHomeScreen() {
         {filters.map((filter) => (
           <TouchableOpacity key={filter} style={styles.filterButton}>
             <Text style={styles.filterText}>{filter}</Text>
-            <Image 
-              source={require("../../../assets/images/icons8-dropdown-96.png")} 
-              style={{ width: 12, height: 12 }} 
-            />
+            <Ionicons name="chevron-down" style={styles.filtersArrow} />
           </TouchableOpacity>
         ))}
       </View>
@@ -243,9 +241,9 @@ const styles = StyleSheet.create({
 
   },
   searchBar: {
-    backgroundColor: "#f3f3f54b",
+    backgroundColor: "#EAE9E1",
     borderColor: "#eae9e1",
-    borderWidth: 1,
+    borderWidth: 0,
     borderRadius: 15,
     paddingHorizontal: 16,
     paddingVertical: 15,
@@ -257,6 +255,11 @@ const styles = StyleSheet.create({
   searchText: { 
     fontSize: 14, 
     color: "#717182" 
+  },
+  
+    filtersArrow: {
+    fontSize: 16,
+    color: "#000000ff",
   },
 
   // Categories styles

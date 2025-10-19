@@ -115,10 +115,7 @@ export default function ProducerShopScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <Image
-            source={require('../../../assets/images/icons8-arrow-96.png')}
-            style={styles.backButtonIcon}
-          />
+          
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.cartButton} onPress={handleCartPress}>

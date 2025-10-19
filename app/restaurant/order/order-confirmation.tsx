@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from "rea
 import { useTranslation } from "react-i18next";
 import { router } from "expo-router";
 import { useCart } from "../../../components/CartContext";
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 export default function OrderConfirmationScreen() {
   const { t } = useTranslation();
@@ -63,10 +64,7 @@ export default function OrderConfirmationScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <Image
-            source={require('../../../assets/images/icons8-arrow-96.png')}
-            style={styles.backButtonIcon}
-          />
+          <Ionicons name="chevron-back" size={20} color="#4A4459" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('confirmation.title')}</Text>
         <View style={styles.headerSpacer} />

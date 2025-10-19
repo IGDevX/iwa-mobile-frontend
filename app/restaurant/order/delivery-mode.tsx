@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from "rea
 import { useTranslation } from "react-i18next";
 import { router } from "expo-router";
 import { useCart } from "../../../components/CartContext";
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 interface DeliveryOption {
   id: string;
@@ -100,10 +101,7 @@ export default function DeliveryModeScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <Image
-            source={require('../../../assets/images/icons8-arrow-96.png')}
-            style={styles.backButtonIcon}
-          />
+          <Ionicons name="chevron-back" size={20} color="#4A4459" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('delivery.title')}</Text>
         <View style={styles.headerSpacer} />

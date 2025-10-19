@@ -13,8 +13,7 @@ const SCREENS_WITH_BOTTOM_NAV = [
   '/protected',
   '/restaurant-home',
   '/restaurant/home/restaurant-home',
-  '/restaurant/order/orders-list',
-  '/profile',
+  '/restaurant/order/orders-list'
 ];
 
 function LayoutContent() {

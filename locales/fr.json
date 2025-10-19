@@ -7,6 +7,7 @@
   
   "auth": {
     "signup_choice": {
+      "join_us": "Sélectionner votre rôle",
       "are_you_producer": "Êtes-vous producteur ?",
       "are_you_restaurant": "Êtes-vous restaurateur ?",
       "already_have_account": "Vous avez déjà un compte ?",
@@ -100,6 +101,25 @@
     "loading": "Chargement du profil...",
     "edit_button": "Modifier mes informations",
     "general_info": "Informations générales",
+    "biography": "Biographie",
+    "about": "À propos",
+    "restaurant_info": "Informations du restaurant",
+    "company_info": "Informations d'entreprise",
+    "certifications": "Certifications et Récompenses",
+    "hygiene_certifications": "Certifications hygiène",
+    "awards": "Récompenses",
+    "online_presence": "Présence en ligne",
+    "website": "Site web",
+    "social_networks": "Réseaux sociaux",
+    "service_type": "Type de service",
+    "cuisine_type": "Type de cuisine",
+    "installation_year": "Année d'installation",
+    "employees_count": "Nombre d'employés",
+    "siret": "SIRET",
+    "organization_type": "Type d'organisme",
+    "product_types": "Type de produit(s)",
+    "professions": "Métier(s)",
+    "certifications_labels": "Certifications et Labels",
     "not_provided": "Non renseigné",
     "signout": {
       "title": "Se déconnecter",
@@ -146,6 +166,26 @@
         "continue": "Continuer"
       }
     }
+  },
+
+  "edit_profile": {
+    "title_producer": "Modifier mon profil Producteur",
+    "title_restaurant": "Modifier mon profil Restaurant",
+    "account_info": "Informations du compte",
+    "required_info": "Informations obligatoires",
+    "optional_info": "Informations facultatives",
+    "password": "Mot de passe",
+    "change_password": "Modifier le mot de passe",
+    "update": "Mettre à jour",
+    "cancel": "Annuler",
+    "placeholder_professions": "Maraîcher, Producteur...",
+    "placeholder_bio_producer": "Présentez votre exploitation et vos valeurs...",
+    "placeholder_bio_restaurant": "Présentez votre restaurant et votre philosophie culinaire...",
+    "placeholder_org_type": "Exploitation agricole...",
+    "placeholder_service_type": "Restaurant, Traiteur...",
+    "placeholder_cuisine_type": "Ex: Italien, Végétarien, Gastronomique...",
+    "placeholder_hygiene": "HACCP, ISO 22000...",
+    "placeholder_awards": "Étoiles Michelin, Guide Gault & Millau..."
   },
   
   "cart": {
@@ -248,11 +288,15 @@
     "quick_actions": "Actions rapides",
     "payment_due": "Paiement dû : {{date}}",
     "pay_now": "Payer maintenant",
+    "order_placed": "Commande passée",
+    "order_accepted": "Commande acceptée",
     "order_placed_on": "Commande passée le",
     "order_accepted_on": "Commande acceptée le",
     "delivery_date_time": "Date/heure de livraison",
     "delivery_mode": "Mode de livraison",
     "order_status": "Statut de la commande",
+    "current_status": "Statut actuel",
+    "pending": "En attente...",
     "delivery_fees": "Frais de livraison",
     "grand_total": "Total général",
     "call_producer": "Appeler le producteur",

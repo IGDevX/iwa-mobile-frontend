@@ -7,6 +7,7 @@
   
   "auth": {
     "signup_choice": {
+      "join_us": "Select your role",
       "are_you_producer": "Are you a producer?",
       "are_you_restaurant": "Are you a restaurant?",
       "already_have_account": "Already have an account?",
@@ -100,6 +101,25 @@
     "loading": "Loading profile...",
     "edit_button": "Edit my information",
     "general_info": "General Information",
+    "biography": "Biography",
+    "about": "About",
+    "restaurant_info": "Restaurant Information",
+    "company_info": "Company Information",
+    "certifications": "Certifications and Awards",
+    "hygiene_certifications": "Hygiene certifications",
+    "awards": "Awards",
+    "online_presence": "Online Presence",
+    "website": "Website",
+    "social_networks": "Social networks",
+    "service_type": "Service type",
+    "cuisine_type": "Cuisine type",
+    "installation_year": "Installation year",
+    "employees_count": "Number of employees",
+    "siret": "SIRET",
+    "organization_type": "Organization type",
+    "product_types": "Product type(s)",
+    "professions": "Profession(s)",
+    "certifications_labels": "Certifications and Labels",
     "not_provided": "Not provided",
     "signout": {
       "title": "Sign Out",
@@ -146,6 +166,26 @@
         "continue": "Continue"
       }
     }
+  },
+
+  "edit_profile": {
+    "title_producer": "Edit my Producer Profile",
+    "title_restaurant": "Edit my Restaurant Profile",
+    "account_info": "Account Information",
+    "required_info": "Required Information",
+    "optional_info": "Optional Information",
+    "password": "Password",
+    "change_password": "Change password",
+    "update": "Update",
+    "cancel": "Cancel",
+    "placeholder_professions": "Market gardener, Producer...",
+    "placeholder_bio_producer": "Present your farm and your values...",
+    "placeholder_bio_restaurant": "Present your restaurant and your culinary philosophy...",
+    "placeholder_org_type": "Agricultural farm...",
+    "placeholder_service_type": "Restaurant, Caterer...",
+    "placeholder_cuisine_type": "Ex: Italian, Vegetarian, Gourmet...",
+    "placeholder_hygiene": "HACCP, ISO 22000...",
+    "placeholder_awards": "Michelin stars, Gault & Millau guide..."
   },
   
   "cart": {
@@ -248,11 +288,15 @@
     "quick_actions": "Quick Actions",
     "payment_due": "Payment due: {{date}}",
     "pay_now": "Pay Now",
+    "order_placed": "Order Placed",
+    "order_accepted": "Order Accepted",
     "order_placed_on": "Order placed on",
     "order_accepted_on": "Order accepted on",
     "delivery_date_time": "Delivery date/time",
     "delivery_mode": "Delivery mode",
     "order_status": "Order status",
+    "current_status": "Current Status",
+    "pending": "Pending...",
     "delivery_fees": "Delivery fees",
     "grand_total": "Grand Total",
     "call_producer": "Call Producer",

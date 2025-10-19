@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Image } from "react-native";
 import { useTranslation } from "react-i18next";
 import { router } from "expo-router";
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 interface Order {
   id: string;
@@ -125,19 +126,19 @@ export default function OrdersListScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>{t('orders.my_orders')}</Text>
-        <TouchableOpacity style={styles.profileButton}>
-          <Text style={styles.profileIcon}>👤</Text>
-        </TouchableOpacity>
       </View>
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
-        <View style={styles.searchInputContainer}>
-          <Text style={styles.searchIcon}>🔍</Text>
+        <View style={styles.searchBar}>
+          <Image 
+            source={require('../../../assets/images/icons8-search-96.png')} 
+            style={styles.searchIcon} 
+          />
           <TextInput
             style={styles.searchInput}
             placeholder={t('orders.search_placeholder')}
-            placeholderTextColor="#4A4459"
+            placeholderTextColor="#717182"
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
@@ -147,9 +148,13 @@ export default function OrdersListScreen() {
       {/* Filters Button */}
       <View style={styles.filtersContainer}>
         <TouchableOpacity style={styles.filtersButton}>
-          <Text style={styles.filtersIcon}>⚙️</Text>
+          <Ionicons 
+            name="filter" 
+            size={16} 
+            color="#FFFFFF"
+          />
           <Text style={styles.filtersText}>{t('orders.filters')}</Text>
-          <Text style={styles.filtersArrow}>▼</Text>
+          <Ionicons name="chevron-down" style={styles.filtersArrow} />
         </TouchableOpacity>
       </View>
 
@@ -203,6 +208,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F7F6ED",
+    paddingTop: 40
   },
 
   // Header
@@ -210,61 +216,53 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 29,
-    paddingVertical: 23,
+    paddingHorizontal: 16,
+    paddingVertical: 19,
     backgroundColor: "#F7F6ED",
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: "600",
-    color: "#4A4459",
-  },
-  profileButton: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: "#EAE9E1",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  profileIcon: {
-    fontSize: 20,
+    fontSize: 18,
+    lineHeight: 27,
+    color: '#4A4459',
+    fontWeight: '600',
   },
 
   // Search
   searchContainer: {
-    paddingHorizontal: 28,
+    paddingHorizontal: 16,
     marginBottom: 16,
   },
-  searchInputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+  searchBar: {
     backgroundColor: "#EAE9E1",
+    borderColor: "#eae9e1",
+    borderWidth: 0,
     borderRadius: 15,
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    height: 48,
+    height: 55,
+    justifyContent: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
   },
   searchIcon: {
-    fontSize: 16,
-    marginRight: 12,
-    opacity: 0.6,
+    width: 20,
+    height: 20,
+    marginRight: 8,
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 14,
     color: "#4A4459",
   },
 
   // Filters
   filtersContainer: {
-    paddingHorizontal: 30,
-    marginBottom: 24,
+    paddingHorizontal: 16,
+    marginBottom: 10,
   },
   filtersButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#89A083",
+    backgroundColor: "#89a083ff",
     borderRadius: 15,
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -272,7 +270,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   filtersIcon: {
-    fontSize: 16,
+    width: 16,
+    height: 16,
   },
   filtersText: {
     fontSize: 16,
@@ -280,7 +279,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   filtersArrow: {
-    fontSize: 12,
+    fontSize: 16,
     color: "#FFFFFF",
   },
 
@@ -289,14 +288,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   ordersList: {
-    paddingHorizontal: 30,
-    gap: 16,
+    paddingHorizontal: 16,
+    paddingTop: 5,
   },
 
   // Order Card
   orderCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 15,
+    borderRadius: 16,
     padding: 16,
     marginBottom: 16,
     shadowColor: '#000',

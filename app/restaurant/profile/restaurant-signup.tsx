@@ -14,6 +14,7 @@ import { AuthContext } from '../../../components/AuthContext';
 import Button from '../../../components/Button';
 import EmailVerificationModal from '../../../components/EmailVerificationModal';
 import { router } from 'expo-router';
+import Ionicons from '@expo/vector-icons/build/Ionicons';
 
 export default function RestaurantSignupScreen() {
   const [email, setEmail] = useState('');
@@ -100,10 +101,7 @@ export default function RestaurantSignupScreen() {
           {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
-              <Image
-                source={require('../../../assets/images/icons8-arrow-96.png')}
-                style={styles.backButtonIcon}
-              />
+              <Ionicons name="chevron-back" size={20} color="#4A4459" />
             </TouchableOpacity>
             <View style={styles.heading}>
               <Text style={styles.title}>{t('auth.login.restaurant_signup_title')}</Text>

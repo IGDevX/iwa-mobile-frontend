@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../components/AuthContext';
 import Button from '../components/Button';
 import { router } from 'expo-router';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -159,10 +160,7 @@ export default function LoginScreen() {
           {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
-              <Image
-                source={require('../assets/images/icons8-arrow-96.png')}
-                style={styles.backButtonIcon}
-              />
+              <Ionicons name="chevron-back" size={20} color="#4A4459" />
             </TouchableOpacity>
             <View style={styles.heading}>
               <Text style={styles.title}>{t('auth.login.title')}</Text>

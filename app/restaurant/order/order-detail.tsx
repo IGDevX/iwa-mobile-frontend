@@ -1,7 +1,8 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Linking, Alert } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Linking, Alert, Image } from "react-native";
 import { useTranslation } from "react-i18next";
 import { router, useLocalSearchParams } from "expo-router";
+import Ionicons from "@expo/vector-icons/build/Ionicons";
 
 interface OrderItem {
   id: string;
@@ -127,7 +128,7 @@ export default function OrderDetailScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <Text style={styles.backButtonText}>←</Text>
+          <Ionicons name="chevron-back" size={20} color="#4A4459" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('order_detail.title')}</Text>
         <View style={styles.headerSpacer} />
@@ -139,7 +140,7 @@ export default function OrderDetailScreen() {
           <Text style={styles.producerName}>{orderDetails.producerName}</Text>
           <Text style={styles.orderNumber}>{orderDetails.orderNumber}</Text>
           <View style={styles.addressRow}>
-            <Text style={styles.addressIcon}>📍</Text>
+            <Image source={require("../../../assets/images/icons8-map-pin-96.png")} style={styles.addressIcon} />
             <Text style={styles.addressText}>{orderDetails.producerAddress}</Text>
           </View>
         </View>
@@ -149,7 +150,7 @@ export default function OrderDetailScreen() {
           <Text style={styles.sectionTitle}>{t('order_detail.payment_information')}</Text>
           <View style={styles.paymentRow}>
             <View style={styles.paymentInfo}>
-              <Text style={styles.paymentIcon}>⚠️</Text>
+              <Image source={require("../../../assets/images/icons8-error-96.png")} style={styles.paymentIcon} />
               <Text style={styles.paymentDueText}>
                 {t('order_detail.payment_due', { date: formatPaymentDate(orderDetails.paymentDue) })}
               </Text>
@@ -163,30 +164,78 @@ export default function OrderDetailScreen() {
         {/* Order Information */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('order_detail.order_information')}</Text>
-          <View style={styles.infoRows}>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>{t('order_detail.order_placed_on')}:</Text>
-              <Text style={styles.infoValue}>{formatDate(orderDetails.orderDate)}</Text>
+          <View style={styles.timelineContainer}>
+            {/* Order Placed */}
+            <View style={styles.timelineItem}>
+              <View style={styles.timelineIconContainer}>
+                <View style={[styles.timelineIcon, styles.completedIcon]}>
+                  <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+                </View>
+                {orderDetails.status !== 'pending' && <View style={styles.timelineLine} />}
+              </View>
+              <View style={styles.timelineContent}>
+                <Text style={styles.timelineTitle}>{t('order_detail.order_placed')}</Text>
+                <Text style={styles.timelineDate}>{formatDate(orderDetails.orderDate)}</Text>
+              </View>
             </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>{t('order_detail.order_accepted_on')}:</Text>
-              <Text style={styles.infoValue}>{formatDate(orderDetails.acceptedDate)}</Text>
+
+            {/* Order Accepted */}
+            <View style={styles.timelineItem}>
+              <View style={styles.timelineIconContainer}>
+                <View style={[styles.timelineIcon, 
+                  orderDetails.status !== 'pending' ? styles.completedIcon : styles.pendingIcon]}>
+                  {orderDetails.status !== 'pending' ? (
+                    <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+                  ) : (
+                    <View style={styles.pendingDot} />
+                  )}
+                </View>
+                {(orderDetails.status === 'delivered' || orderDetails.status === 'paid') && 
+                  <View style={styles.timelineLine} />}
+              </View>
+              <View style={styles.timelineContent}>
+                <Text style={[styles.timelineTitle, 
+                  orderDetails.status === 'pending' && styles.pendingTitle]}>
+                  {t('order_detail.order_accepted')}
+                </Text>
+                <Text style={styles.timelineDate}>
+                  {orderDetails.status !== 'pending' ? formatDate(orderDetails.acceptedDate) : t('order_detail.pending')}
+                </Text>
+              </View>
             </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>{t('order_detail.delivery_date_time')}:</Text>
-              <Text style={styles.infoValue}>{formatDate(orderDetails.deliveryDate)}</Text>
+
+            {/* Delivery */}
+            <View style={styles.timelineItem}>
+              <View style={styles.timelineIconContainer}>
+                <View style={[styles.timelineIcon, 
+                  (orderDetails.status === 'delivered' || orderDetails.status === 'paid') ? styles.completedIcon : styles.upcomingIcon]}>
+                  {(orderDetails.status === 'delivered' || orderDetails.status === 'paid') ? (
+                    <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+                  ) : (
+                    <Ionicons name="cube-outline" size={12} color="#9CA3AF" />
+                  )}
+                </View>
+              </View>
+              <View style={styles.timelineContent}>
+                <Text style={[styles.timelineTitle,
+                  (orderDetails.status !== 'delivered' && orderDetails.status !== 'paid') && styles.upcomingTitle]}>
+                  {orderDetails.deliveryMode === 'pickup' 
+                    ? t('orders.pickup_at_farm')
+                    : t('orders.at_restaurant')
+                  }
+                </Text>
+                <Text style={styles.timelineDate}>
+                  {(orderDetails.status === 'delivered' || orderDetails.status === 'paid') 
+                    ? formatDate(orderDetails.deliveryDate)
+                    : formatDate(orderDetails.deliveryDate)
+                  }
+                </Text>
+              </View>
             </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>{t('order_detail.delivery_mode')}:</Text>
-              <Text style={styles.infoValue}>
-                {orderDetails.deliveryMode === 'pickup' 
-                  ? t('orders.pickup_at_farm')
-                  : t('orders.at_restaurant')
-                }
-              </Text>
-            </View>
-            <View style={styles.statusRow}>
-              <Text style={styles.infoLabel}>{t('order_detail.order_status')}:</Text>
+
+            {/* Status Badge */}
+            <View style={styles.statusContainer}>
+              <Text style={styles.statusLabel}>{t('order_detail.current_status')}:</Text>
               <View style={[styles.statusBadge, getStatusStyle(orderDetails.status)]}>
                 <Text style={[styles.statusText, { color: getStatusStyle(orderDetails.status).color }]}>
                   {t(`orders.status.${orderDetails.status}`)}
@@ -229,11 +278,11 @@ export default function OrderDetailScreen() {
           <Text style={styles.sectionTitle}>{t('order_detail.quick_actions')}</Text>
           <View style={styles.actionsRow}>
             <TouchableOpacity style={styles.actionButton} onPress={handleCallProducer}>
-              <Text style={styles.actionIcon}>📞</Text>
+              <Image source={require("../../../assets/images/icons8-call-96.png")} style={styles.actionIcon} />
               <Text style={styles.actionText}>{t('order_detail.call_producer')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionButton} onPress={handleEmailProducer}>
-              <Text style={styles.actionIcon}>✉️</Text>
+              <Image source={require("../../../assets/images/icons8-email-96.png")} style={styles.actionIcon} />
               <Text style={styles.actionText}>{t('order_detail.email_producer')}</Text>
             </TouchableOpacity>
           </View>
@@ -249,6 +298,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F7F6ED",
+    paddingTop: 40
   },
 
   // Header
@@ -271,9 +321,10 @@ const styles = StyleSheet.create({
     color: "#4A4459",
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#4A4459",
+    fontSize: 18,
+    lineHeight: 27,
+    color: '#4A4459',
+    fontWeight: '600',
   },
   headerSpacer: {
     width: 24,
@@ -283,7 +334,8 @@ const styles = StyleSheet.create({
   // Content
   content: {
     flex: 1,
-    paddingHorizontal: 30,
+    paddingHorizontal: 16,
+    paddingTop: 5,
   },
 
   // Section
@@ -318,7 +370,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   addressIcon: {
-    fontSize: 16,
+    width: 16,
+    height: 16,
     opacity: 0.6,
   },
   addressText: {
@@ -350,15 +403,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   paymentIcon: {
-    fontSize: 20,
+    width: 20,
+    height: 20,
   },
   paymentDueText: {
     fontSize: 14,
-    color: "#EF4444",
+    color: "#b55d62ff",
+    fontWeight: "700",
     flex: 1,
   },
   payButton: {
-    backgroundColor: "#F59E0B",
+    backgroundColor: "#b55d62ff",
     borderRadius: 10,
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -394,6 +449,88 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
+
+  // Timeline Stepper
+  timelineContainer: {
+    paddingVertical: 8,
+  },
+  timelineItem: {
+    flexDirection: "row",
+    marginBottom: 24,
+  },
+  timelineIconContainer: {
+    alignItems: "center",
+    marginRight: 16,
+    position: "relative",
+  },
+  timelineIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+    zIndex: 1,
+  },
+  completedIcon: {
+    backgroundColor: "#89A083",
+  },
+  pendingIcon: {
+    backgroundColor: "#df9f32ff",
+  },
+  upcomingIcon: {
+    backgroundColor: "#E5E7EB",
+  },
+  pendingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#FFFFFF",
+  },
+  timelineLine: {
+    position: "absolute",
+    top: 40,
+    left: 15,
+    width: 2,
+    height: 32,
+    backgroundColor: "#D1D5DB",
+    zIndex: 0,
+  },
+  timelineContent: {
+    flex: 1,
+    paddingTop: 4,
+  },
+  timelineTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#4A4459",
+    marginBottom: 4,
+  },
+  pendingTitle: {
+    color: "#F59E0B",
+  },
+  upcomingTitle: {
+    color: "#9CA3AF",
+  },
+  timelineDate: {
+    fontSize: 14,
+    color: "#6B7280",
+  },
+  statusContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 8,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
+  },
+  statusLabel: {
+    fontSize: 16,
+    color: "#4A4459",
+    fontWeight: "500",
+  },
+
   statusBadge: {
     borderRadius: 20,
     paddingHorizontal: 12,
@@ -439,9 +576,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#EAE9E1",
   },
   deliveryFeeLabel: {
     fontSize: 16,
@@ -457,7 +591,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingTop: 8,
+    paddingTop: 15,
     borderTopWidth: 2,
     borderTopColor: "#89A083",
   },
@@ -479,7 +613,7 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
-    backgroundColor: "#EAE9E1",
+    backgroundColor: "#eae9e15e",
     borderRadius: 10,
     paddingVertical: 20,
     alignItems: "center",
@@ -487,7 +621,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   actionIcon: {
-    fontSize: 16,
+    width: 25,
+    height: 25,
   },
   actionText: {
     fontSize: 16,
