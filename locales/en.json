@@ -305,6 +305,38 @@
     "payment_message": "Payment functionality would be implemented here."
   },
   
+  "settings": {
+    "title": "Account Settings",
+    "login_info": {
+      "title": "Login Information",
+      "email": "Email",
+      "save": "Save",
+      "change_password": "Change Password",
+      "current_password": "Current Password",
+      "new_password": "New Password",
+      "confirm_password": "Confirm New Password",
+      "change_password_button": "Change Password"
+    },
+    "notifications": {
+      "title": "Notification Preferences",
+      "order_status": "Order Accepted/Rejected",
+      "order_status_desc": "Order status from producers",
+      "payment_due": "Payment Due",
+      "payment_due_desc": "Payment due reminders",
+      "delivery_scheduled": "Delivery Scheduled",
+      "delivery_scheduled_desc": "Scheduled delivery notifications",
+      "pickup_scheduled": "Pickup Scheduled",
+      "pickup_scheduled_desc": "Pickup reminders at sales points",
+      "incomplete_profile": "Incomplete Profile",
+      "incomplete_profile_desc": "Reminders to complete your profile"
+    },
+    "account_management": {
+      "title": "Account Management",
+      "delete_account": "Delete My Account",
+      "delete_warning": "This action is irreversible"
+    }
+  },
+  
   "common": {
     "error": "Error",
     "ok": "OK"

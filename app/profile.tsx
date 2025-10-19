@@ -229,6 +229,10 @@ export default function ProfilePage() {
         router.back();
     };
 
+    const handleSettingsPress = () => {
+        router.push('/settings');
+    };
+
     const handleSignOut = () => {
         Alert.alert(
             t('profile.signout.title', 'Sign Out'),
@@ -273,6 +277,12 @@ export default function ProfilePage() {
                         <Ionicons name="chevron-back" size={20} color="#4A4459" />
                     </TouchableOpacity>
                     <Text style={styles.title}>{t('profile.title', 'Mon Profil')}</Text>
+                    <TouchableOpacity style={styles.settingsButton} onPress={handleSettingsPress}>
+                        <Image
+                            source={require('../assets/images/icons8-settings-96.png')}
+                            style={styles.settingsIcon}
+                        />
+                    </TouchableOpacity>
                 </View>
 
                 {/* Edit Profile Button */}
@@ -533,6 +543,7 @@ const styles = StyleSheet.create({
     headerRow: {
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'space-between',
         gap: 12,
     },
     backButton: {
@@ -541,6 +552,18 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         alignItems: "center",
         justifyContent: "center",
+    },
+    settingsButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 15,
+        alignItems: "center",
+        justifyContent: "center",
+        position: "relative",
+    },
+    settingsIcon: {
+        width: 30,
+        height: 30,
     },
     title: {
         fontSize: 18,

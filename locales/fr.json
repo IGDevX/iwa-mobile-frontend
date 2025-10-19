@@ -305,6 +305,38 @@
     "payment_message": "La fonctionnalité de paiement sera implémentée ici."
   },
   
+  "settings": {
+    "title": "Paramètres du compte",
+    "login_info": {
+      "title": "Informations de connexion",
+      "email": "Email",
+      "save": "Sauvegarder",
+      "change_password": "Changer mot de passe",
+      "current_password": "Mot de passe actuel",
+      "new_password": "Nouveau mot de passe",
+      "confirm_password": "Confirmer nouveau mot de passe",
+      "change_password_button": "Changer mot de passe"
+    },
+    "notifications": {
+      "title": "Préférences de notifications",
+      "order_status": "Commande acceptée / refusée",
+      "order_status_desc": "Statut des commandes chez les producteurs",
+      "payment_due": "Paiement dû",
+      "payment_due_desc": "Rappels d'échéances de paiement",
+      "delivery_scheduled": "Livraison prévue",
+      "delivery_scheduled_desc": "Notifications de livraisons programmées",
+      "pickup_scheduled": "Retrait prévu",
+      "pickup_scheduled_desc": "Rappels de retraits en points de vente",
+      "incomplete_profile": "Profil incomplet",
+      "incomplete_profile_desc": "Rappels pour compléter votre profil"
+    },
+    "account_management": {
+      "title": "Gestion du compte",
+      "delete_account": "Supprimer mon compte",
+      "delete_warning": "Cette action est irréversible"
+    }
+  },
+  
   "common": {
     "error": "Erreur",
     "ok": "OK"
