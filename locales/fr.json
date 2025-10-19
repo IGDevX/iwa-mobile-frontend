@@ -207,7 +207,17 @@
     "order_total": "Total de la commande",
     "next": "Suivant",
     "delivery_note": "Vous choisirez le mode de livraison à l'étape suivante",
-    "checkout": "Procéder au checkout"
+    "checkout": "Procéder au checkout",
+    "login_required_message": "Vous devez vous connecter pour accéder à cette fonctionnalité. Voulez-vous vous connecter maintenant ?",
+    "item_added": "Article ajouté",
+    "item_added_message": "{{quantity}} {{unit}} de {{name}} ajouté au panier",
+    "login_required": {
+      "title": "Connexion requise",
+      "message": "Vous devez être connecté pour ajouter des produits à votre panier. Voulez-vous vous connecter maintenant ?",
+      "cart_access": "Vous devez être connecté pour accéder à votre panier. Veuillez vous connecter pour continuer.",
+      "login": "Se connecter",
+      "cancel": "Annuler"
+    }
   },
   
   "delivery": {
@@ -242,7 +252,32 @@
     "agriculture_bio": "Agriculture biologique certifiée",
     "no_pesticides": "Cultivé sans pesticides",
     "heritage_variety": "Variété ancienne",
-    "daily_harvest": "Récolte du jour"
+    "daily_harvest": "Récolte du jour",
+    "add_product_title": "Ajouter un Produit",
+    "product_name": "Nom du Produit",
+    "product_name_placeholder": "Entrez le nom du produit",
+    "upload_image": "Télécharger une Image",
+    "sale_type": "Type de Vente",
+    "unit": "Unité",
+    "weight": "Poids",
+    "price": "Prix",
+    "quantity": "Quantité",
+    "packaging": "Emballage",
+    "plastic_free": "Sans plastique",
+    "bag": "Sac",
+    "box": "Boîte",
+    "delivery_mode": "Mode de Livraison",
+    "delivery": "Livraison",
+    "pickup": "Retrait",
+    "fresh_product": "Produit frais",
+    "certifications": "Certifications",
+    "organic": "Biologique",
+    "pesticide_free": "Sans pesticides",
+    "heritage": "Ancienne",
+    "daily_harvested": "Récolte du jour",
+    "origin": "Origine",
+    "origin_placeholder": "Entrez l'origine",
+    "add_product_button": "Ajouter le Produit"
   },
   
   "confirmation": {
@@ -276,7 +311,8 @@
       "delivered": "Livrée",
       "paid": "Payée",
       "unpaid": "Non payée",
-      "not_delivered": "Non livrée"
+      "not_delivered": "Non livrée",
+      "refused": "Refusée"
     }
   },
   
@@ -339,6 +375,35 @@
   
   "common": {
     "error": "Erreur",
-    "ok": "OK"
+    "ok": "OK",
+    "cancel": "Annuler"
+  },
+
+  "producer": {
+    "shop": {
+      "my_shop": "Ma boutique",
+      "edit_mode": "Mode édition",
+      "add_new_category": "Ajouter une nouvelle catégorie",
+      "category_name": "Nom de la catégorie",
+      "stock": "Stock : {{count}}",
+      "delete_category": "Supprimer la catégorie",
+      "add_product": "Ajouter un produit"
+    },
+    "cannot_add_own_product": "Vous ne pouvez pas ajouter vos propres produits au panier.",
+    "delivery": "Livraison"
+  },
+
+  "dashboard": {
+    "orders": "Commandes",
+    "analytics": "Tableau de Bord", 
+    "total_orders": "Total Commandes",
+    "revenue": "Chiffre d'Affaires",
+    "accepted": "Acceptées",
+    "refused": "Refusées",
+    "orders_per_day": "Commandes par Jour",
+    "revenue_breakdown": "Répartition du Chiffre d'Affaires",
+    "top_customers": "Meilleurs Clients",
+    "chart_placeholder": "Visualisation graphique",
+    "pie_chart_placeholder": "Graphique en secteurs"
   }
 }

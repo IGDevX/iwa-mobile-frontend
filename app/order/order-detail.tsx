@@ -140,7 +140,7 @@ export default function OrderDetailScreen() {
           <Text style={styles.producerName}>{orderDetails.producerName}</Text>
           <Text style={styles.orderNumber}>{orderDetails.orderNumber}</Text>
           <View style={styles.addressRow}>
-            <Image source={require("../../../assets/images/icons8-map-pin-96.png")} style={styles.addressIcon} />
+            <Image source={require("../../assets/images/icons8-map-pin-96.png")} style={styles.addressIcon} />
             <Text style={styles.addressText}>{orderDetails.producerAddress}</Text>
           </View>
         </View>
@@ -150,7 +150,7 @@ export default function OrderDetailScreen() {
           <Text style={styles.sectionTitle}>{t('order_detail.payment_information')}</Text>
           <View style={styles.paymentRow}>
             <View style={styles.paymentInfo}>
-              <Image source={require("../../../assets/images/icons8-error-96.png")} style={styles.paymentIcon} />
+              <Image source={require("../../assets/images/icons8-error-96.png")} style={styles.paymentIcon} />
               <Text style={styles.paymentDueText}>
                 {t('order_detail.payment_due', { date: formatPaymentDate(orderDetails.paymentDue) })}
               </Text>
@@ -278,11 +278,11 @@ export default function OrderDetailScreen() {
           <Text style={styles.sectionTitle}>{t('order_detail.quick_actions')}</Text>
           <View style={styles.actionsRow}>
             <TouchableOpacity style={styles.actionButton} onPress={handleCallProducer}>
-              <Image source={require("../../../assets/images/icons8-call-96.png")} style={styles.actionIcon} />
+              <Image source={require("../../assets/images/icons8-call-96.png")} style={styles.actionIcon} />
               <Text style={styles.actionText}>{t('order_detail.call_producer')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionButton} onPress={handleEmailProducer}>
-              <Image source={require("../../../assets/images/icons8-email-96.png")} style={styles.actionIcon} />
+              <Image source={require("../../assets/images/icons8-email-96.png")} style={styles.actionIcon} />
               <Text style={styles.actionText}>{t('order_detail.email_producer')}</Text>
             </TouchableOpacity>
           </View>

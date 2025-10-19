@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { AuthContext } from '../components/AuthContext';
+import { AuthContext } from '../../components/AuthContext';
 import { router } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 

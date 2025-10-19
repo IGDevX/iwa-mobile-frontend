@@ -10,8 +10,8 @@ import {
   Keyboard,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { AuthContext } from '../components/AuthContext';
-import Button from '../components/Button';
+import { AuthContext } from '../../components/AuthContext';
+import Button from '../../components/Button';
 import { router } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
@@ -131,22 +131,27 @@ export default function LoginScreen() {
       const profileStatus = await checkProfileCompletion();
       
       if (profileStatus.isComplete) {
-        // Profile is complete, redirect to home page
-        router.replace('/restaurant/home/restaurant-home');
+        // Profile is complete, redirect based on user role
+        const userRole = state.userInfo?.roles?.[0];
+        if (userRole === 'Producer') {
+          router.replace('../producer/home/producer-shop');
+        } else {
+          router.replace('../restaurant/home/restaurant-home');
+        }
       } else {
         // Profile is incomplete, redirect to complete profile
-        router.replace('/complete-profile');
+        router.replace('/profile/complete-profile');
       }
     } catch (error) {
       console.error('Error checking profile completion:', error);
       // Default to complete profile page if there's an error
-      router.replace('/complete-profile');
+      router.replace('/profile/complete-profile');
     }
   };
 
   const handleSignupRedirect = () => {
     // Navigate back to home and trigger signup choice modal
-    router.replace('/restaurant/home/restaurant-home?showSignup=true');
+    router.replace('../restaurant/home/restaurant-home?showSignup=true');
   };
 
   const handleBackPress = () => {

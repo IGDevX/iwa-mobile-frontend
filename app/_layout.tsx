@@ -13,7 +13,9 @@ const SCREENS_WITH_BOTTOM_NAV = [
   '/protected',
   '/restaurant-home',
   '/restaurant/home/restaurant-home',
-  '/restaurant/order/orders-list'
+  '/producer/home/producer-shop',
+  '/order/orders-list',
+  '/producer/home/dashboard',
 ];
 
 function LayoutContent() {

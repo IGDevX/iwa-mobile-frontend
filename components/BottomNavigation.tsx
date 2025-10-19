@@ -25,21 +25,34 @@ export default function BottomNavigation() {
   const isAuthenticated = state.isSignedIn;
   const pathname = usePathname();
 
+  // Determine home path based on user role
+  const getHomePath = () => {
+    if (!isAuthenticated) {
+      return '/restaurant/home/restaurant-home'; // Default for non-authenticated users
+    }
+    
+    const userRole = state.userInfo?.roles?.[0];
+    if (userRole === 'Producer') {
+      return '/producer/home/producer-shop'; // Producer's own shop
+    }
+    return '/restaurant/home/restaurant-home'; // Restaurant owner sees marketplace
+  };
+
   const tabs: TabItem[] = [
     {
       nameKey: 'navigation.home',
-      path: '/restaurant/home/restaurant-home',
+      path: getHomePath(),
       icon: require('../assets/images/icons8-home-96.png'),
     },
     {
       nameKey: 'navigation.orders',
-      path: '/restaurant/order/orders-list',
+      path: '/order/orders-list',
       icon: require('../assets/images/icons8-order-96.png'),
       requiresAuth: true,
     },
     {
       nameKey: 'navigation.profile',
-      path: '/profile', // Will be dynamically determined
+      path: '/profile/my-profile',
       icon: require('../assets/images/icons8-name-96.png'),
     },
   ];
@@ -59,15 +72,15 @@ export default function BottomNavigation() {
       try {
         const profileStatus = await checkProfileCompletion();
         if (profileStatus.isComplete) {
-          router.push('/profile');
+          router.push('/profile/my-profile');
         } else {
-          router.push('/complete-profile');
+          router.push('/profile/complete-profile');
         }
         return;
       } catch (error) {
         console.error('Error checking profile completion:', error);
         // Default to complete profile on error
-        router.push('/complete-profile');
+        router.push('/profile/complete-profile');
         return;
       }
     }
@@ -77,7 +90,12 @@ export default function BottomNavigation() {
       return;
     }
 
-    router.push(tab.path as any);
+    // For home tab, use dynamic path based on user role
+    if (tab.nameKey === 'navigation.home') {
+      router.push(getHomePath() as any);
+    } else {
+      router.push(tab.path as any);
+    }
   };
 
   const handleExistingUserPress = () => {

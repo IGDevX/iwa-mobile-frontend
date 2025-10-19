@@ -1,8 +1,10 @@
-import React from "react";
-import { Text, Image, StyleSheet, ScrollView, TouchableOpacity, View } from "react-native";
+import React, { useContext, useState } from "react";
+import { Text, Image, StyleSheet, ScrollView, TouchableOpacity, View, Alert, Switch, TextInput } from "react-native";
 import { useTranslation } from "react-i18next";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCart } from "../../../components/CartContext";
+import { AuthContext } from "../../../components/AuthContext";
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 // Mock producer data
 const mockProducer = {
@@ -13,8 +15,23 @@ const mockProducer = {
   profileImage: "https://photo-cdn2.icons8.com/vVsONpHf7-sTgM9mNbSkmX0iCJP6YF9_Ux93NilJJkY/rs:fit:576:384/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvNTA1L2NkNjhm/ODcwLWVjMmMtNDU2/OC1hNmE5LTk3ZGQw/NWE3Mjc3Mi5qcGc.webp"
 };
 
+// Type definitions
+interface Product {
+  id: number;
+  name: string;
+  image: string;
+  price: number;
+  priceDisplay: string;
+  unit: string;
+  category: string;
+}
+
+interface ProductsData {
+  [key: string]: Product[];
+}
+
 // Mock products data organized by category
-const mockProducts = {
+const mockProducts: ProductsData = {
   "Légumes": [
     {
       id: 1,
@@ -61,51 +78,178 @@ export default function ProducerShopScreen() {
   const { t } = useTranslation();
   const params = useLocalSearchParams();
   const { state } = useCart();
+  const { state: authState } = useContext(AuthContext);
 
-  const handleBack = () => {
-    router.back();
-  };
+  // Edit mode state
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [products, setProducts] = useState<ProductsData>(mockProducts);
+  const [newCategoryName, setNewCategoryName] = useState('');
+
+  // Determine if this is the producer's own shop
+  const isOwnShop = authState.userInfo?.roles?.[0] === 'Producer';
 
   const handleCartPress = () => {
+    // Check if user is logged in
+    if (!authState.isSignedIn) {
+      Alert.alert(
+        t('auth.login.title', 'Login Required'),
+        t('cart.login_required_message', 'You need to login to view your cart. Would you like to login now?'),
+        [
+          { text: t('common.cancel', 'Cancel'), style: 'cancel' },
+          {
+            text: t('auth.login.sign_in', 'Login'),
+            onPress: () => router.push('../../profile/login')
+          }
+        ]
+      );
+      return;
+    }
+
     router.push('/restaurant/order/cart');
   };
 
   const handleProductPress = (product: any) => {
+    if (isEditMode) {
+      // Handle product editing
+      handleEditProduct(product);
+    } else {
+      router.push({
+        pathname: '../../restaurant/order/product-detail',
+        params: {
+          productId: product.id,
+          productName: product.name,
+          productPrice: product.priceDisplay
+        }
+      });
+    }
+  };
+
+  const handleEditProduct = (product: any) => {
+    Alert.alert(
+      t('producer.edit_product', 'Edit Product'),
+      `${t('producer.edit_product_message', 'Edit')} ${product.name}`,
+      [
+        { text: t('common.cancel', 'Cancel'), style: 'cancel' },
+        { text: t('producer.edit', 'Edit'), onPress: () => console.log('Edit product:', product.id) }
+      ]
+    );
+  };
+
+  const handleDeleteProduct = (productId: number) => {
+    Alert.alert(
+      t('producer.delete_product', 'Delete Product'),
+      t('producer.delete_product_message', 'Are you sure you want to delete this product?'),
+      [
+        { text: t('common.cancel', 'Cancel'), style: 'cancel' },
+        {
+          text: t('producer.delete', 'Delete'),
+          style: 'destructive',
+          onPress: () => {
+            // Remove product from category
+            const updatedProducts = { ...products };
+            Object.keys(updatedProducts).forEach(category => {
+              updatedProducts[category] = updatedProducts[category].filter(p => p.id !== productId);
+            });
+            setProducts(updatedProducts);
+          }
+        }
+      ]
+    );
+  };
+
+  const handleDeleteCategory = (categoryName: string) => {
+    Alert.alert(
+      t('producer.delete_category', 'Delete Category'),
+      t('producer.delete_category_message', `Are you sure you want to delete the category "${categoryName}"?`),
+      [
+        { text: t('common.cancel', 'Cancel'), style: 'cancel' },
+        {
+          text: t('producer.delete', 'Delete'),
+          style: 'destructive',
+          onPress: () => {
+            const updatedProducts = { ...products };
+            delete updatedProducts[categoryName];
+            setProducts(updatedProducts);
+          }
+        }
+      ]
+    );
+  };
+
+  const handleAddProduct = (categoryName: string) => {
     router.push({
-      pathname: '../../restaurant/order/product-detail',
+      pathname: '/producer/home/add-product',
       params: {
-        productId: product.id,
-        productName: product.name,
-        productPrice: product.priceDisplay
+        categoryName: categoryName
       }
     });
   };
 
-  const renderProductCard = (product: any) => (
-    <TouchableOpacity
-      key={product.id}
-      style={styles.productCard}
-      onPress={() => handleProductPress(product)}
-    >
-      <View style={styles.productImageContainer}>
-        <Image source={{ uri: product.image }} style={styles.productImage} />
-      </View>
-      <Text style={styles.productName}>{product.name}</Text>
-      <Text style={styles.productPrice}>{product.priceDisplay}</Text>
-    </TouchableOpacity>
+  const handleAddCategory = () => {
+    if (newCategoryName.trim()) {
+      const updatedProducts = { ...products };
+      updatedProducts[newCategoryName.trim()] = [];
+      setProducts(updatedProducts);
+      setNewCategoryName('');
+    }
+  };
+
+  const renderProductCard = (product: Product) => (
+    <View key={product.id} style={styles.productCard}>
+      <TouchableOpacity
+        style={styles.productCardContent}
+        onPress={() => handleProductPress(product)}
+      >
+        <View style={styles.productImageContainer}>
+          <Image source={{ uri: product.image }} style={styles.productImage} />
+        </View>
+        <Text style={styles.productName}>{product.name}</Text>
+        <Text style={styles.productPrice}>{product.priceDisplay}</Text>
+        {isEditMode && (
+          <Text style={styles.stockText}>Stock: 10 kg</Text>
+        )}
+      </TouchableOpacity>
+
+      {isEditMode && isOwnShop && (
+        <TouchableOpacity
+          style={styles.deleteProductButton}
+          onPress={() => handleDeleteProduct(product.id)}
+        >
+          <Ionicons name="close-circle" size={20} color="#ff4444" />
+        </TouchableOpacity>
+      )}
+    </View>
   );
 
-  const renderCategory = (categoryName: string, products: any[]) => (
+  const renderCategory = (categoryName: string, categoryProducts: Product[]) => (
     <View key={categoryName} style={styles.categorySection}>
       <View style={styles.categoryHeader}>
         <Text style={styles.categoryTitle}>{categoryName}</Text>
         <View style={styles.categoryBadge}>
-          <Text style={styles.categoryBadgeText}>{products.length}</Text>
+          <Text style={styles.categoryBadgeText}>{categoryProducts.length}</Text>
         </View>
       </View>
 
+      {isEditMode && isOwnShop && (
+        <View style={styles.editActions}>
+          <TouchableOpacity
+            style={styles.deleteCategory}
+            onPress={() => handleDeleteCategory(categoryName)}
+          >
+            <Text style={styles.deleteCategoryText}>{t('producer.delete_category', 'Delete Category')}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.addProduct}
+            onPress={() => handleAddProduct(categoryName)}
+          >
+            <Text style={styles.addProductText}>{t('producer.add_product', 'Add Product')}</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       <View style={styles.productsGrid}>
-        {products.map(renderProductCard)}
+        {categoryProducts.map(renderProductCard)}
       </View>
     </View>
   );
@@ -114,21 +258,42 @@ export default function ProducerShopScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          
-        </TouchableOpacity>
+        <Text style={styles.title}>{t('producer.shop.my_shop', 'My Shop')}</Text>
 
-        <TouchableOpacity style={styles.cartButton} onPress={handleCartPress}>
-          <Image
-            source={require('../../../assets/images/icons8-cart-96.png')}
-            style={styles.cartIcon}
-          />
-          {state.totalItems > 0 && (
-            <View style={styles.cartBadge}>
-              <Text style={styles.cartBadgeText}>{state.totalItems}</Text>
+        {isOwnShop && (
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View style={styles.editModeContainer}>
+              <Switch
+                value={isEditMode}
+                onValueChange={setIsEditMode}
+                trackColor={{ false: '#757575', true: '#89A083' }}
+                thumbColor={isEditMode ? '#fff' : '#fff'}
+              />
+              <Text style={styles.editModeText}>{t('producer.shop.edit_mode', 'Edit mode')}</Text>
             </View>
-          )}
-        </TouchableOpacity>
+            <TouchableOpacity style={{...styles.notificationButton, marginLeft: 20, marginRight: -18 }}>
+              <Image
+                source={require("../../../assets/images/icons8-bell-96.png")}
+                style={{ width: 30, height: 30, marginRight: 8 }}
+              />
+            </TouchableOpacity>
+          </View>
+        )}
+
+
+        {!isOwnShop && (
+          <TouchableOpacity style={styles.cartButton} onPress={handleCartPress}>
+            <Image
+              source={require('../../../assets/images/icons8-cart-96.png')}
+              style={styles.cartIcon}
+            />
+            {authState.isSignedIn && state.totalItems > 0 && (
+              <View style={styles.cartBadge}>
+                <Text style={styles.cartBadgeText}>{state.totalItems}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        )}
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -148,10 +313,32 @@ export default function ProducerShopScreen() {
         {/* Description */}
         <Text style={styles.description}>{mockProducer.description}</Text>
 
+        {/* New Category Section - Edit Mode Only */}
+        {isEditMode && isOwnShop && (
+          <View style={styles.newCategorySection}>
+            <Text style={styles.newCategoryTitle}>{t('producer.new_category', 'New Category')}</Text>
+            <View style={styles.newCategoryInput}>
+              <TextInput
+                style={styles.categoryInput}
+                placeholder={t('producer.category_name', 'Category Name')}
+                value={newCategoryName}
+                onChangeText={setNewCategoryName}
+                placeholderTextColor="rgba(74, 68, 89, 0.5)"
+              />
+              <TouchableOpacity
+                style={styles.addCategoryButton}
+                onPress={handleAddCategory}
+              >
+                <Ionicons name="add" size={20} color="#89A083" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         {/* Products and Categories */}
         <View style={styles.productsSection}>
-          {Object.entries(mockProducts).map(([categoryName, products]) =>
-            renderCategory(categoryName, products)
+          {Object.entries(products).map(([categoryName, categoryProducts]) =>
+            renderCategory(categoryName, categoryProducts)
           )}
         </View>
 
@@ -173,23 +360,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 19,
-    paddingVertical: 21,
+    paddingHorizontal: 24,
+    paddingVertical: 16,
     backgroundColor: "#F7F6ED",
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 15,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  backButtonIcon: {
-    width: 20,
-    height: 20
-  },
-  backButtonText: {
+  title: {
     fontSize: 20,
+    fontWeight: "600",
     color: "#4A4459",
   },
   cartButton: {
@@ -361,5 +538,121 @@ const styles = StyleSheet.create({
     color: "#89A083",
     marginBottom: 4,
     textAlign: "center",
-  }
+  },
+
+  notificationButton: {
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+  },
+  notificationDot: {
+    position: "absolute",
+    top: -2,
+    right: -2,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: "#E07A5F",
+  },
+
+  // Edit mode styles
+  editModeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#EAE9E1",
+    borderRadius: 25,
+    paddingHorizontal: 12,
+    paddingVertical: 0,
+    gap: 8,
+  },
+  editModeText: {
+    fontSize: 14,
+    color: "#4A4459",
+    fontWeight: "500",
+  },
+  productCardContent: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+  },
+  stockText: {
+    fontSize: 12,
+    color: "rgba(74, 68, 89, 0.7)",
+    marginTop: 4,
+    textAlign: "center",
+  },
+  deleteProductButton: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  editActions: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 12,
+  },
+  deleteCategory: {
+    backgroundColor: "#fcdcdc",
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 3,
+  },
+  deleteCategoryText: {
+    fontSize: 12,
+    color: "#660101",
+    fontWeight: "500",
+  },
+  addProduct: {
+    backgroundColor: "#dcfce7",
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 3,
+  },
+  addProductText: {
+    fontSize: 12,
+    color: "#016630",
+    fontWeight: "500",
+  },
+  newCategorySection: {
+    backgroundColor: "#EAE9E1",
+    borderRadius: 15,
+    padding: 16,
+    marginHorizontal: 24,
+    marginBottom: 16,
+  },
+  newCategoryTitle: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#4A4459",
+    marginBottom: 12,
+  },
+  newCategoryInput: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  categoryInput: {
+    flex: 1,
+    height: 37,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    fontSize: 14,
+    color: "#4A4459",
+  },
+  addCategoryButton: {
+    width: 48,
+    height: 37,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });

@@ -50,7 +50,7 @@ export default function RestaurantSignupScreen() {
               text: t('auth.signup.go_to_login', 'Go to Login'),
               onPress: () => {
                 setShowEmailVerification(false);
-                router.replace('/login');
+                router.replace('../../profile/login');
               }
             }
           ]
@@ -91,7 +91,7 @@ export default function RestaurantSignupScreen() {
   };
 
   const handleLoginPress = () => {
-    router.push('/login');
+    router.push('../../profile/login');
   };
 
   return (

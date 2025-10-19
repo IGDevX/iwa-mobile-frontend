@@ -1,13 +1,22 @@
-import React from "react";
+import React, { useContext, useEffect } from "react";
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { useTranslation } from "react-i18next";
 import { router } from "expo-router";
 import { useCart } from "../../../components/CartContext";
+import { AuthContext } from "../../../components/AuthContext";
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 export default function CartScreen() {
   const { t } = useTranslation();
   const { state, updateQuantity, removeItem } = useCart();
+  const { state: authState } = useContext(AuthContext);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authState.isSignedIn) {
+      router.replace('../../profile/login');
+    }
+  }, [authState.isSignedIn]);
 
   const handleBack = () => {
     router.back();
@@ -46,6 +55,11 @@ export default function CartScreen() {
     }
     return null;
   };
+
+  // Don't render anything if not authenticated - redirect will handle navigation
+  if (!authState.isSignedIn) {
+    return null;
+  }
 
   const producerInfo = getProducerInfo();
 

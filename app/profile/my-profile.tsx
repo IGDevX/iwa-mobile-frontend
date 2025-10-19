@@ -1,9 +1,9 @@
 import React, { useState, useContext, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image, Animated } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { AuthContext } from '../components/AuthContext';
+import { AuthContext } from '../../components/AuthContext';
 import { router } from 'expo-router';
-import { convertKeycloakAttributesToProfile } from '../utils/profileUtils';
+import { convertKeycloakAttributesToProfile } from '../../utils/profileUtils';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 interface ProfileData {
@@ -222,7 +222,7 @@ export default function ProfilePage() {
     };
 
     const handleEditProfile = () => {
-        router.push('/edit-profile');
+        router.push('/profile/edit-profile');
     };
 
     const handleBack = () => {
@@ -230,7 +230,7 @@ export default function ProfilePage() {
     };
 
     const handleSettingsPress = () => {
-        router.push('/settings');
+        router.push('../settings');
     };
 
     const handleSignOut = () => {
@@ -261,7 +261,7 @@ export default function ProfilePage() {
         return (
             <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
                 <Animated.Image
-                    source={require('../assets/images/icons8-loading-96.png')}
+                    source={require('../../assets/images/icons8-loading-96.png')}
                     style={[styles.icon, { transform: [{ rotate }] }]}
                 />
                 <Text style={styles.title}>{t('profile.loading', 'Loading profile...')}</Text>
@@ -277,12 +277,20 @@ export default function ProfilePage() {
                         <Ionicons name="chevron-back" size={20} color="#4A4459" />
                     </TouchableOpacity>
                     <Text style={styles.title}>{t('profile.title', 'Mon Profil')}</Text>
-                    <TouchableOpacity style={styles.settingsButton} onPress={handleSettingsPress}>
-                        <Image
-                            source={require('../assets/images/icons8-settings-96.png')}
-                            style={styles.settingsIcon}
-                        />
-                    </TouchableOpacity>
+                    <View style={styles.headerIcons}>
+                        <TouchableOpacity style={styles.settingsButton} onPress={handleSettingsPress}>
+                            <Image
+                                source={require('../../assets/images/icons8-settings-96.png')}
+                                style={styles.settingsIcon}
+                            />
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.logoutButton} onPress={handleSignOut}>
+                            <Image
+                                source={require('../../assets/images/icons8-log-out-96.png')}
+                                style={styles.logoutIcon}
+                            />
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
                 {/* Edit Profile Button */}
@@ -491,7 +499,7 @@ export default function ProfilePage() {
             )}
 
             {/* Online Presence Section */}
-            <View style={styles.infoSection}>
+            <View style={{...styles.infoSection, marginBottom: 70}}>
                 <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>
                         {t('profile.online_presence')}
@@ -509,15 +517,6 @@ export default function ProfilePage() {
                 </View>
                 <SocialNetworks networks={isProducer ? mockProducerData.socialNetworks : mockRestaurantData.socialNetworks} />
             </View>
-
-            {/* Sign Out Button */}
-            <View style={styles.buttonContainer}>
-                <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
-                    <Text style={styles.signOutButtonText}>
-                        {t('profile.signout.button', 'Se déconnecter')}
-                    </Text>
-                </TouchableOpacity>
-            </View>
         </ScrollView>
     );
 }
@@ -532,7 +531,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f7f6ed',
-        paddingTop: 40
+        paddingTop: 40,
     },
     header: {
         paddingHorizontal: 24,
@@ -544,6 +543,11 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
+        gap: 12,
+    },
+    headerIcons: {
+        flexDirection: 'row',
+        alignItems: 'center',
         gap: 12,
     },
     backButton: {
@@ -562,6 +566,18 @@ const styles = StyleSheet.create({
         position: "relative",
     },
     settingsIcon: {
+        width: 30,
+        height: 30,
+    },
+    logoutButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 15,
+        alignItems: "center",
+        justifyContent: "center",
+        position: "relative",
+    },
+    logoutIcon: {
         width: 30,
         height: 30,
     },
@@ -676,32 +692,5 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#4a4459',
         lineHeight: 21,
-    },
-    buttonContainer: {
-        paddingHorizontal: 24,
-        paddingVertical: 14,
-        marginBottom: 72,
-    },
-    signOutButton: {
-        backgroundColor: '#b55d62ff',
-        height: 55,
-        borderRadius: 16,
-        justifyContent: 'center',
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 4,
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 10,
-        elevation: 4,
-    },
-    signOutButtonText: {
-        fontSize: 14,
-        fontFamily: 'Roboto',
-        color: '#ffffff',
-        lineHeight: 21,
-        fontWeight: '500',
     },
 });

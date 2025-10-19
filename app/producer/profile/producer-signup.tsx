@@ -49,7 +49,7 @@ export default function ProducerSignupScreen() {
               text: t('auth.signup.go_to_login', 'Go to Login'),
               onPress: () => {
                 setShowEmailVerification(false);
-                router.replace('/login');
+                router.replace('../../profile/login');
               }
             }
           ]
@@ -83,7 +83,7 @@ export default function ProducerSignupScreen() {
   };
 
   const handleLoginPress = () => {
-    router.push('/login');
+    router.push('../../profile/login');
   };
 
   const handleBackPress = () => {

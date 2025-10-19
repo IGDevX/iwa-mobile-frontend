@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from "react-native";
 import { useTranslation } from "react-i18next";
 import { router } from "expo-router";
 import { useCart } from "../../../components/CartContext";
+import { AuthContext } from "../../../components/AuthContext";
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 interface DeliveryOption {
@@ -32,7 +33,20 @@ const deliveryOptions: DeliveryOption[] = [
 export default function DeliveryModeScreen() {
   const { t } = useTranslation();
   const { state } = useCart();
+  const { state: authState } = useContext(AuthContext);
   const [selectedDeliveryMode, setSelectedDeliveryMode] = useState<string>('pickup');
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authState.isSignedIn) {
+      router.replace('../../profile/login');
+    }
+  }, [authState.isSignedIn]);
+
+  // Don't render anything if not authenticated
+  if (!authState.isSignedIn) {
+    return null;
+  }
 
   const handleBack = () => {
     router.back();

@@ -207,7 +207,17 @@
     "order_total": "Order total",
     "next": "Next",
     "delivery_note": "You will choose the delivery method in the next step",
-    "checkout": "Proceed to checkout"
+    "checkout": "Proceed to checkout",
+    "login_required_message": "You need to login to access this feature. Would you like to login now?",
+    "item_added": "Item Added",
+    "item_added_message": "{{quantity}} {{unit}} of {{name}} added to cart",
+    "login_required": {
+      "title": "Login Required",
+      "message": "You need to be logged in to add products to your cart. Would you like to login now?",
+      "cart_access": "You must be logged in to access your cart. Please login to continue.",
+      "login": "Login",
+      "cancel": "Cancel"
+    }
   },
   
   "delivery": {
@@ -242,7 +252,32 @@
     "agriculture_bio": "Certified organic farming",
     "no_pesticides": "Grown without pesticides",
     "heritage_variety": "Heritage variety",
-    "daily_harvest": "Daily harvest"
+    "daily_harvest": "Daily harvest",
+    "add_product_title": "Add Product",
+    "product_name": "Product Name",
+    "product_name_placeholder": "Enter product name",
+    "upload_image": "Upload Image",
+    "sale_type": "Sale Type",
+    "unit": "Unit",
+    "weight": "Weight",
+    "price": "Price",
+    "quantity": "Quantity",
+    "packaging": "Packaging",
+    "plastic_free": "Plastic-free",
+    "bag": "Bag",
+    "box": "Box",
+    "delivery_mode": "Delivery Mode",
+    "delivery": "Delivery",
+    "pickup": "Pickup",
+    "fresh_product": "Fresh product",
+    "certifications": "Certifications",
+    "organic": "Organic",
+    "pesticide_free": "Pesticide-free",
+    "heritage": "Heritage",
+    "daily_harvested": "Daily harvested",
+    "origin": "Origin",
+    "origin_placeholder": "Enter origin",
+    "add_product_button": "Add Product"
   },
   
   "confirmation": {
@@ -276,7 +311,8 @@
       "delivered": "Delivered",
       "paid": "Paid",
       "unpaid": "Unpaid",
-      "not_delivered": "Not delivered"
+      "not_delivered": "Not delivered",
+      "refused": "Refused"
     }
   },
   
@@ -339,6 +375,36 @@
   
   "common": {
     "error": "Error",
-    "ok": "OK"
+    "ok": "OK",
+    "cancel": "Cancel"
+  },
+
+  "producer": {
+    "shop": {
+      "my_shop": "My Shop",
+      "edit_mode": "Edit mode",
+      "add_new_category": "Add new category",
+      "category_name": "Category name",
+      "stock": "Stock: {{count}}",
+      "delete_category": "Delete category",
+      "add_product": "Add product"
+    },
+    "cannot_add_own_product": "You cannot add your own products to cart.",
+    "delivery": "Delivery"
+  },
+
+  "dashboard": {
+    "orders": "Orders", 
+    "analytics": "Dashboard",
+    "total_orders": "Total Orders",
+    "revenue": "Revenue",
+    "accepted": "Accepted",
+    "refused": "Refused",
+    "orders_per_day": "Orders per Day",
+    "revenue_breakdown": "Revenue Breakdown",
+    "top_customers": "Top Customers",
+    "chart_placeholder": "Chart visualization",
+    "pie_chart_placeholder": "Pie chart visualization"
   }
 }
+

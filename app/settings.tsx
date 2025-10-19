@@ -480,7 +480,7 @@ const styles = StyleSheet.create({
   deleteButton: {
     height: 45,
     borderRadius: 10,
-    backgroundColor: '#fb2c36',
+    backgroundColor: '#c2295aff',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,

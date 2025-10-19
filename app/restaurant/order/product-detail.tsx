@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, Alert } from "react-native";
 import { useTranslation } from "react-i18next";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCart } from "../../../components/CartContext";
+import { AuthContext } from "../../../components/AuthContext";
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 // Mock producer data
@@ -38,10 +39,16 @@ export default function ProductDetailScreen() {
   const { t } = useTranslation();
   const params = useLocalSearchParams();
   const { addItem, getItemQuantity } = useCart();
+  const { state } = useContext(AuthContext);
   const [quantity, setQuantity] = useState(1);
 
-  // Get current quantity in cart for this product
-  const cartQuantity = getItemQuantity(mockProductDetails.id);
+  // Determine user role
+  const userRole = state.userInfo?.roles?.[0];
+  const isProducer = userRole === 'Producer';
+  const isRestaurantOwner = userRole === 'Restaurant Owner';
+
+  // Get current quantity in cart for this product (only for restaurant owners)
+  const cartQuantity = !isProducer ? getItemQuantity(mockProductDetails.id) : 0;
 
   const handleBack = () => {
     router.back();
@@ -53,6 +60,32 @@ export default function ProductDetailScreen() {
   };
 
   const handleAddToCart = () => {
+    // Producers cannot add their own products to cart
+    if (isProducer) {
+      Alert.alert(
+        t('common.info', 'Information'),
+        t('producer.cannot_add_own_product', 'You cannot add your own products to cart.'),
+        [{ text: t('common.ok', 'OK') }]
+      );
+      return;
+    }
+
+    // Check if user is logged in
+    if (!state.isSignedIn) {
+      Alert.alert(
+        t('auth.login.title', 'Login Required'),
+        t('cart.login_required_message', 'You need to login to add items to cart. Would you like to login now?'),
+        [
+          { text: t('common.cancel', 'Cancel'), style: 'cancel' },
+          {
+            text: t('auth.login.sign_in', 'Login'),
+            onPress: () => router.push('../../profile/login')
+          }
+        ]
+      );
+      return;
+    }
+
     // Add to cart using CartContext
     addItem({
       id: mockProductDetails.id,
@@ -65,7 +98,6 @@ export default function ProductDetailScreen() {
       producerId: 1,
       producerName: mockProducer.name
     });
-
   };
 
   const handleViewShop = () => {
@@ -80,6 +112,27 @@ export default function ProductDetailScreen() {
   };
 
   const handleCartPress = () => {
+    // Producers don't have cart access
+    if (isProducer) {
+      return;
+    }
+
+    // Check if user is logged in
+    if (!state.isSignedIn) {
+      Alert.alert(
+        t('auth.login.title', 'Login Required'),
+        t('cart.login_required_message', 'You need to login to view your cart. Would you like to login now?'),
+        [
+          { text: t('common.cancel', 'Cancel'), style: 'cancel' },
+          {
+            text: t('auth.login.sign_in', 'Login'),
+            onPress: () => router.push('../../profile/login')
+          }
+        ]
+      );
+      return;
+    }
+
     router.push('/restaurant/order/cart');
   };
 
@@ -91,17 +144,20 @@ export default function ProductDetailScreen() {
           <Ionicons name="chevron-back" size={20} color="#4A4459" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.cartButton} onPress={handleCartPress}>
-          <Image
-            source={require('../../../assets/images/icons8-cart-96.png')}
-            style={styles.cartIcon}
-          />
-          {cartQuantity > 0 && (
-            <View style={styles.cartBadge}>
-              <Text style={styles.cartBadgeText}>{cartQuantity}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
+        {/* Only show cart button for restaurant owners */}
+        {!isProducer && (
+          <TouchableOpacity style={styles.cartButton} onPress={handleCartPress}>
+            <Image
+              source={require('../../../assets/images/icons8-cart-96.png')}
+              style={styles.cartIcon}
+            />
+            {state.isSignedIn && cartQuantity > 0 && (
+              <View style={styles.cartBadge}>
+                <Text style={styles.cartBadgeText}>{cartQuantity}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        )}
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -190,19 +246,21 @@ export default function ProductDetailScreen() {
         <View style={{ height: 200 }} />
       </ScrollView>
 
-      {/* Bottom Cart Section */}
-      <View style={styles.bottomSection}>
-        <View style={styles.totalContainer}>
-          <Text style={styles.totalLabel}>{t('product.total')} ({quantity} {mockProductDetails.unit})</Text>
-          <Text style={styles.totalPrice}>{(mockProductDetails.price * quantity).toFixed(2)}€</Text>
-        </View>
+      {/* Bottom Cart Section - Only for Restaurant Owners */}
+      {!isProducer && (
+        <View style={styles.bottomSection}>
+          <View style={styles.totalContainer}>
+            <Text style={styles.totalLabel}>{t('product.total')} ({quantity} {mockProductDetails.unit})</Text>
+            <Text style={styles.totalPrice}>{(mockProductDetails.price * quantity).toFixed(2)}€</Text>
+          </View>
 
-        <TouchableOpacity style={styles.addToCartButton} onPress={handleAddToCart}>
-          <Text style={styles.addToCartText}>
-            {t('product.add_to_cart')}
-          </Text>
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity style={styles.addToCartButton} onPress={handleAddToCart}>
+            <Text style={styles.addToCartText}>
+              {t('product.add_to_cart')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }

@@ -2,10 +2,10 @@ import React, { useState, useContext } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert, Keyboard, Image } from 'react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { AuthContext } from '../components/AuthContext';
-import Button from '../components/Button';
+import { AuthContext } from '../../components/AuthContext';
+import Button from '../../components/Button';
 import { TextInput } from 'react-native';
-import { isUserProfileComplete, convertKeycloakAttributesToProfile } from '../utils/profileUtils';
+import { isUserProfileComplete, convertKeycloakAttributesToProfile } from '../../utils/profileUtils';
 
 export default function CompletePage() {
     const { t } = useTranslation();
@@ -99,10 +99,11 @@ export default function CompletePage() {
             const success = await saveProfileToKeycloak(formData);
 
             if (success) {
+                const redirectPath = isProducer ? '/producer/home/producer-shop' : '/restaurant/home/restaurant-home';
                 Alert.alert(
                     t('profile.complete.success.title'),
                     t('profile.complete.success.message'),
-                    [{ text: t('common.ok'), onPress: () => router.replace('/restaurant/home/restaurant-home') }]
+                    [{ text: t('common.ok'), onPress: () => router.replace(redirectPath) }]
                 );
             } else {
                 Alert.alert(t('common.error'), t('profile.complete.error.save_failed'));
@@ -242,12 +243,13 @@ export default function CompletePage() {
     };
 
     const handleSkip = () => {
+        const redirectPath = isProducer ? '/producer/home/producer-shop' : '/restaurant/home/restaurant-home';
         Alert.alert(
             t('profile.complete.skip_confirmation.title'),
             t('profile.complete.skip_confirmation.message'),
             [
                 { text: t('profile.complete.skip_confirmation.cancel'), style: 'cancel' },
-                { text: t('profile.complete.skip_confirmation.continue'), onPress: () => router.replace('/restaurant/home/restaurant-home') }
+                { text: t('profile.complete.skip_confirmation.continue'), onPress: () => router.replace(redirectPath) }
             ]
         );
     };
@@ -255,7 +257,7 @@ export default function CompletePage() {
     if (initialLoading) {
         return (
             <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-                <Image source={require('../assets/images/icons8-loading-96.png')} style={[styles.icon]}/>
+                <Image source={require('../../assets/images/icons8-loading-96.png')} style={[styles.icon]}/>
                 <Text style={styles.title}>{t('profile.loading', 'Loading profile...')}</Text>
             </View>
         );
