@@ -2,7 +2,7 @@
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
-## Get started
+## Get started to launch the app
 
 1. Install dependencies
 
@@ -15,6 +15,15 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    ```bash
    npx expo start
    ```
+
+3. Use the following credentials for testing only
+Producer : 
+   username : poomedyrungen@gmail.com
+   pwd : test
+
+Restauraqnt Owner :
+   username : pourungen@gmail.com
+   pwd : test
 
 ## Git
 
