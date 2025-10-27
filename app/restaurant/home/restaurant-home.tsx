@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import Button from "../../../components/Button";
 import { router } from "expo-router";
 import Ionicons from "@expo/vector-icons/build/Ionicons";
+import { useNotifications } from "../../../hooks/useNotifications";
 
 const { width } = Dimensions.get("window");
 
@@ -46,6 +47,11 @@ const mockProducts = [
 
 export default function RestaurantHomeScreen() {
   const { t } = useTranslation();
+  const { hasUnreadNotifications } = useNotifications();
+
+  const handleNotificationPress = () => {
+    router.push('/notification');
+  };
 
   // Optimized function to render pickup mode icons
   const renderPickupModeIcons = (pickupMode: string, distance: string) => {
@@ -135,11 +141,17 @@ export default function RestaurantHomeScreen() {
         
         <Image source={{ uri: "https://placehold.co/50x50" }} style={styles.profileImage} />
         
-        <TouchableOpacity style={styles.notificationButton}>
+        <TouchableOpacity 
+          style={styles.notificationButton}
+          onPress={handleNotificationPress}
+        >
           <Image 
             source={require("../../../assets/images/icons8-bell-96.png")} 
             style={{ width: 30, height: 30, marginRight: 8 }} 
           />
+          {hasUnreadNotifications && (
+            <View style={styles.notificationDot} />
+          )}
         </TouchableOpacity>
       </View>
 
@@ -228,10 +240,10 @@ const styles = StyleSheet.create({
   notificationDot: {
     position: "absolute",
     top: -2,
-    right: -2,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    right: 5,
+    width: 15,
+    height: 15,
+    borderRadius: 8,
     backgroundColor: "#E07A5F",
   },
 

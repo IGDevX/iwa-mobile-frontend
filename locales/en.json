@@ -376,7 +376,8 @@
   "common": {
     "error": "Error",
     "ok": "OK",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "delete": "Delete"
   },
 
   "producer": {
@@ -405,6 +406,70 @@
     "top_customers": "Top Customers",
     "chart_placeholder": "Chart visualization",
     "pie_chart_placeholder": "Pie chart visualization"
+  },
+
+  "notifications": {
+    "title": "Notifications",
+    "clear_inbox": "Clear inbox",
+    "load_more": "Load more",
+    "restaurant_space": "Restaurant Space",
+    "producer_space": "Producer Space",
+    "pay": "Pay",
+    "accept": "Accept",
+    "refuse": "Refuse", 
+    "extend": "Extend",
+    
+    "restaurant": {
+      "new_order_registered": "New order registered",
+      "order_accepted": "Order accepted",
+      "order_refused": "Order refused", 
+      "payment_due": "Payment due in 2 days",
+      "pickup_reminder": "Order to pickup tomorrow",
+      "delivery_reminder": "Order to be delivered tomorrow",
+      "profile_incomplete": "Incomplete profile",
+      "certification_expired": "Certification expired",
+      "new_feature": "New feature",
+      "message_received": "Message received",
+      
+      "new_order_text": "Your organic vegetable order at Ferme du Soleil has been successfully registered.",
+      "order_accepted_text": "Ferme Bio du Soleil has accepted your vegetable order (25€). Scheduled for October 15th.",
+      "order_refused_text": "Producer Martin refused your cheese order. Insufficient stock.",
+      "payment_due_text": "Your order at Ferme des Champs (32€) must be paid before October 12th.",
+      "pickup_reminder_text": "Don't forget to pick up your order at Ferme Bio du Soleil at 10am.",
+      "delivery_reminder_text": "Your dairy order will be delivered tomorrow between 2pm and 4pm.",
+      "profile_incomplete_text": "Your profile is 60% complete. Complete it for more visibility with producers.",
+      "certification_expired_text": "Your Master Restaurant certification expires in 45 days. Remember to renew it.",
+      "new_feature_text": "Discover the new producer rating system in the application.",
+      "message_received_text": "Ferme Bio du Soleil sent you a message about your last order."
+    },
+
+    "producer": {
+      "new_order_request": "New order request",
+      "payment_due_soon": "Payment due soon", 
+      "unpaid_order_expired": "Unpaid order expired",
+      "stock_shortage": "Item out of stock",
+      "item_expiring": "Item expiring soon",
+      "profile_incomplete": "Incomplete profile",
+      "delivery_reminder": "Delivery reminder for tomorrow",
+      "pickup_reminder": "Customer pickup reminder",
+      "certification_expired": "Certification expired",
+      "new_feature": "New feature",
+      
+      "new_order_text": "Restaurant Le Gourmet wants to order 10kg of organic tomatoes for October 15th.",
+      "payment_due_text": "Payment from Restaurant Le Bistrot (45€) is due in 3 days.",
+      "unpaid_order_text": "Restaurant Le Comptoir's order (78€) expired without payment.",
+      "stock_shortage_text": "Your organic potatoes are out of stock. Remember to restock.",
+      "item_expiring_text": "Your lavender honey will be automatically removed in 5 days.",
+      "profile_incomplete_text": "Your profile is 65% complete. Complete it to improve your visibility.",
+      "delivery_reminder_text": "Delivery scheduled tomorrow at 2pm at Restaurant Le Gourmet - 15kg organic vegetables.",
+      "pickup_reminder_text": "Restaurant Le Bistrot picks up their order tomorrow at 10am at point of sale.",
+      "certification_expired_text": "Your organic certification expires in 30 days. Remember to renew it.",
+      "new_feature_text": "Discover advanced statistics in your dashboard."
+    },
+
+    "login_required_message": "You need to login to access notifications. Would you like to login now?",
+    "delete_notification": "Delete Notification",
+    "delete_confirmation": "Are you sure you want to delete this notification?"
   }
 }
 

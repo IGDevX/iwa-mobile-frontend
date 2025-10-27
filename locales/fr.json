@@ -376,7 +376,8 @@
   "common": {
     "error": "Erreur",
     "ok": "OK",
-    "cancel": "Annuler"
+    "cancel": "Annuler",
+    "delete": "Supprimer"
   },
 
   "producer": {
@@ -405,5 +406,69 @@
     "top_customers": "Meilleurs Clients",
     "chart_placeholder": "Visualisation graphique",
     "pie_chart_placeholder": "Graphique en secteurs"
+  },
+
+  "notifications": {
+    "title": "Notifications",
+    "clear_inbox": "Vider la boîte de réception",
+    "load_more": "Charger plus",
+    "restaurant_space": "Espace Restaurateur",
+    "producer_space": "Espace Producteur",
+    "pay": "Payer",
+    "accept": "Accepter",
+    "refuse": "Refuser", 
+    "extend": "Prolonger",
+    
+    "restaurant": {
+      "new_order_registered": "Nouvelle commande enregistrée",
+      "order_accepted": "Commande acceptée",
+      "order_refused": "Commande refusée", 
+      "payment_due": "Paiement dû dans 2 jours",
+      "pickup_reminder": "Commande à retirer demain",
+      "delivery_reminder": "Commande livrée demain",
+      "profile_incomplete": "Profil incomplet",
+      "certification_expired": "Certification expirée",
+      "new_feature": "Nouvelle fonctionnalité",
+      "message_received": "Message reçu",
+      
+      "new_order_text": "Votre commande de légumes bio chez Ferme du Soleil a été enregistrée avec succès.",
+      "order_accepted_text": "Ferme Bio du Soleil a accepté votre commande de légumes (25€). Prévue pour le 15 octobre.",
+      "order_refused_text": "Producteur Martin a refusé votre commande de fromages. Stock insuffisant.",
+      "payment_due_text": "Votre commande chez Ferme des Champs (32€) doit être payée avant le 12 octobre.",
+      "pickup_reminder_text": "N'oubliez pas de récupérer votre commande chez Ferme Bio du Soleil à 10h.",
+      "delivery_reminder_text": "Votre commande de produits laitiers sera livrée demain entre 14h et 16h.",
+      "profile_incomplete_text": "Votre profil est complété à 60%. Complétez-le pour plus de visibilité auprès des producteurs.",
+      "certification_expired_text": "Votre certification Maître Restaurateur expire dans 45 jours. Pensez à la renouveler.",
+      "new_feature_text": "Découvrez le nouveau système de notation des producteurs dans l'application.",
+      "message_received_text": "Ferme Bio du Soleil vous a envoyé un message concernant votre dernière commande."
+    },
+
+    "producer": {
+      "new_order_request": "Nouvelle demande de commande",
+      "payment_due_soon": "Échéance de paiement proche", 
+      "unpaid_order_expired": "Commande non payée arrivée à échéance",
+      "stock_shortage": "Article en rupture de stock",
+      "item_expiring": "Article arrive à expiration",
+      "profile_incomplete": "Profil incomplet",
+      "delivery_reminder": "Rappel livraison prévue demain",
+      "pickup_reminder": "Client vient chercher commande",
+      "certification_expired": "Certification expirée",
+      "new_feature": "Nouvelle fonctionnalité",
+      
+      "new_order_text": "Restaurant Le Gourmet souhaite commander 10kg de tomates bio pour le 15 octobre.",
+      "payment_due_text": "Le paiement de Restaurant Le Bistrot (45€) arrive à échéance dans 3 jours.",
+      "unpaid_order_text": "La commande de Restaurant Le Comptoir (78€) est arrivée à échéance sans paiement.",
+      "stock_shortage_text": "Vos pommes de terre bio sont en rupture. Pensez à réapprovisionner votre stock.",
+      "item_expiring_text": "Votre miel de lavande sera retiré automatiquement dans 5 jours.",
+      "profile_incomplete_text": "Votre profil est complété à 65%. Complétez-le pour améliorer votre visibilité.",
+      "delivery_reminder_text": "Livraison prévue demain à 14h chez Restaurant Le Gourmet - 15kg de légumes bio.",
+      "pickup_reminder_text": "Restaurant Le Bistrot vient chercher sa commande demain à 10h en point de vente.",
+      "certification_expired_text": "Votre certification bio expire dans 30 jours. Pensez à la renouveler.",
+      "new_feature_text": "Découvrez les statistiques avancées dans votre tableau de bord."
+    },
+
+    "login_required_message": "Vous devez vous connecter pour accéder aux notifications. Voulez-vous vous connecter maintenant ?",
+    "delete_notification": "Supprimer la Notification",
+    "delete_confirmation": "Êtes-vous sûr de vouloir supprimer cette notification ?"
   }
 }

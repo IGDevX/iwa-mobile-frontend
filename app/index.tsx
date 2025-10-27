@@ -15,7 +15,7 @@ const CARD_SIZE = width * 0.35;
 
 export default function LanguageSelection() {
   const { t } = useTranslation();
-  const { state } = useContext(AuthContext);
+  const { state, isLoading } = useContext(AuthContext);
   const [selectedLang, setSelectedLang] = useState(i18n.language);
   const [modalVisible, setModalVisible] = useState(false);
   const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
@@ -32,11 +32,11 @@ export default function LanguageSelection() {
 
   // Handle navigation after auth state changes
   useEffect(() => {
-    if (isFirstLaunch === false) {
-      // Not first launch, redirect based on auth state
+    if (!isLoading && isFirstLaunch === false) {
+      // Not first launch and auth state has loaded, redirect based on auth state
       redirectBasedOnAuthState();
     }
-  }, [isFirstLaunch, state.isSignedIn]);
+  }, [isFirstLaunch, state.isSignedIn, isLoading]);
 
   const checkFirstLaunch = async () => {
     try {
@@ -103,8 +103,8 @@ export default function LanguageSelection() {
     i18n.changeLanguage(code);
   };
 
-  // Show loading or nothing while checking first launch
-  if (isFirstLaunch === null) {
+  // Show loading or nothing while checking first launch or auth state
+  if (isFirstLaunch === null || isLoading) {
     return (
       <View style={[styles.container, { justifyContent: 'center' }]}>
         <Image source={require("../assets/images/logo.png")} style={styles.logo} />
@@ -118,7 +118,7 @@ export default function LanguageSelection() {
     return (
       <View style={[styles.container, { justifyContent: 'center' }]}>
         <Image source={require("../assets/images/logo.png")} style={styles.logo} />
-        <Text style={styles.subtitle}>Loading...</Text>
+        <Text style={styles.subtitle}>Redirecting...</Text>
       </View>
     );
   }

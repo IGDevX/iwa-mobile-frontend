@@ -1,5 +1,6 @@
 import React, { createContext, useMemo, useReducer, useEffect, ReactNode } from 'react'
 import { makeRedirectUri, useAuthRequest, useAutoDiscovery } from 'expo-auth-session'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { isUserProfileComplete, convertKeycloakAttributesToProfile, getMissingProfileFields } from '../utils/profileUtils'
 
 interface UserInfo {
@@ -26,10 +27,11 @@ interface AuthContextType {
   signOut: () => Promise<void>
   hasRole: (role: string) => boolean
   checkProfileCompletion: () => Promise<{isComplete: boolean, missingFields: string[]}>
+  isLoading: boolean
 }
 
 interface AuthAction {
-  type: 'SIGN_IN' | 'USER_INFO' | 'SIGN_OUT'
+  type: 'SIGN_IN' | 'USER_INFO' | 'SIGN_OUT' | 'RESTORE_TOKEN' | 'SET_LOADING'
   payload?: any
 }
 
@@ -40,6 +42,11 @@ const initialState: AuthState = {
   userInfo: null,
 }
 
+// AsyncStorage keys
+const AUTH_TOKEN_KEY = '@auth_token'
+const AUTH_ID_TOKEN_KEY = '@auth_id_token'
+const AUTH_USER_INFO_KEY = '@auth_user_info'
+
 const AuthContext = createContext<AuthContextType>({
   state: initialState,
   signIn: () => { },
@@ -47,7 +54,8 @@ const AuthContext = createContext<AuthContextType>({
   signUpWithCredentials: async () => ({ success: false }),
   signOut: async () => { },
   hasRole: (role: string) => false,
-  checkProfileCompletion: async () => ({ isComplete: false, missingFields: [] })
+  checkProfileCompletion: async () => ({ isComplete: false, missingFields: [] }),
+  isLoading: true
 })
 
 // Helper function to get Keycloak admin token
@@ -98,6 +106,9 @@ const AuthContext = createContext<AuthContextType>({
     },
     discovery
   )
+
+  const [isLoading, setIsLoading] = React.useState(true)
+
   const [authState, dispatch] = useReducer((previousState: AuthState, action: AuthAction): AuthState => {
     switch (action.type) {
       case 'SIGN_IN':
@@ -119,12 +130,69 @@ const AuthContext = createContext<AuthContextType>({
             sub: action.payload.sub // Keycloak user ID
           },
         }
+      case 'RESTORE_TOKEN':
+        return {
+          ...previousState,
+          isSignedIn: true,
+          accessToken: action.payload.accessToken,
+          idToken: action.payload.idToken,
+          userInfo: action.payload.userInfo,
+        }
       case 'SIGN_OUT':
         return initialState
       default:
         return previousState
     }
   }, initialState)
+
+  // Save authentication data to AsyncStorage
+  const saveAuthData = async (accessToken: string, idToken: string, userInfo: UserInfo) => {
+    try {
+      await AsyncStorage.multiSet([
+        [AUTH_TOKEN_KEY, accessToken],
+        [AUTH_ID_TOKEN_KEY, idToken],
+        [AUTH_USER_INFO_KEY, JSON.stringify(userInfo)]
+      ])
+    } catch (error) {
+      console.error('Error saving auth data:', error)
+    }
+  }
+
+  // Clear authentication data from AsyncStorage
+  const clearAuthData = async () => {
+    try {
+      await AsyncStorage.multiRemove([AUTH_TOKEN_KEY, AUTH_ID_TOKEN_KEY, AUTH_USER_INFO_KEY])
+    } catch (error) {
+      console.error('Error clearing auth data:', error)
+    }
+  }
+
+  // Restore authentication state on app startup
+  useEffect(() => {
+    const restoreAuthState = async () => {
+      try {
+        const [[, accessToken], [, idToken], [, userInfoString]] = await AsyncStorage.multiGet([
+          AUTH_TOKEN_KEY,
+          AUTH_ID_TOKEN_KEY,
+          AUTH_USER_INFO_KEY
+        ])
+
+        if (accessToken && idToken && userInfoString) {
+          const userInfo = JSON.parse(userInfoString)
+          dispatch({
+            type: 'RESTORE_TOKEN',
+            payload: { accessToken, idToken, userInfo }
+          })
+        }
+      } catch (error) {
+        console.error('Error restoring auth state:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    restoreAuthState()
+  }, [])
 
   useEffect(() => {
     const getToken = async ({ code, codeVerifier, redirectUri }: { 
@@ -205,6 +273,13 @@ const AuthContext = createContext<AuthContextType>({
     }
   }, [authState.accessToken, authState.isSignedIn])
 
+  // Save auth data when user info is complete
+  useEffect(() => {
+    if (authState.isSignedIn && authState.accessToken && authState.idToken && authState.userInfo) {
+      saveAuthData(authState.accessToken, authState.idToken, authState.userInfo)
+    }
+  }, [authState.isSignedIn, authState.accessToken, authState.idToken, authState.userInfo])
+
   const authContext = useMemo(
     () => ({
       state: authState,
@@ -214,6 +289,16 @@ const AuthContext = createContext<AuthContextType>({
         dispatch({ type: 'SIGN_IN', payload: tokens });
         // Then dispatch user info
         dispatch({ type: 'USER_INFO', payload: userInfo });
+        // Save to storage immediately since we have both tokens and userInfo
+        const processedUserInfo = {
+          username: userInfo.preferred_username,
+          givenName: userInfo.given_name,
+          familyName: userInfo.family_name,
+          email: userInfo.email,
+          roles: userInfo.roles || [],
+          sub: userInfo.sub
+        };
+        saveAuthData(tokens.access_token, tokens.id_token, processedUserInfo);
       },
       signUpWithCredentials: async (email: string, password: string, role: string) => {
         try {
@@ -408,6 +493,7 @@ const AuthContext = createContext<AuthContextType>({
           await fetch(
             `${process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG}/protocol/openid-connect/logout?id_token_hint=${idToken}`
           )
+          await clearAuthData()
           dispatch({ type: 'SIGN_OUT' })
         } catch (e) {
           console.warn(e)
@@ -458,8 +544,9 @@ const AuthContext = createContext<AuthContextType>({
           return { isComplete: false, missingFields: ['Error checking profile'] };
         }
       },
+      isLoading,
     }),
-    [authState, promptAsync]
+    [authState, promptAsync, isLoading]
   )
 
   return (

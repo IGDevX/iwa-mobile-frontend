@@ -1,10 +1,21 @@
-import React, { useContext, useState } from "react";
-import { Text, Image, StyleSheet, ScrollView, TouchableOpacity, View, Alert, Switch, TextInput } from "react-native";
+import React, { useState, useContext } from "react";
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  TouchableOpacity, 
+  ScrollView, 
+  Image, 
+  Alert, 
+  TextInput,
+  Switch
+} from "react-native";
 import { useTranslation } from "react-i18next";
-import { router, useLocalSearchParams } from "expo-router";
-import { useCart } from "../../../components/CartContext";
-import { AuthContext } from "../../../components/AuthContext";
+import { useLocalSearchParams, router } from "expo-router";
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useCart } from '../../../components/CartContext';
+import { AuthContext } from '../../../components/AuthContext';
+import { useNotifications } from '../../../hooks/useNotifications';
 
 // Mock producer data
 const mockProducer = {
@@ -79,6 +90,7 @@ export default function ProducerShopScreen() {
   const params = useLocalSearchParams();
   const { state } = useCart();
   const { state: authState } = useContext(AuthContext);
+  const { hasUnreadNotifications } = useNotifications();
 
   // Edit mode state
   const [isEditMode, setIsEditMode] = useState(false);
@@ -106,6 +118,10 @@ export default function ProducerShopScreen() {
     }
 
     router.push('/restaurant/order/cart');
+  };
+
+  const handleNotificationPress = () => {
+    router.push('/notification');
   };
 
   const handleProductPress = (product: any) => {
@@ -271,11 +287,17 @@ export default function ProducerShopScreen() {
               />
               <Text style={styles.editModeText}>{t('producer.shop.edit_mode', 'Edit mode')}</Text>
             </View>
-            <TouchableOpacity style={{...styles.notificationButton, marginLeft: 20, marginRight: -18 }}>
+            <TouchableOpacity 
+              style={{ ...styles.notificationButton, marginLeft: 20, marginRight: -18 }}
+              onPress={handleNotificationPress}
+            >
               <Image
                 source={require("../../../assets/images/icons8-bell-96.png")}
                 style={{ width: 30, height: 30, marginRight: 8 }}
               />
+              {hasUnreadNotifications && (
+                <View style={styles.notificationDot} />
+              )}
             </TouchableOpacity>
           </View>
         )}
@@ -549,10 +571,10 @@ const styles = StyleSheet.create({
   notificationDot: {
     position: "absolute",
     top: -2,
-    right: -2,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    right: 5,
+    width: 15,
+    height: 15,
+    borderRadius: 8,
     backgroundColor: "#E07A5F",
   },
 
