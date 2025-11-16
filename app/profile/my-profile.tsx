@@ -1,54 +1,49 @@
-import React, { useState, useContext, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image, Animated } from 'react-native';
-import { useTranslation } from 'react-i18next';
-import { AuthContext } from '../../components/AuthContext';
-import { router } from 'expo-router';
-import { convertKeycloakAttributesToProfile } from '../../utils/profileUtils';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { router, useFocusEffect } from 'expo-router';
+import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Alert, Animated, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { AuthContext } from '../../components/AuthContext';
+import { getCompleteUserProfile } from '../../services/account';
 
 interface ProfileData {
     displayName: string;
     responsibleName: string;
     phoneNumber: string;
     address: string;
-    profession: string;
     email: string;
 }
 
-// Mock data for restaurant owner
-const mockRestaurantData = {
-    biography: "Restaurant gastronomique au cœur de Paris, nous proposons une cuisine française moderne avec des produits locaux et de saison. Notre chef étoilé crée des plats d'exception dans une ambiance raffinée.",
-    serviceType: "Restaurant gastronomique",
-    cuisineType: "Cuisine française moderne",
-    installationYear: "2018",
-    employeesCount: "8-12 employés",
-    hygieneCertifications: ["HACCP", "Certification Hygiène Alimentaire"],
-    awards: ["1 étoile Michelin", "Trophée du Meilleur Restaurant 2023"],
-    website: "www.restaurant-le-gourmet.fr",
-    socialNetworks: {
-        facebook: "restaurantlegourmet",
-        instagram: "legourmet_paris",
-        twitter: "gourmetparis"
-    }
-};
+interface AccountServiceData {
+    biography?: string;
+    website?: string;
+    facebook?: string;
+    instagram?: string;
+    linkedin?: string;
+    // Producer specific
+    professions?: Array<{
+        id: number;
+        code?: string;
+        nameEn?: string;
+        nameFr?: string;
+    }>;
+    siret?: string;
+    organizationType?: string;
+    installationYear?: number;
+    employeesCount?: number;
+    // Restaurant specific
+    serviceType?: string;
+    cuisineType?: string;
+    hygieneCertifications?: string;
+    awards?: string;
+}
 
-// Mock data for producer
-const mockProducerData = {
-    biography: "Ferme familiale depuis 3 générations, spécialisée dans la production de légumes bio et de fruits de saison. Nous cultivons nos produits dans le respect de l'environnement et des traditions agricoles.",
-    professions: ["Maraîcher", "Producteur de fruits"],
-    siret: "12345678901234",
-    organizationType: "Exploitation agricole individuelle",
-    productTypes: ["Légumes bio", "Fruits de saison", "Aromates"],
-    installationYear: "2015",
-    employeesCount: "3-5 employés",
-    certifications: ["Agriculture Biologique", "Demeter", "Label Rouge"],
-    website: "www.ferme-bio-soleil.fr",
-    socialNetworks: {
-        facebook: "fermebiosoleil",
-        instagram: "ferme_bio_soleil",
-        twitter: "fermesoleil"
-    }
-};
+// Social networks type
+interface SocialNetworks {
+    facebook?: string;
+    instagram?: string;
+    linkedin?: string;
+}
 
 export default function ProfilePage() {
     const { t } = useTranslation();
@@ -58,9 +53,9 @@ export default function ProfilePage() {
         responsibleName: '',
         phoneNumber: '',
         address: '',
-        profession: '',
         email: '',
     });
+    const [accountServiceData, setAccountServiceData] = useState<AccountServiceData>({});
     const [loading, setLoading] = useState(true);
     const rotateValue = useRef(new Animated.Value(0)).current;
 
@@ -91,20 +86,26 @@ export default function ProfilePage() {
     );
 
     // Helper component for social networks
-    const SocialNetworks = ({ networks }: { networks: any }) => (
+    const SocialNetworks = ({ networks }: { networks: SocialNetworks }) => (
         <View style={styles.socialContainer}>
-            <View style={styles.socialItem}>
-                <Ionicons name="logo-facebook" size={16} color="#4A4459" />
-                <Text style={styles.socialText}>{networks.facebook}</Text>
-            </View>
-            <View style={styles.socialItem}>
-                <Ionicons name="logo-instagram" size={16} color="#4A4459" />
-                <Text style={styles.socialText}>{networks.instagram}</Text>
-            </View>
-            <View style={styles.socialItem}>
-                <Ionicons name="logo-twitter" size={16} color="#4A4459" />
-                <Text style={styles.socialText}>{networks.twitter}</Text>
-            </View>
+            {networks.facebook && (
+                <View style={styles.socialItem}>
+                    <Ionicons name="logo-facebook" size={16} color="#4A4459" />
+                    <Text style={styles.socialText}>{networks.facebook}</Text>
+                </View>
+            )}
+            {networks.instagram && (
+                <View style={styles.socialItem}>
+                    <Ionicons name="logo-instagram" size={16} color="#4A4459" />
+                    <Text style={styles.socialText}>{networks.instagram}</Text>
+                </View>
+            )}
+            {networks.linkedin && (
+                <View style={styles.socialItem}>
+                    <Ionicons name="logo-twitter" size={16} color="#4A4459" />
+                    <Text style={styles.socialText}>{networks.linkedin}</Text>
+                </View>
+            )}
         </View>
     );
 
@@ -112,6 +113,18 @@ export default function ProfilePage() {
     useEffect(() => {
         loadProfileData();
     }, [state.userInfo]);
+
+    // Reload profile data when screen comes into focus (e.g., after editing)
+    useFocusEffect(
+        useCallback(() => {
+            loadProfileData();
+        }, [state.userInfo])
+    );
+
+    // Prefer professions coming from Account Service (array of objects). If none, show mock data for producers.
+    const professionsToShow = (accountServiceData?.professions && accountServiceData.professions.length > 0)
+        ? accountServiceData.professions.map(p => p.nameFr || p.nameEn || p.code || String(p.id))
+        : [];
 
     // Animation for loading icon
     useEffect(() => {
@@ -132,7 +145,7 @@ export default function ProfilePage() {
         }
     }, [loading, rotateValue]);
 
-    // Function to load profile data from Keycloak
+    // Function to load profile data from Keycloak + Account Service
     const loadProfileData = async () => {
         try {
             if (!state.userInfo?.sub) {
@@ -140,43 +153,32 @@ export default function ProfilePage() {
                 return;
             }
 
-            const adminToken = await getKeycloakAdminToken();
-            if (!adminToken) {
-                console.warn('Could not get admin token to load profile');
-                setLoading(false);
-                return;
-            }
+            const keycloakId = state.userInfo.sub;
 
-            const targetRealm = process.env.EXPO_PUBLIC_KEYCLOAK_REALM || 'marche-conclu';
-            const userId = state.userInfo.sub;
+            // Use the combined function to get both Keycloak and Account Service data
+            const completeProfile = await getCompleteUserProfile(keycloakId, getKeycloakAdminToken);
 
-            const response = await fetch(
-                `${process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG}/admin/realms/${targetRealm}/users/${userId}`,
-                {
-                    headers: {
-                        'Authorization': `Bearer ${adminToken}`,
-                        'Accept': 'application/json',
-                    }
-                }
-            );
+            // Set Keycloak data (general information)
+            setProfileData({
+                displayName: completeProfile.keycloak.displayName || '',
+                responsibleName: completeProfile.keycloak.responsibleName || '',
+                phoneNumber: completeProfile.keycloak.phoneNumber || '',
+                address: completeProfile.keycloak.address || '',
+                email: completeProfile.keycloak.email || '',
+            });
 
-            if (response.ok) {
-                const userData = await response.json();
-                const attributes = userData.attributes || {};
+            // Set Account Service data (business-specific information)
+            setAccountServiceData(completeProfile.accountService);
 
-                // Load profile data using utility function
-                const loadedProfileData = convertKeycloakAttributesToProfile(attributes);
-
-                // Set profile data with email from main user data
-                setProfileData({
-                    ...loadedProfileData,
-                    email: userData.email || userData.username || 'Not provided'
-                });
-            } else {
-                console.warn('Failed to load user profile data');
-            }
+            console.log('Profile loaded successfully:', completeProfile);
+            console.log('Account Service data:', completeProfile.accountService);
+            console.log('Professions data:', completeProfile.accountService?.professions);
         } catch (error) {
             console.error('Error loading profile:', error);
+            Alert.alert(
+                t('common.error', 'Error'),
+                t('profile.error.load_failed', 'Failed to load profile data')
+            );
         } finally {
             setLoading(false);
         }
@@ -339,18 +341,6 @@ export default function ProfilePage() {
                     </Text>
                 </View>
 
-                {/* Professions for Producer OR Address for both */}
-                {isProducer ? (
-                    <FieldWithIcon
-                        icon="briefcase-outline"
-                        label={t('profile.professions')}
-                        value=""
-                    />
-                ) : null}
-                {isProducer && (
-                    <TagsList tags={mockProducerData.professions} />
-                )}
-
                 {/* Address */}
                 <FieldWithIcon
                     icon="location-outline"
@@ -379,7 +369,7 @@ export default function ProfilePage() {
                         {t('profile.about')}
                     </Text>
                     <Text style={styles.fieldValue}>
-                        {isProducer ? mockProducerData.biography : mockRestaurantData.biography}
+                        {accountServiceData.biography || t('profile.not_provided', 'Non renseigné')}
                     </Text>
                 </View>
             </View>
@@ -395,48 +385,47 @@ export default function ProfilePage() {
                             </Text>
                         </View>
 
-                        <View style={styles.infoField}>
-                            <Text style={styles.fieldLabel}>{t('profile.siret')}</Text>
-                            <Text style={styles.fieldValue}>{mockProducerData.siret}</Text>
-                        </View>
+                        {accountServiceData.siret && (
+                            <View style={styles.infoField}>
+                                <Text style={styles.fieldLabel}>{t('profile.siret')}</Text>
+                                <Text style={styles.fieldValue}>{accountServiceData.siret}</Text>
+                            </View>
+                        )}
 
-                        <View style={styles.infoField}>
-                            <Text style={styles.fieldLabel}>{t('profile.organization_type')}</Text>
-                            <Text style={styles.fieldValue}>{mockProducerData.organizationType}</Text>
-                        </View>
+                        {accountServiceData.organizationType && (
+                            <View style={styles.infoField}>
+                                <Text style={styles.fieldLabel}>{t('profile.organization_type')}</Text>
+                                <Text style={styles.fieldValue}>{accountServiceData.organizationType}</Text>
+                            </View>
+                        )}
 
-                        <View style={styles.infoField}>
-                            <Text style={styles.fieldLabel}>{t('profile.product_types')}</Text>
-                        </View>
-                        <TagsList tags={mockProducerData.productTypes} />
+                        {/* Professions */}
+                        {professionsToShow.length > 0 && (
+                            <>
+                                <FieldWithIcon
+                                    icon="briefcase-outline"
+                                    label={t('profile.professions', 'Métier(s)')}
+                                    value=""
+                                />
+                                <TagsList tags={professionsToShow} />
+                            </>
+                        )}
 
-                        <FieldWithIcon
-                            icon="calendar-outline"
-                            label={t('profile.installation_year')}
-                            value={mockProducerData.installationYear}
-                        />
+                        {accountServiceData.installationYear && (
+                            <FieldWithIcon
+                                icon="calendar-outline"
+                                label={t('profile.installation_year')}
+                                value={accountServiceData.installationYear.toString()}
+                            />
+                        )}
 
-                        <FieldWithIcon
-                            icon="people-outline"
-                            label={t('profile.employees_count')}
-                            value={mockProducerData.employeesCount}
-                        />
-                    </View>
-
-                    {/* Certifications - Producer */}
-                    <View style={styles.infoSection}>
-                        <View style={styles.sectionHeader}>
-                            <Text style={styles.sectionTitle}>
-                                {t('profile.certifications_labels')}
-                            </Text>
-                        </View>
-
-                        <FieldWithIcon
-                            icon="ribbon-outline"
-                            label={t('profile.certifications')}
-                            value=""
-                        />
-                        <TagsList tags={mockProducerData.certifications} />
+                        {accountServiceData.employeesCount && (
+                            <FieldWithIcon
+                                icon="people-outline"
+                                label={t('profile.employees_count')}
+                                value={accountServiceData.employeesCount.toString()}
+                            />
+                        )}
                     </View>
                 </>
             ) : (
@@ -449,52 +438,70 @@ export default function ProfilePage() {
                             </Text>
                         </View>
 
-                        <FieldWithIcon
-                            icon="restaurant-outline"
-                            label={t('profile.service_type')}
-                            value={mockRestaurantData.serviceType}
-                        />
+                        {accountServiceData.serviceType && (
+                            <FieldWithIcon
+                                icon="restaurant-outline"
+                                label={t('profile.service_type')}
+                                value={accountServiceData.serviceType}
+                            />
+                        )}
 
-                        <View style={styles.infoField}>
-                            <Text style={styles.fieldLabel}>{t('profile.cuisine_type')}</Text>
-                            <Text style={styles.fieldValue}>{mockRestaurantData.cuisineType}</Text>
-                        </View>
+                        {accountServiceData.cuisineType && (
+                            <View style={styles.infoField}>
+                                <Text style={styles.fieldLabel}>{t('profile.cuisine_type')}</Text>
+                                <Text style={styles.fieldValue}>{accountServiceData.cuisineType}</Text>
+                            </View>
+                        )}
 
-                        <FieldWithIcon
-                            icon="calendar-outline"
-                            label={t('profile.installation_year')}
-                            value={mockRestaurantData.installationYear}
-                        />
+                        {accountServiceData.installationYear && (
+                            <FieldWithIcon
+                                icon="calendar-outline"
+                                label={t('profile.installation_year')}
+                                value={accountServiceData.installationYear.toString()}
+                            />
+                        )}
 
-                        <FieldWithIcon
-                            icon="people-outline"
-                            label={t('profile.employees_count')}
-                            value={mockRestaurantData.employeesCount}
-                        />
+                        {accountServiceData.employeesCount && (
+                            <FieldWithIcon
+                                icon="people-outline"
+                                label={t('profile.employees_count')}
+                                value={accountServiceData.employeesCount.toString()}
+                            />
+                        )}
                     </View>
 
                     {/* Certifications and Awards - Restaurant */}
-                    <View style={styles.infoSection}>
-                        <View style={styles.sectionHeader}>
-                            <Text style={styles.sectionTitle}>
-                                {t('profile.certifications')}
-                            </Text>
+                    {(accountServiceData.hygieneCertifications || accountServiceData.awards) && (
+                        <View style={styles.infoSection}>
+                            <View style={styles.sectionHeader}>
+                                <Text style={styles.sectionTitle}>
+                                    {t('profile.certifications')}
+                                </Text>
+                            </View>
+
+                            {accountServiceData.hygieneCertifications && (
+                                <>
+                                    <FieldWithIcon
+                                        icon="shield-checkmark-outline"
+                                        label={t('profile.hygiene_certifications')}
+                                        value=""
+                                    />
+                                    <TagsList tags={accountServiceData.hygieneCertifications.split(', ')} />
+                                </>
+                            )}
+
+                            {accountServiceData.awards && (
+                                <>
+                                    <FieldWithIcon
+                                        icon="trophy-outline"
+                                        label={t('profile.awards')}
+                                        value=""
+                                    />
+                                    <TagsList tags={accountServiceData.awards.split(', ')} />
+                                </>
+                            )}
                         </View>
-
-                        <FieldWithIcon
-                            icon="shield-checkmark-outline"
-                            label={t('profile.hygiene_certifications')}
-                            value=""
-                        />
-                        <TagsList tags={mockRestaurantData.hygieneCertifications} />
-
-                        <FieldWithIcon
-                            icon="trophy-outline"
-                            label={t('profile.awards')}
-                            value=""
-                        />
-                        <TagsList tags={mockRestaurantData.awards} />
-                    </View>
+                    )}
                 </>
             )}
 
@@ -506,16 +513,26 @@ export default function ProfilePage() {
                     </Text>
                 </View>
 
-                <FieldWithIcon
-                    icon="globe-outline"
-                    label={t('profile.website')}
-                    value={isProducer ? mockProducerData.website : mockRestaurantData.website}
-                />
+                {accountServiceData.website && (
+                    <FieldWithIcon
+                        icon="globe-outline"
+                        label={t('profile.website')}
+                        value={accountServiceData.website}
+                    />
+                )}
 
-                <View style={styles.infoField}>
-                    <Text style={styles.fieldLabel}>{t('profile.social_networks')}</Text>
-                </View>
-                <SocialNetworks networks={isProducer ? mockProducerData.socialNetworks : mockRestaurantData.socialNetworks} />
+                {(accountServiceData.facebook || accountServiceData.instagram || accountServiceData.linkedin) && (
+                    <>
+                        <View style={styles.infoField}>
+                            <Text style={styles.fieldLabel}>{t('profile.social_networks')}</Text>
+                        </View>
+                        <SocialNetworks networks={{
+                            facebook: accountServiceData.facebook,
+                            instagram: accountServiceData.instagram,
+                            linkedin: accountServiceData.linkedin,
+                        }} />
+                    </>
+                )}
             </View>
         </ScrollView>
     );

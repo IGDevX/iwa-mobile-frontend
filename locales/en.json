@@ -165,6 +165,11 @@
         "cancel": "Cancel",
         "continue": "Continue"
       }
+    },
+    "incomplete": {
+      "title": "Profile Incomplete",
+      "message_restaurant": "You must complete your profile before placing orders. Would you like to complete it now?",
+      "message_producer": "You must complete your profile before editing your shop. Would you like to complete it now?"
     }
   },
 
@@ -176,8 +181,12 @@
     "optional_info": "Optional Information",
     "password": "Password",
     "change_password": "Change password",
-    "update": "Update",
+    "update": "Update Optional Information",
+    "save_required": "Save Required Information",
+    "saving": "Saving...",
     "cancel": "Cancel",
+    "choose_professions": "Choose Professions",
+    "select_professions": "Select professions...",
     "placeholder_professions": "Market gardener, Producer...",
     "placeholder_bio_producer": "Present your farm and your values...",
     "placeholder_bio_restaurant": "Present your restaurant and your culinary philosophy...",
@@ -377,7 +386,9 @@
     "error": "Error",
     "ok": "OK",
     "cancel": "Cancel",
-    "delete": "Delete"
+    "done": "Done",
+    "delete": "Delete",
+    "success": "Success"
   },
 
   "producer": {

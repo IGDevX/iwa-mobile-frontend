@@ -218,7 +218,11 @@ const mockProducerNotifications: Notification[] = [
 
 export default function NotificationScreen() {
   const { t } = useTranslation();
-  const { hasRole, state } = useContext(AuthContext);
+  const { state } = useContext(AuthContext);
+
+  const userRole = state.userInfo?.roles?.[0];
+  const isProducer = userRole === 'Producer';
+  const isRestaurantOwner = userRole === 'Restaurant Owner';
   
   // Check if user is logged in - redirect if not
   useEffect(() => {
@@ -243,10 +247,9 @@ export default function NotificationScreen() {
   }, [state.isSignedIn]);
 
   const [notifications, setNotifications] = useState<Notification[]>(
-    hasRole('producer') ? mockProducerNotifications : mockRestaurantNotifications
+    isProducer ? mockProducerNotifications : mockRestaurantNotifications
   );
   
-  const isProducer = hasRole('producer');
 
   const handleBack = () => {
     router.back();

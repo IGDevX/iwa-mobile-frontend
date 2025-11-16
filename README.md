@@ -10,18 +10,24 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npm install
    ```
 
-2. Start the app
+2. Configure backend URL (optional, defaults to localhost:8080)
+
+   ```bash
+   echo "EXPO_PUBLIC_API_BASE_URL=http://localhost:8080/api" > .env
+   ```
+
+3. Start the app
 
    ```bash
    npx expo start
    ```
 
-3. Use the following credentials for testing only
+4. Use the following credentials for testing only
 Producer : 
    username : poomedyrungen@gmail.com
    pwd : test
 
-Restauraqnt Owner :
+Restaurant Owner :
    username : pourungen@gmail.com
    pwd : test
 

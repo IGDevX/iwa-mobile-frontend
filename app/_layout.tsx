@@ -1,11 +1,11 @@
-import { Stack } from "expo-router";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { Stack, usePathname } from "expo-router";
 import { View } from "react-native";
-import { usePathname } from "expo-router";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider } from "../components/AuthContext";
-import { CartProvider } from "../components/CartContext";
 import BottomNavigation from "../components/BottomNavigation";
+import { CartProvider } from "../components/CartContext";
+import { useAccountService } from "../hooks/useAccountService";
 
 // Screens that should show the bottom navigation
 const SCREENS_WITH_BOTTOM_NAV = [
@@ -21,6 +21,9 @@ const SCREENS_WITH_BOTTOM_NAV = [
 function LayoutContent() {
   const pathname = usePathname();
   const shouldShowBottomNav = SCREENS_WITH_BOTTOM_NAV.includes(pathname);
+
+  // Initialize account service (token provider, retry pending notifications)
+  useAccountService();
 
   return (
     <View style={{ flex: 1 }}>
