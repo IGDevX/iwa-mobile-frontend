@@ -8,14 +8,14 @@
 import { httpDelete, httpGet, httpPost, httpPut, isNetworkError } from '../shared/httpClient';
 import { addPendingNotification, removePendingNotification } from '../shared/retryQueue';
 import {
-  ApiError,
-  type ProducerProfileRequest,
-  type ProducerPublicProfileResponse,
-  type Profession,
-  type RestaurantProfileRequest,
-  type RestaurantPublicProfileResponse,
-  type UpdatePersonalInfoRequest,
-  type UserProfileResponse
+    ApiError,
+    type ProducerProfileRequest,
+    type ProducerPublicProfileResponse,
+    type Profession,
+    type RestaurantProfileRequest,
+    type RestaurantPublicProfileResponse,
+    type UpdatePersonalInfoRequest,
+    type UserProfileResponse
 } from './accountApi';
 import { ACCOUNT_ENDPOINTS } from './accountConfig';
 
@@ -164,7 +164,6 @@ export async function getUserByKeycloakId(
   keycloakId: string
 ): Promise<UserProfileResponse> {
   const endpoint = ACCOUNT_ENDPOINTS.INTERNAL_BY_KEYCLOAK_ID(keycloakId);
-  console.log(`[getUserByKeycloakId] Calling: GET ${endpoint}`);
   
   try {
     // Use GET endpoint which auto-creates user if not exists
@@ -176,7 +175,6 @@ export async function getUserByKeycloakId(
         }
       }
     );
-    console.log('[getUserByKeycloakId] Success:', result);
     return result;
   } catch (error) {
     console.error('[getUserByKeycloakId] Failed:', error);
@@ -458,7 +456,6 @@ export async function getCompleteUserProfile(
 }> {
   try {
     // Get Keycloak data with timeout
-    console.log('Getting admin token...');
     const adminToken = await getKeycloakAdminToken();
     if (!adminToken) {
       throw new Error('Failed to get admin token');
@@ -466,8 +463,6 @@ export async function getCompleteUserProfile(
 
     const targetRealm = process.env.EXPO_PUBLIC_KEYCLOAK_REALM || 'marche-conclu';
     const keycloakUrl = `${process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG}/admin/realms/${targetRealm}/users/${keycloakId}`;
-    
-    console.log('Fetching Keycloak user data from:', keycloakUrl);
     
     // Create abort controller for timeout
     const controller = new AbortController();
@@ -493,7 +488,6 @@ export async function getCompleteUserProfile(
       const attributes = keycloakData.attributes || {};
 
       // Get Account Service data
-      console.log('Fetching Account Service data...');
       const accountServiceData = await getUserByKeycloakId(keycloakId);
 
       return {

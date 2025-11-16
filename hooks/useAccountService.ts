@@ -40,7 +40,6 @@ export function useAccountService() {
       setIsRetrying(true);
       try {
         const result = await retryPendingNotifications();
-        console.log('Retry result:', result);
         
         // Update pending count
         const count = await getPendingNotificationCount();

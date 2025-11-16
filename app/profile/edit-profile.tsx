@@ -142,11 +142,8 @@ export default function EditProfilePage() {
             }
 
             const keycloakId = state.userInfo.sub;
-            console.log('Loading profile for Keycloak ID:', keycloakId);
 
             const completeProfile = await getCompleteUserProfile(keycloakId, getKeycloakAdminToken);
-            console.log('Profile loaded from API:', completeProfile);
-            console.log('🔍 Professions from API:', completeProfile.accountService?.professions);
 
             // Set required data (Keycloak)
             setRequiredData({
@@ -160,8 +157,6 @@ export default function EditProfilePage() {
             const professionsIds = Array.isArray((completeProfile.accountService as any)?.professions)
                 ? ((completeProfile.accountService as any).professions as any[]).map((p: any) => p.id)
                 : [];
-            
-            console.log('📋 Extracted profession IDs:', professionsIds);
             
             setOptionalData({
                 biography: completeProfile.accountService.biography || '',
@@ -183,7 +178,6 @@ export default function EditProfilePage() {
             
             // Store original profession IDs for comparison later
             setOriginalProfessionIds(professionsIds);
-            console.log('💾 Set originalProfessionIds to:', professionsIds);
 
             // Fetch available professions options from Account Service (use service helper)
             try {
@@ -195,8 +189,6 @@ export default function EditProfilePage() {
 
             // Save Account Service ID for updates
             setAccountServiceId(completeProfile.accountService.id.toString());
-
-            console.log('Profile loaded successfully');
         } catch (error) {
             console.error('Error loading profile:', error);
             // Show user-friendly error but don't prevent page from showing
@@ -488,40 +480,6 @@ export default function EditProfilePage() {
                     </Text>
                 </View>
             </View>
-
-            {/* Account Information Section - Restaurant Only */}
-            {!isProducer && (
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>
-                        {t('edit_profile.account_info', 'Informations du compte')}
-                    </Text>
-                    <View style={styles.sectionContent}>
-                        <View style={styles.fieldContainer}>
-                            <Text style={styles.fieldLabel}>{t('auth.login.email', 'Email')}</Text>
-                            <View style={styles.inputContainer}>
-                                <TextInput
-                                    style={styles.textInput}
-                                    value={state.userInfo?.email || ''}
-                                    editable={false}
-                                    keyboardType="email-address"
-                                />
-                            </View>
-                        </View>
-                        <View style={styles.fieldContainer}>
-                            <Text style={styles.fieldLabel}>
-                                {t('edit_profile.password', 'Mot de passe')}
-                            </Text>
-                            <TouchableOpacity style={styles.passwordButton}>
-                                <Text style={styles.passwordButtonText}>
-                                    {t('edit_profile.change_password', 'Modifier le mot de passe')}
-                                </Text>
-                                <Text style={styles.arrow}>→</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-                
-            )}
 
             {/* Required Information Section */}
             <View style={styles.section}>

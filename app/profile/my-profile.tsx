@@ -169,10 +169,6 @@ export default function ProfilePage() {
 
             // Set Account Service data (business-specific information)
             setAccountServiceData(completeProfile.accountService);
-
-            console.log('Profile loaded successfully:', completeProfile);
-            console.log('Account Service data:', completeProfile.accountService);
-            console.log('Professions data:', completeProfile.accountService?.professions);
         } catch (error) {
             console.error('Error loading profile:', error);
             Alert.alert(
