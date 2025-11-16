@@ -1,8 +1,9 @@
-import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Linking, Alert, Image } from "react-native";
-import { useTranslation } from "react-i18next";
-import { router, useLocalSearchParams } from "expo-router";
 import Ionicons from "@expo/vector-icons/build/Ionicons";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useContext } from "react";
+import { useTranslation } from "react-i18next";
+import { Alert, Image, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { AuthContext } from "../../components/AuthContext";
 
 interface OrderItem {
   id: string;
@@ -54,8 +55,13 @@ const mockOrderDetails: OrderDetails = {
 
 export default function OrderDetailScreen() {
   const { t } = useTranslation();
+  const { state } = useContext(AuthContext);
   const params = useLocalSearchParams();
   const orderId = params.id as string;
+
+  // Determine user role
+  const userRole = state.userInfo?.roles?.[0] || 'Producer';
+  const isRestaurant = userRole === 'Restaurant Owner';
 
   // In a real app, you would fetch order details based on orderId
   const orderDetails = mockOrderDetails;
@@ -145,21 +151,23 @@ export default function OrderDetailScreen() {
           </View>
         </View>
 
-        {/* Payment Information */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('order_detail.payment_information')}</Text>
-          <View style={styles.paymentRow}>
-            <View style={styles.paymentInfo}>
-              <Image source={require("../../assets/images/icons8-error-96.png")} style={styles.paymentIcon} />
-              <Text style={styles.paymentDueText}>
-                {t('order_detail.payment_due', { date: formatPaymentDate(orderDetails.paymentDue) })}
-              </Text>
+        {/* Payment Information - Only visible to Restaurant owners */}
+        {isRestaurant && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{t('order_detail.payment_information')}</Text>
+            <View style={styles.paymentRow}>
+              <View style={styles.paymentInfo}>
+                <Image source={require("../../assets/images/icons8-error-96.png")} style={styles.paymentIcon} />
+                <Text style={styles.paymentDueText}>
+                  {t('order_detail.payment_due', { date: formatPaymentDate(orderDetails.paymentDue) })}
+                </Text>
+              </View>
+              <TouchableOpacity style={styles.payButton} onPress={handlePayNow}>
+                <Text style={styles.payButtonText}>{t('order_detail.pay_now')}</Text>
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity style={styles.payButton} onPress={handlePayNow}>
-              <Text style={styles.payButtonText}>{t('order_detail.pay_now')}</Text>
-            </TouchableOpacity>
           </View>
-        </View>
+        )}
 
         {/* Order Information */}
         <View style={styles.section}>

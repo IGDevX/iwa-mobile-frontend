@@ -99,12 +99,6 @@ async function request<T = any>(
   const url = path.startsWith('http') ? path : `${API_BASE_URL}${path}`;
   const { headers = {}, timeout = API_TIMEOUT, retries = MAX_RETRY_ATTEMPTS } = options;
 
-  // Log the request for debugging
-  console.log(`[HTTP] ${method} ${url}`);
-  if (headers && Object.keys(headers).length > 0) {
-    console.log('[HTTP] Headers:', headers);
-  }
-
   // Get auth token if available
   let authToken: string | null = null;
   if (tokenProvider) {
