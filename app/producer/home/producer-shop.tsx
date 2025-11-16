@@ -1,21 +1,22 @@
-import React, { useState, useContext } from "react";
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  ScrollView, 
-  Image, 
-  Alert, 
-  TextInput,
-  Switch
-} from "react-native";
-import { useTranslation } from "react-i18next";
-import { useLocalSearchParams, router } from "expo-router";
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useCart } from '../../../components/CartContext';
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useContext, useState } from "react";
+import { useTranslation } from "react-i18next";
+import {
+  Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from "react-native";
 import { AuthContext } from '../../../components/AuthContext';
+import { useCart } from '../../../components/CartContext';
 import { useNotifications } from '../../../hooks/useNotifications';
+import { useProfileCompletion } from '../../../hooks/useProfileCompletion';
 
 // Mock producer data
 const mockProducer = {
@@ -91,6 +92,7 @@ export default function ProducerShopScreen() {
   const { state } = useCart();
   const { state: authState } = useContext(AuthContext);
   const { hasUnreadNotifications } = useNotifications();
+  const { isComplete: isProfileComplete, isLoading: isProfileLoading } = useProfileCompletion();
 
   // Edit mode state
   const [isEditMode, setIsEditMode] = useState(false);
@@ -118,6 +120,25 @@ export default function ProducerShopScreen() {
     }
 
     router.push('/restaurant/order/cart');
+  };
+
+  const handleEditModeToggle = (value: boolean) => {
+    // Check if profile is complete before enabling edit mode
+    if (value && isOwnShop && !isProfileLoading && !isProfileComplete) {
+      Alert.alert(
+        t('profile.incomplete.title', 'Profile Incomplete'),
+        t('profile.incomplete.message_producer', 'You must complete your profile before editing your shop. Would you like to complete it now?'),
+        [
+          { text: t('common.cancel', 'Cancel'), style: 'cancel' },
+          {
+            text: t('profile.complete.title', 'Complete Profile'),
+            onPress: () => router.push('/profile/complete-profile')
+          }
+        ]
+      );
+      return;
+    }
+    setIsEditMode(value);
   };
 
   const handleNotificationPress = () => {
@@ -281,7 +302,7 @@ export default function ProducerShopScreen() {
             <View style={styles.editModeContainer}>
               <Switch
                 value={isEditMode}
-                onValueChange={setIsEditMode}
+                onValueChange={handleEditModeToggle}
                 trackColor={{ false: '#757575', true: '#89A083' }}
                 thumbColor={isEditMode ? '#fff' : '#fff'}
               />

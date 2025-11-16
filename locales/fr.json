@@ -165,6 +165,11 @@
         "cancel": "Annuler",
         "continue": "Continuer"
       }
+    },
+    "incomplete": {
+      "title": "Profil incomplet",
+      "message_restaurant": "Vous devez compléter votre profil avant de passer des commandes. Voulez-vous le compléter maintenant ?",
+      "message_producer": "Vous devez compléter votre profil avant de modifier votre boutique. Voulez-vous le compléter maintenant ?"
     }
   },
 
@@ -176,8 +181,12 @@
     "optional_info": "Informations facultatives",
     "password": "Mot de passe",
     "change_password": "Modifier le mot de passe",
-    "update": "Mettre à jour",
+    "update": "Mettre à jour les informations facultatives",
+    "save_required": "Enregistrer les informations obligatoires",
+    "saving": "Enregistrement...",
     "cancel": "Annuler",
+    "choose_professions": "Choisir les métiers",
+    "select_professions": "Sélectionner des métiers...",
     "placeholder_professions": "Maraîcher, Producteur...",
     "placeholder_bio_producer": "Présentez votre exploitation et vos valeurs...",
     "placeholder_bio_restaurant": "Présentez votre restaurant et votre philosophie culinaire...",
@@ -377,7 +386,9 @@
     "error": "Erreur",
     "ok": "OK",
     "cancel": "Annuler",
-    "delete": "Supprimer"
+    "done": "Terminé",
+    "delete": "Supprimer",
+    "success": "Succès"
   },
 
   "producer": {

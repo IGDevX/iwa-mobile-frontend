@@ -1,10 +1,11 @@
-import React, { useState, useContext } from "react";
-import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, Alert } from "react-native";
-import { useTranslation } from "react-i18next";
-import { router, useLocalSearchParams } from "expo-router";
-import { useCart } from "../../../components/CartContext";
-import { AuthContext } from "../../../components/AuthContext";
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useContext, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { AuthContext } from "../../../components/AuthContext";
+import { useCart } from "../../../components/CartContext";
+import { useProfileCompletion } from "../../../hooks/useProfileCompletion";
 
 // Mock producer data
 const mockProducer = {
@@ -40,6 +41,7 @@ export default function ProductDetailScreen() {
   const params = useLocalSearchParams();
   const { addItem, getItemQuantity } = useCart();
   const { state } = useContext(AuthContext);
+  const { isComplete: isProfileComplete, isLoading: isProfileLoading } = useProfileCompletion();
   const [quantity, setQuantity] = useState(1);
 
   // Determine user role
@@ -80,6 +82,22 @@ export default function ProductDetailScreen() {
           {
             text: t('auth.login.sign_in', 'Login'),
             onPress: () => router.push('../../profile/login')
+          }
+        ]
+      );
+      return;
+    }
+
+    // Check if profile is complete (for Restaurant Owners)
+    if (isRestaurantOwner && !isProfileLoading && !isProfileComplete) {
+      Alert.alert(
+        t('profile.incomplete.title', 'Profile Incomplete'),
+        t('profile.incomplete.message_restaurant', 'You must complete your profile before placing orders. Would you like to complete it now?'),
+        [
+          { text: t('common.cancel', 'Cancel'), style: 'cancel' },
+          {
+            text: t('profile.complete.title', 'Complete Profile'),
+            onPress: () => router.push('/profile/complete-profile')
           }
         ]
       );
@@ -172,6 +190,7 @@ export default function ProductDetailScreen() {
               <Text style={styles.price}>{mockProductDetails.priceDisplay}</Text>
             </View>
 
+            {!isProducer && (
             <View style={styles.quantityContainer}>
               <TouchableOpacity
                 style={styles.quantityButton}
@@ -187,6 +206,7 @@ export default function ProductDetailScreen() {
                 <Text style={styles.quantityButtonText}>+</Text>
               </TouchableOpacity>
             </View>
+            )}
           </View>
 
           {/* Description */}

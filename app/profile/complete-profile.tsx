@@ -1,11 +1,10 @@
-import React, { useState, useContext } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, Keyboard, Image } from 'react-native';
 import { router } from 'expo-router';
+import React, { useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Alert, Image, Keyboard, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { AuthContext } from '../../components/AuthContext';
 import Button from '../../components/Button';
-import { TextInput } from 'react-native';
-import { isUserProfileComplete, convertKeycloakAttributesToProfile } from '../../utils/profileUtils';
+import { convertKeycloakAttributesToProfile } from '../../utils/profileUtils';
 
 export default function CompletePage() {
     const { t } = useTranslation();
@@ -24,7 +23,6 @@ export default function CompletePage() {
         responsibleName: '',
         phoneNumber: '',
         address: '',
-        profession: '', // Only for producers
     });
 
     // Load existing profile data when component mounts
@@ -67,6 +65,23 @@ export default function CompletePage() {
                 // Load existing profile data into form using utility function
                 const profileData = convertKeycloakAttributesToProfile(attributes);
                 setFormData(profileData);
+
+                // If basic required fields are already present, consider the profile completed.
+                // Profession is managed by the Account Service now, so we only check the core fields.
+                const basicComplete = Boolean(
+                    (profileData.displayName || '').trim() &&
+                    (profileData.responsibleName || '').trim() &&
+                    (profileData.phoneNumber || '').trim() &&
+                    (profileData.address || '').trim()
+                );
+
+                if (basicComplete) {
+                    const redirectPath = isProducer ? '/producer/home/producer-shop' : '/restaurant/home/restaurant-home';
+                    console.log('Profile already complete, redirecting to', redirectPath);
+                    // Navigate away immediately so user doesn't see the completion screen
+                    router.replace(redirectPath);
+                    return;
+                }
             } else {
                 console.warn('Failed to load user profile data');
             }
@@ -90,21 +105,16 @@ export default function CompletePage() {
                 return;
             }
 
-            if (isProducer && !formData.profession) {
-                Alert.alert(t('common.error'), t('profile.complete.validation.profession_required'));
-                return;
-            }
+            // Profession is now managed by the Account Service; do not require it here
 
             // Save profile data to Keycloak user attributes
             const success = await saveProfileToKeycloak(formData);
 
             if (success) {
+                // Navigate immediately after successful save so user isn't left on the completion screen
                 const redirectPath = isProducer ? '/producer/home/producer-shop' : '/restaurant/home/restaurant-home';
-                Alert.alert(
-                    t('profile.complete.success.title'),
-                    t('profile.complete.success.message'),
-                    [{ text: t('common.ok'), onPress: () => router.replace(redirectPath) }]
-                );
+                console.log('Profile saved successfully, navigating to', redirectPath);
+                router.replace(redirectPath);
             } else {
                 Alert.alert(t('common.error'), t('profile.complete.error.save_failed'));
             }
@@ -166,10 +176,7 @@ export default function CompletePage() {
                 email: [userEmail] // Always include email in attributes
             };
 
-            // Add profession for producers
-            if (isProducer && profileData.profession) {
-                userAttributes.profession = [profileData.profession];
-            }
+            // Profession handled by account service; do not set it here anymore
 
             // Create the update payload - update both attributes and main email field
             const updatePayload = {
@@ -191,10 +198,11 @@ export default function CompletePage() {
             );
 
             if (updateResponse.ok) {
+                console.log('Keycloak update returned OK (status:', updateResponse.status, ')');
                 return true;
             } else {
                 const errorText = await updateResponse.text();
-                console.error('Failed to update user profile:', errorText);
+                console.error('Failed to update user profile. status:', updateResponse.status, ' body:', errorText);
                 return false;
             }
         } catch (error) {
@@ -322,19 +330,7 @@ export default function CompletePage() {
                     />
                 </View>
 
-                {/* Profession - Only for Producers */}
-                {isProducer && (
-                    <View style={styles.inputContainer}>
-                        <Text style={styles.label}>{t('profile.complete.profession')}</Text>
-                        <TextInput
-                            style={styles.textInput}
-                            placeholder={t('profile.complete.profession_placeholder')}
-                            value={formData.profession}
-                            onChangeText={(text) => setFormData(prev => ({ ...prev, profession: text }))}
-                            placeholderTextColor="rgba(74, 68, 89, 0.5)"
-                        />
-                    </View>
-                )}
+                {/* Profession is removed from this flow; producers select professions in their profile edit page linked to Account Service */}
             </View>
 
             {/* Buttons */}

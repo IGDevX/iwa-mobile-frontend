@@ -1,7 +1,7 @@
-import React, { createContext, useMemo, useReducer, useEffect, ReactNode } from 'react'
-import { makeRedirectUri, useAuthRequest, useAutoDiscovery } from 'expo-auth-session'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { isUserProfileComplete, convertKeycloakAttributesToProfile, getMissingProfileFields } from '../utils/profileUtils'
+import { makeRedirectUri, useAuthRequest, useAutoDiscovery } from 'expo-auth-session'
+import React, { createContext, ReactNode, useEffect, useMemo, useReducer } from 'react'
+import { convertKeycloakAttributesToProfile, getMissingProfileFields, isUserProfileComplete } from '../utils/profileUtils'
 
 interface UserInfo {
   username: string
@@ -470,6 +470,29 @@ const AuthContext = createContext<AuthContextType>({
               // Verification email sent successfully
             } else {
               console.warn('Failed to send verification email, but user was created');
+            }
+          }
+
+          // Step 6: Create profile in Account Service
+          if (userId) {
+            try {
+              if (role === 'Producer') {
+                const { ensureProducerProfileExists } = await import('../services/account');
+                const accountResult = await ensureProducerProfileExists(userId, {
+                  // Informations de base - à compléter plus tard dans complete-profile
+                });
+                console.log('Producer profile created successfully, ID:', accountResult.id);
+              } else if (role === 'Restaurant Owner') {
+                const { ensureRestaurantProfileExists } = await import('../services/account');
+                const accountResult = await ensureRestaurantProfileExists(userId, {
+                  // Informations de base - à compléter plus tard dans complete-profile
+                });
+                console.log('Restaurant profile created successfully, ID:', accountResult.id);
+              }
+            } catch (accountError) {
+              // Don't fail the registration if account service fails
+              // The notification will be queued for retry
+              console.warn('Failed to create account profile (will retry later):', accountError);
             }
           }
 

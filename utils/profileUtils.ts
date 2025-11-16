@@ -5,7 +5,6 @@ export interface ProfileData {
     responsibleName: string;
     phoneNumber: string;
     address: string;
-    profession: string;
 }
 
 export interface UserAttributes {
@@ -13,7 +12,6 @@ export interface UserAttributes {
     responsibleName?: string[];
     phoneNumber?: string[];
     address?: string[];
-    profession?: string[];
 }
 
 /**
@@ -25,16 +23,11 @@ export interface UserAttributes {
 export const isUserProfileComplete = (profileData: ProfileData, userRole: string): boolean => {
     const requiredFields = ['displayName', 'responsibleName', 'phoneNumber', 'address'];
     
-    // Check basic required fields
-    const basicFieldsComplete = requiredFields.every(field => 
-        profileData[field as keyof ProfileData]?.trim()
+    // Check basic required fields only (profession is managed by Account Service)
+    const basicFieldsComplete = requiredFields.every(field =>
+        Boolean(profileData[field as keyof ProfileData]?.trim())
     );
-    
-    // For producers, also check profession
-    if (userRole === 'Producer') {
-        return basicFieldsComplete && Boolean(profileData.profession?.trim());
-    }
-    
+
     return basicFieldsComplete;
 };
 
@@ -49,7 +42,6 @@ export const convertKeycloakAttributesToProfile = (attributes: UserAttributes): 
         responsibleName: attributes.responsibleName?.[0] || '',
         phoneNumber: attributes.phoneNumber?.[0] || '',
         address: attributes.address?.[0] || '',
-        profession: attributes.profession?.[0] || '',
     };
 };
 
@@ -62,12 +54,6 @@ export const convertKeycloakAttributesToProfile = (attributes: UserAttributes): 
 export const getMissingProfileFields = (profileData: ProfileData, userRole: string): string[] => {
     const requiredFields = ['displayName', 'responsibleName', 'phoneNumber', 'address'];
     
-    // Add profession for producers
-    if (userRole === 'Producer') {
-        requiredFields.push('profession');
-    }
-    
-    return requiredFields.filter(field => 
-        !profileData[field as keyof ProfileData]?.trim()
-    );
+    // profession is managed by Account Service; only core fields are required here
+    return requiredFields.filter(field => !profileData[field as keyof ProfileData]?.trim());
 };
