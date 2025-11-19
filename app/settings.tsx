@@ -1,19 +1,19 @@
-import React, { useState, useContext } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  Switch,
-  Alert,
-  Image,
-} from 'react-native';
-import { useTranslation } from 'react-i18next';
-import { AuthContext } from '../components/AuthContext';
-import { router } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { router } from 'expo-router';
+import React, { useContext, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from 'react-native';
+import { AuthContext } from '../components/AuthContext';
+import { PaymentStatusCard } from '../components/PaymentStatusCard';
 
 interface NotificationSettings {
   orderStatus: boolean;
@@ -26,6 +26,10 @@ interface NotificationSettings {
 export default function SettingsPage() {
   const { t } = useTranslation();
   const { state } = useContext(AuthContext);
+  
+  // Determine user role
+  const userRole = state.userInfo?.roles?.[0] || 'Producer';
+  const isProducer = userRole === 'Producer';
   
   // Form state
   const [email, setEmail] = useState(state.userInfo?.email || '');
@@ -182,6 +186,13 @@ export default function SettingsPage() {
           <View style={styles.placeholder} />
         </View>
       </View>
+
+      {/* Payment Settings Section - Only for Producers */}
+      {isProducer && (
+        <View style={styles.section_payment}>
+          <PaymentStatusCard compact={false} />
+        </View>
+      )}
 
       {/* Login Information Section */}
       <View style={styles.section}>
@@ -351,6 +362,10 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 6,
   },
+    section_payment: {
+    marginHorizontal: 24,
+    marginBottom: 16,
+  },
   sectionHeader: {
     marginBottom: 16,
   },
@@ -381,8 +396,6 @@ const styles = StyleSheet.create({
     height: 39,
     borderRadius: 10,
     backgroundColor: '#f7f6ed',
-    borderWidth: 1,
-    borderColor: '#4a4459',
     paddingHorizontal: 12,
     fontSize: 14,
     color: '#4a4459',
@@ -413,8 +426,6 @@ const styles = StyleSheet.create({
     height: 39,
     borderRadius: 10,
     backgroundColor: '#f7f6ed',
-    borderWidth: 1,
-    borderColor: '#4a4459',
     paddingHorizontal: 12,
     paddingRight: 40,
     fontSize: 14,
@@ -429,6 +440,7 @@ const styles = StyleSheet.create({
     width: 24,
   },
   changePasswordButton: {
+    marginTop: 6,
     height: 37,
     borderRadius: 10,
     backgroundColor: '#89a083',

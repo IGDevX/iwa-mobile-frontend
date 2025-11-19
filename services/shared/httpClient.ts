@@ -109,6 +109,26 @@ async function request<T = any>(
     }
   }
 
+  // Extract Keycloak ID from JWT token
+  let keycloakId: string | null = null;
+  if (authToken) {
+    try {
+      // Decode JWT to get the 'sub' claim (Keycloak user ID)
+      const base64Url = authToken.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
+      const payload = JSON.parse(jsonPayload);
+      keycloakId = payload.sub;
+    } catch (error) {
+      console.warn('Failed to decode JWT token:', error);
+    }
+  }
+
   // Build headers
   const requestHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -118,6 +138,11 @@ async function request<T = any>(
 
   if (authToken) {
     requestHeaders['Authorization'] = `Bearer ${authToken}`;
+  }
+
+  // Add Keycloak ID header if available
+  if (keycloakId) {
+    requestHeaders['X-Keycloak-Id'] = keycloakId;
   }
 
   // Build request options

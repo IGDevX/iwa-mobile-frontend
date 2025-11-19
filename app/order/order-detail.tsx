@@ -1,9 +1,12 @@
 import Ionicons from "@expo/vector-icons/build/Ionicons";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useContext } from "react";
+import React, { useContext, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Alert, Image, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { AuthContext } from "../../components/AuthContext";
+import { usePaymentContext } from "../../components/PaymentContext";
+import { usePayment } from "../../hooks/usePayment";
+import { convertPaymentRecordToRequest, convertPaymentResponseToRecord, getOrderPaymentStatus, recordOrderPayment, updateOrderStatusToPaid } from "../../services/payment";
 
 interface OrderItem {
   id: string;
@@ -19,6 +22,7 @@ interface OrderDetails {
   orderNumber: string;
   producerName: string;
   producerAddress: string;
+  producerKeycloakId?: string; // Producer's Keycloak ID for payments
   total: number;
   status: 'accepted' | 'pending' | 'delivered' | 'paid' | 'unpaid' | 'not_delivered';
   deliveryMode: 'pickup' | 'delivery';
@@ -36,8 +40,9 @@ const mockOrderDetails: OrderDetails = {
   orderNumber: 'ORD-2024-001234',
   producerName: 'Ferme Bio Du Soleil',
   producerAddress: '15 Rue des Tomates, Loupian',
+  producerKeycloakId: '1f40acc3-6fa2-4599-a9ac-184773358935', // ⚠️ TODO: Replace with actual producer Keycloak ID
   total: 93.90,
-  status: 'delivered',
+  status: 'not_delivered',
   deliveryMode: 'delivery',
   orderDate: '2024-09-26 10:30',
   acceptedDate: '2024-09-26 11:15',
@@ -56,6 +61,7 @@ const mockOrderDetails: OrderDetails = {
 export default function OrderDetailScreen() {
   const { t } = useTranslation();
   const { state } = useContext(AuthContext);
+  const { addPayment, getPaymentByOrderId, updatePaymentStatus } = usePaymentContext();
   const params = useLocalSearchParams();
   const orderId = params.id as string;
 
@@ -65,6 +71,45 @@ export default function OrderDetailScreen() {
 
   // In a real app, you would fetch order details based on orderId
   const orderDetails = mockOrderDetails;
+
+  // Check if payment exists for this order
+  const existingPayment = getPaymentByOrderId(orderId);
+  const isPaid = existingPayment?.status === 'succeeded';
+
+  // Initialize payment hook with producer info for Stripe Connect
+  const { loading, openPaymentSheet } = usePayment({
+    amount: Math.round(orderDetails.total * 100), // Convert to cents
+    currency: 'eur',
+    merchantDisplayName: orderDetails.producerName,
+    producerKeycloakId: orderDetails.producerKeycloakId, // For direct payment to producer
+    orderId: orderDetails.id, // For tracking
+  });
+
+  // Load payment status from backend on component mount
+  useEffect(() => {
+    const loadPaymentStatus = async () => {
+      try {
+        console.log('[OrderDetail] Loading payment status from backend...');
+        const backendPayment = await getOrderPaymentStatus(orderId);
+        
+        if (backendPayment) {
+          // Convert backend response to frontend format and store in context
+          const paymentRecord = convertPaymentResponseToRecord(backendPayment);
+          addPayment(paymentRecord);
+          console.log('[OrderDetail] Payment status loaded from backend:', backendPayment.status);
+        } else {
+          console.log('[OrderDetail] No payment found for this order');
+        }
+      } catch (error: any) {
+        console.error('[OrderDetail] Failed to load payment status:', error);
+        // Don't show error to user - just means no payment exists yet
+      }
+    };
+
+    if (isRestaurant && orderId) {
+      loadPaymentStatus();
+    }
+  }, [orderId, isRestaurant, addPayment]);
 
   const handleBack = () => {
     router.back();
@@ -99,17 +144,97 @@ export default function OrderDetailScreen() {
     Linking.openURL(`mailto:${email}`);
   };
 
-  const handlePayNow = () => {
-    Alert.alert(
-      t('order_detail.payment_title'),
-      t('order_detail.payment_message'),
-      [
-        { text: t('common.ok'), style: 'default' }
-      ]
-    );
-  };
+  const didTapCheckoutButton = async () => {
+    try {
+      // Payment will be split automatically by Stripe Connect:
+      // - 90% (€84.51) goes directly to producer's connected account
+      // - 10% (€9.39) stays with platform as application fee
+      // Total charged to customer: €93.90
+      const result = await openPaymentSheet();
 
-  const formatDate = (dateString: string) => {
+      if (result.success) {
+        // Get payment intent ID from the result
+        const paymentIntentId = result.paymentIntentId || 'unknown';
+        
+        // Create payment record object
+        const paymentRecord = {
+          paymentId: paymentIntentId,
+          orderId: orderId,
+          amount: Math.round(orderDetails.total * 100),
+          currency: 'eur',
+          status: 'succeeded' as const,
+          paidBy: state.userInfo?.sub || state.userInfo?.username || 'unknown',
+          paidTo: orderDetails.producerName,
+          paymentDate: new Date().toISOString(),
+          paymentDueDate: orderDetails.paymentDue,
+        };
+
+        try {
+          // Store in local context first
+          addPayment(paymentRecord);
+
+          // Sync with backend
+          console.log('[OrderDetail] Syncing payment with backend...');
+          const backendPaymentRequest = convertPaymentRecordToRequest(paymentRecord);
+          
+          // Record payment in backend
+          await recordOrderPayment(orderId, backendPaymentRequest);
+          
+          // Update order status to 'paid'
+          await updateOrderStatusToPaid(orderId, paymentIntentId);
+          
+          console.log('[OrderDetail] Payment successfully synced with backend');
+
+          Alert.alert(
+            'Payment Successful',
+            `Your payment of €${orderDetails.total.toFixed(2)} has been processed successfully!`,
+            [
+              {
+                text: 'OK',
+                onPress: () => {
+                  // Payment is now fully recorded - user can navigate away
+                  console.log('[OrderDetail] Payment completed and synced');
+                }
+              }
+            ]
+          );
+
+        } catch (backendError: any) {
+          // Payment succeeded on Stripe but failed to sync with backend
+          console.error('[OrderDetail] Backend sync failed:', backendError);
+          
+          Alert.alert(
+            'Payment Completed',
+            'Your payment was successful, but we had trouble updating your order. Please contact support if you don\'t see the update shortly.',
+            [{ text: 'OK' }]
+          );
+        }
+        
+      } else if (!result.canceled) {
+        // Error occurred (but user didn't cancel)
+        console.error('[OrderDetail] Payment failed:', result.error);
+        
+        // Store failed payment attempt
+        addPayment({
+          paymentId: 'failed',
+          orderId: orderId,
+          amount: Math.round(orderDetails.total * 100),
+          currency: 'eur',
+          status: 'failed',
+          paidBy: state.userInfo?.sub || state.userInfo?.username || 'unknown',
+          paidTo: orderDetails.producerName,
+          paymentDate: new Date().toISOString(),
+          paymentDueDate: orderDetails.paymentDue,
+          errorMessage: result.error,
+        });
+        
+        Alert.alert('Payment Failed', result.error || 'An error occurred');
+      }
+    } catch (error: any) {
+      console.error('[OrderDetail] Unexpected error during payment:', error);
+      Alert.alert('Error', error.message || 'An unexpected error occurred');
+    }
+  };  const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('fr-FR', {
       year: 'numeric',
@@ -155,17 +280,59 @@ export default function OrderDetailScreen() {
         {isRestaurant && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t('order_detail.payment_information')}</Text>
-            <View style={styles.paymentRow}>
-              <View style={styles.paymentInfo}>
-                <Image source={require("../../assets/images/icons8-error-96.png")} style={styles.paymentIcon} />
-                <Text style={styles.paymentDueText}>
-                  {t('order_detail.payment_due', { date: formatPaymentDate(orderDetails.paymentDue) })}
-                </Text>
+            
+            {isPaid ? (
+              // Show payment completed status
+              <View style={styles.paymentCompletedContainer}>
+                <View style={styles.paymentCompletedHeader}>
+                  <Ionicons name="checkmark-circle" size={24} color="#89A083" />
+                  <Text style={styles.paymentCompletedTitle}>Payment Completed</Text>
+                </View>
+                <View style={styles.paymentDetailsContainer}>
+                  <View style={styles.paymentDetailRow}>
+                    <Text style={styles.paymentDetailLabel}>Amount Paid:</Text>
+                    <Text style={styles.paymentDetailValue}>€{orderDetails.total.toFixed(2)}</Text>
+                  </View>
+                  <View style={styles.paymentDetailRow}>
+                    <Text style={styles.paymentDetailLabel}>Payment Date:</Text>
+                    <Text style={styles.paymentDetailValue}>
+                      {new Date(existingPayment.paymentDate).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </Text>
+                  </View>
+                  <View style={styles.paymentDetailRow}>
+                    <Text style={styles.paymentDetailLabel}>Payment ID:</Text>
+                    <Text style={[styles.paymentDetailValue, styles.paymentId]}>
+                      {existingPayment.paymentId.substring(0, 20)}...
+                    </Text>
+                  </View>
+                </View>
               </View>
-              <TouchableOpacity style={styles.payButton} onPress={handlePayNow}>
-                <Text style={styles.payButtonText}>{t('order_detail.pay_now')}</Text>
-              </TouchableOpacity>
-            </View>
+            ) : (
+              // Show payment due with button
+              <View style={styles.paymentRow}>
+                <View style={styles.paymentInfo}>
+                  <Image source={require("../../assets/images/icons8-error-96.png")} style={styles.paymentIcon} />
+                  <Text style={styles.paymentDueText}>
+                    {t('order_detail.payment_due', { date: formatPaymentDate(orderDetails.paymentDue) })}
+                  </Text>
+                </View>
+                <TouchableOpacity 
+                  style={[styles.payButton, loading && styles.payButtonDisabled]} 
+                  onPress={didTapCheckoutButton}
+                  disabled={loading}
+                >
+                  <Text style={styles.payButtonText}>
+                    {loading ? 'Processing...' : t('order_detail.pay_now')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         )}
 
@@ -190,20 +357,20 @@ export default function OrderDetailScreen() {
             {/* Order Accepted */}
             <View style={styles.timelineItem}>
               <View style={styles.timelineIconContainer}>
-                <View style={[styles.timelineIcon, 
-                  orderDetails.status !== 'pending' ? styles.completedIcon : styles.pendingIcon]}>
+                <View style={[styles.timelineIcon,
+                orderDetails.status !== 'pending' ? styles.completedIcon : styles.pendingIcon]}>
                   {orderDetails.status !== 'pending' ? (
                     <Ionicons name="checkmark" size={12} color="#FFFFFF" />
                   ) : (
                     <View style={styles.pendingDot} />
                   )}
                 </View>
-                {(orderDetails.status === 'delivered' || orderDetails.status === 'paid') && 
+                {(orderDetails.status === 'delivered' || orderDetails.status === 'paid') &&
                   <View style={styles.timelineLine} />}
               </View>
               <View style={styles.timelineContent}>
-                <Text style={[styles.timelineTitle, 
-                  orderDetails.status === 'pending' && styles.pendingTitle]}>
+                <Text style={[styles.timelineTitle,
+                orderDetails.status === 'pending' && styles.pendingTitle]}>
                   {t('order_detail.order_accepted')}
                 </Text>
                 <Text style={styles.timelineDate}>
@@ -215,8 +382,8 @@ export default function OrderDetailScreen() {
             {/* Delivery */}
             <View style={styles.timelineItem}>
               <View style={styles.timelineIconContainer}>
-                <View style={[styles.timelineIcon, 
-                  (orderDetails.status === 'delivered' || orderDetails.status === 'paid') ? styles.completedIcon : styles.upcomingIcon]}>
+                <View style={[styles.timelineIcon,
+                (orderDetails.status === 'delivered' || orderDetails.status === 'paid') ? styles.completedIcon : styles.upcomingIcon]}>
                   {(orderDetails.status === 'delivered' || orderDetails.status === 'paid') ? (
                     <Ionicons name="checkmark" size={12} color="#FFFFFF" />
                   ) : (
@@ -226,14 +393,14 @@ export default function OrderDetailScreen() {
               </View>
               <View style={styles.timelineContent}>
                 <Text style={[styles.timelineTitle,
-                  (orderDetails.status !== 'delivered' && orderDetails.status !== 'paid') && styles.upcomingTitle]}>
-                  {orderDetails.deliveryMode === 'pickup' 
+                (orderDetails.status !== 'delivered' && orderDetails.status !== 'paid') && styles.upcomingTitle]}>
+                  {orderDetails.deliveryMode === 'pickup'
                     ? t('orders.pickup_at_farm')
                     : t('orders.at_restaurant')
                   }
                 </Text>
                 <Text style={styles.timelineDate}>
-                  {(orderDetails.status === 'delivered' || orderDetails.status === 'paid') 
+                  {(orderDetails.status === 'delivered' || orderDetails.status === 'paid')
                     ? formatDate(orderDetails.deliveryDate)
                     : formatDate(orderDetails.deliveryDate)
                   }
@@ -268,12 +435,12 @@ export default function OrderDetailScreen() {
                 <Text style={styles.itemTotal}>{item.total.toFixed(2)} €</Text>
               </View>
             ))}
-            
+
             <View style={styles.deliveryFeeRow}>
               <Text style={styles.deliveryFeeLabel}>{t('order_detail.delivery_fees')}</Text>
               <Text style={styles.deliveryFeeAmount}>{orderDetails.deliveryFee.toFixed(2)} €</Text>
             </View>
-            
+
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>{t('order_detail.grand_total')}</Text>
               <Text style={styles.totalAmount}>{orderDetails.total.toFixed(2)} €</Text>
@@ -312,7 +479,7 @@ const styles = StyleSheet.create({
   // Header
   header: {
     flexDirection: "row",
-    justifyContent: "space-between", 
+    justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 30,
     paddingVertical: 20,
@@ -430,6 +597,52 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#FFFFFF",
     fontWeight: "500",
+  },
+  payButtonDisabled: {
+    backgroundColor: "#9CA3AF",
+    opacity: 0.6,
+  },
+
+  // Payment Completed Styles
+  paymentCompletedContainer: {
+    backgroundColor: "#F0F9FF",
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#89A083",
+  },
+  paymentCompletedHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 16,
+  },
+  paymentCompletedTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#89A083",
+  },
+  paymentDetailsContainer: {
+    gap: 12,
+  },
+  paymentDetailRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  paymentDetailLabel: {
+    fontSize: 14,
+    color: "#4A4459",
+    opacity: 0.7,
+  },
+  paymentDetailValue: {
+    fontSize: 14,
+    color: "#4A4459",
+    fontWeight: "600",
+  },
+  paymentId: {
+    fontSize: 12,
+    fontFamily: 'monospace',
   },
 
   // Info Rows
