@@ -236,7 +236,7 @@ export default function EditProfilePage() {
 
             const targetRealm = process.env.EXPO_PUBLIC_KEYCLOAK_REALM || 'marche-conclu';
 
-            // Get current user data to preserve existing attributes
+            // Get current user data to preserve existing attributes and fields
             const getCurrentUserResponse = await fetch(
                 `${process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG}/admin/realms/${targetRealm}/users/${keycloakId}`,
                 {
@@ -247,11 +247,12 @@ export default function EditProfilePage() {
                 }
             );
 
-            let existingAttributes = {};
-            if (getCurrentUserResponse.ok) {
-                const currentUserData = await getCurrentUserResponse.json();
-                existingAttributes = currentUserData.attributes || {};
+            if (!getCurrentUserResponse.ok) {
+                throw new Error('Failed to fetch current user data');
             }
+
+            const currentUserData = await getCurrentUserResponse.json();
+            const existingAttributes = currentUserData.attributes || {};
 
             // Prepare updated attributes
             const updatedAttributes: Record<string, string[]> = {
@@ -264,7 +265,7 @@ export default function EditProfilePage() {
 
             // do not write profession attribute from required section; it's handled in optional account service flow
 
-            // Update Keycloak user
+            // Update Keycloak user - IMPORTANT: Preserve email and other core fields
             const updateKeycloakResponse = await fetch(
                 `${process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG}/admin/realms/${targetRealm}/users/${keycloakId}`,
                 {
@@ -274,6 +275,12 @@ export default function EditProfilePage() {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
+                        email: currentUserData.email, // Preserve email
+                        username: currentUserData.username, // Preserve username
+                        firstName: currentUserData.firstName, // Preserve first name
+                        lastName: currentUserData.lastName, // Preserve last name
+                        enabled: currentUserData.enabled, // Preserve enabled status
+                        emailVerified: currentUserData.emailVerified, // Preserve email verification
                         attributes: updatedAttributes
                     })
                 }
