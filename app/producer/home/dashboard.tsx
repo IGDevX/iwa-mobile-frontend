@@ -1,8 +1,9 @@
-import React from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
-import { useTranslation } from "react-i18next";
-import { router } from "expo-router";
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { router } from "expo-router";
+import React from "react";
+import { useTranslation } from "react-i18next";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { PaymentStatusCard } from '../../../components/PaymentStatusCard';
 
 // Mock data for visualizations
 const mockAnalyticsData = {
@@ -177,6 +178,12 @@ export default function ProducerDashboard() {
               <Text style={[styles.metricValue, { color: '#EF4444' }]}>{mockAnalyticsData.unpaidOrders}</Text>
             </View>
           </View>
+
+          {/* Payment Status Card */}
+          <PaymentStatusCard 
+            compact={true} 
+            style={styles.paymentCard}
+          />
 
           {/* Orders per Day Chart */}
           <View style={styles.chartCard}>
@@ -463,5 +470,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#4A4459",
+  },
+  paymentCard: {
+    marginHorizontal: 16,
+    marginVertical: 8,
   },
 });

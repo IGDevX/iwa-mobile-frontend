@@ -236,7 +236,7 @@ export default function EditProfilePage() {
 
             const targetRealm = process.env.EXPO_PUBLIC_KEYCLOAK_REALM || 'marche-conclu';
 
-            // Get current user data to preserve existing attributes
+            // Get current user data to preserve existing attributes and fields
             const getCurrentUserResponse = await fetch(
                 `${process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG}/admin/realms/${targetRealm}/users/${keycloakId}`,
                 {
@@ -247,11 +247,12 @@ export default function EditProfilePage() {
                 }
             );
 
-            let existingAttributes = {};
-            if (getCurrentUserResponse.ok) {
-                const currentUserData = await getCurrentUserResponse.json();
-                existingAttributes = currentUserData.attributes || {};
+            if (!getCurrentUserResponse.ok) {
+                throw new Error('Failed to fetch current user data');
             }
+
+            const currentUserData = await getCurrentUserResponse.json();
+            const existingAttributes = currentUserData.attributes || {};
 
             // Prepare updated attributes
             const updatedAttributes: Record<string, string[]> = {
@@ -264,7 +265,7 @@ export default function EditProfilePage() {
 
             // do not write profession attribute from required section; it's handled in optional account service flow
 
-            // Update Keycloak user
+            // Update Keycloak user - IMPORTANT: Preserve email and other core fields
             const updateKeycloakResponse = await fetch(
                 `${process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG}/admin/realms/${targetRealm}/users/${keycloakId}`,
                 {
@@ -274,6 +275,12 @@ export default function EditProfilePage() {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
+                        email: currentUserData.email, // Preserve email
+                        username: currentUserData.username, // Preserve username
+                        firstName: currentUserData.firstName, // Preserve first name
+                        lastName: currentUserData.lastName, // Preserve last name
+                        enabled: currentUserData.enabled, // Preserve enabled status
+                        emailVerified: currentUserData.emailVerified, // Preserve email verification
                         attributes: updatedAttributes
                     })
                 }
@@ -341,7 +348,6 @@ export default function EditProfilePage() {
             }
 
             // Update Account Service data using X-Keycloak-Id header
-            console.log('Updating Account Service with Keycloak ID:', keycloakId);
             
             if (isProducer) {
                 await updateProducerProfile(keycloakId, accountServiceData as ProducerProfileRequest);
@@ -352,35 +358,20 @@ export default function EditProfilePage() {
                 const currentProfessionIds = optionalData.selectedProfessionIds || [];
                 const originalIds = originalProfessionIds || [];
                 
-                console.log('🔍 BEFORE DIFF CALCULATION:');
-                console.log('  - optionalData.selectedProfessionIds:', optionalData.selectedProfessionIds);
-                console.log('  - originalProfessionIds state:', originalProfessionIds);
-                console.log('  - currentProfessionIds (normalized):', currentProfessionIds);
-                console.log('  - originalIds (normalized):', originalIds);
-                
                 // Calculate differences: what to add and what to remove
                 const professionsToAdd = currentProfessionIds.filter(id => !originalIds.includes(id));
                 const professionsToRemove = originalIds.filter(id => !currentProfessionIds.includes(id));
                 
-                console.log('=== Profession Management Debug ===');
-                console.log('Original profession IDs:', originalIds);
-                console.log('Current selected IDs:', currentProfessionIds);
-                console.log('Professions to ADD:', professionsToAdd);
-                console.log('Professions to REMOVE:', professionsToRemove);
-                console.log('==================================');
-                
                 // Only process if there are actual changes
                 if (professionsToAdd.length === 0 && professionsToRemove.length === 0) {
-                    console.log('No profession changes detected, skipping profession update.');
+                    // No changes
                 } else {
                     // Add new professions
                     for (const professionId of professionsToAdd) {
                         try {
-                            console.log(`✅ Adding profession ${professionId}...`);
                             await addProducerProfession(keycloakId, professionId);
-                            console.log(`✅ Successfully added profession ${professionId}`);
                         } catch (error) {
-                            console.error(`❌ Failed to add profession ${professionId}:`, error);
+                            console.error(`Failed to add profession ${professionId}:`, error);
                             throw new Error(`Failed to add profession ${professionId}`);
                         }
                     }
@@ -388,11 +379,9 @@ export default function EditProfilePage() {
                     // Remove deselected professions
                     for (const professionId of professionsToRemove) {
                         try {
-                            console.log(`🗑️ Removing profession ${professionId}...`);
                             await removeProducerProfession(keycloakId, professionId);
-                            console.log(`✅ Successfully removed profession ${professionId}`);
                         } catch (error) {
-                            console.error(`❌ Failed to remove profession ${professionId}:`, error);
+                            console.error(`Failed to remove profession ${professionId}:`, error);
                             throw new Error(`Failed to remove profession ${professionId}`);
                         }
                     }
@@ -400,12 +389,9 @@ export default function EditProfilePage() {
                 
                 // Update original profession IDs after successful save
                 setOriginalProfessionIds(currentProfessionIds);
-                console.log('✅ Updated originalProfessionIds state to:', currentProfessionIds);
                 
                 // Reload profile data to ensure we have the latest from backend
-                console.log('🔄 Reloading profile data from backend to verify professions...');
                 await loadProfileData();
-                console.log('✅ Profile data reloaded successfully');
             } else {
                 await updateRestaurantProfile(keycloakId, accountServiceData as RestaurantProfileRequest);
             }
