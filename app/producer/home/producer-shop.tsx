@@ -17,6 +17,7 @@ import { AuthContext } from '../../../components/AuthContext';
 import { useCart } from '../../../components/CartContext';
 import { useNotifications } from '../../../hooks/useNotifications';
 import { useProfileCompletion } from '../../../hooks/useProfileCompletion';
+import { getUserByKeycloakId } from '../../../services/account';
 
 // Mock producer data
 const mockProducer = {
@@ -62,6 +63,42 @@ const mockProducts: ProductsData = {
       priceDisplay: "2.20€/kg",
       unit: "kg",
       category: "Légumes"
+    },
+    {
+      id: 5,
+      name: "Courgettes",
+      image: "https://photo-cdn2.icons8.com/WzUVwZCBFjpGJa-vCYcBVrVYdK3zGDGkEGC2v3zZ0vI/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvOTIxL2YyNWRk/MWQxLWM0MmQtNDdl/Yi1iMGRmLWFkMzk0/YTRlMmNlZi5qcGc.webp",
+      price: 2.80,
+      priceDisplay: "2.80€/kg",
+      unit: "kg",
+      category: "Légumes"
+    },
+    {
+      id: 6,
+      name: "Poivrons",
+      image: "https://photo-cdn2.icons8.com/XEBnLz3xjwMuPGiXPSvWKJoKWPXmKT82ZqCXwBdvkts/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvNDU0LzZjNDA2/NjcyLTk3MjMtNGRh/YS05OWNhLTM2YWU4/MWY4YmViMS5qcGc.webp",
+      price: 4.20,
+      priceDisplay: "4.20€/kg",
+      unit: "kg",
+      category: "Légumes"
+    },
+    {
+      id: 7,
+      name: "Aubergines",
+      image: "https://photo-cdn2.icons8.com/GYaRDl_O0nH0xnvfp9YiC2JMbMYoZQfbeLY72kN8Fuw/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvOTg1LzgxZWNi/NjBjLWMzZTQtNDk5/NS05MzUzLTI0MjM2/ZGY4NTdiOS5qcGc.webp",
+      price: 3.80,
+      priceDisplay: "3.80€/kg",
+      unit: "kg",
+      category: "Légumes"
+    },
+    {
+      id: 8,
+      name: "Concombres",
+      image: "https://photo-cdn2.icons8.com/9Vj5Mwb0JZKzMgKqIakrTFXQ1xQp5kMl8tLNALaBHkI/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvMTA5My81ZjRi/MjViMC01MmE1LTQ4/ZTctYWJlZC1iOGMy/MjUyMDRmYmUuanBn.webp",
+      price: 1.90,
+      priceDisplay: "1.90€/kg",
+      unit: "kg",
+      category: "Légumes"
     }
   ],
   "Fruits": [
@@ -82,6 +119,80 @@ const mockProducts: ProductsData = {
       priceDisplay: "3.20€/kg",
       unit: "kg",
       category: "Fruits"
+    },
+    {
+      id: 9,
+      name: "Fraises",
+      image: "https://photo-cdn2.icons8.com/WiXYz-_2CPzrL2QkuN-_PeK9z3BjvgONIGFGE3CJBug/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvOTI0LzUwMzVh/YTE2LTA1NDQtNDM2/My05N2FjLTViM2Rh/NTdjNTgzNC5qcGc.webp",
+      price: 5.50,
+      priceDisplay: "5.50€/kg",
+      unit: "kg",
+      category: "Fruits"
+    },
+    {
+      id: 10,
+      name: "Oranges",
+      image: "https://photo-cdn2.icons8.com/I7TLiYFq_XLVGlmW8dkN8L0EG4e7q6GvJ8iCGRLXdvw/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvNjA5L2YyY2Uz/NjcyLWYzY2ItNGZm/MC04MzdkLTAyYzIy/N2VkZGU5Ni5qcGc.webp",
+      price: 3.00,
+      priceDisplay: "3.00€/kg",
+      unit: "kg",
+      category: "Fruits"
+    },
+    {
+      id: 11,
+      name: "Poires",
+      image: "https://photo-cdn2.icons8.com/xYJHEyQUF_qZo9MBzzNmzrLp0hOxkBRO5EXyXdZfKbE/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvODI0L2UzYzUx/NmE4LTA0ZTQtNGU1/Ny05N2RhLTQ0YTZj/Y2QyZjhmZC5qcGc.webp",
+      price: 3.40,
+      priceDisplay: "3.40€/kg",
+      unit: "kg",
+      category: "Fruits"
+    },
+    {
+      id: 12,
+      name: "Raisins",
+      image: "https://photo-cdn2.icons8.com/IuU5pVz-ZsxFDJ4t5i_GgfXJwLiAWwmAJa0LS2XrXAQ/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvOTc2L2RkYzIz/NmI3LTdhMjYtNDdh/Ny1iNzE1LTQyMTFl/MDI5OGYwZi5qcGc.webp",
+      price: 4.80,
+      priceDisplay: "4.80€/kg",
+      unit: "kg",
+      category: "Fruits"
+    }
+  ],
+  "Produits laitiers": [
+    {
+      id: 13,
+      name: "Fromage de chèvre",
+      image: "https://photo-cdn2.icons8.com/RvQXmn3v-FY4RZWZQ2ZUgPUbMd1EXCvGd1zRZHqD5JI/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvNTkvNTFjY2I5/MzAtNWYyOS00NTk4/LWIwMTgtYjc3ODJl/NjFmNmQ3LmpwZw.webp",
+      price: 6.50,
+      priceDisplay: "6.50€/pièce",
+      unit: "pièce",
+      category: "Produits laitiers"
+    },
+    {
+      id: 14,
+      name: "Yaourt nature",
+      image: "https://photo-cdn2.icons8.com/4qh7MnTtF0jn0BwcADVo8BxJ1aG_7YqKfmPiNQf8pLo/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvOTQ0LzA0YjVl/YTFhLWY4YzItNDMx/NC05NDQ1LWI3Mjdk/ODI2OTM3My5qcGc.webp",
+      price: 3.20,
+      priceDisplay: "3.20€/lot",
+      unit: "lot",
+      category: "Produits laitiers"
+    },
+    {
+      id: 15,
+      name: "Beurre fermier",
+      image: "https://photo-cdn2.icons8.com/eP_PZ9qLfJlREVVUiZvAWTfY4CRO1CdIFy2PqYpTzEE/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvMzg1LzI0MGE3/MzNiLTU1ZjEtNGUx/OC1iZDhjLWU5OGI5/ZDI5ZmRjZS5qcGc.webp",
+      price: 4.50,
+      priceDisplay: "4.50€/250g",
+      unit: "250g",
+      category: "Produits laitiers"
+    },
+    {
+      id: 16,
+      name: "Crème fraîche",
+      image: "https://photo-cdn2.icons8.com/dJnXfhWm9cBrWl8RrfwJrYzMGxEGqnq7vRg0e7g7Hcg/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvNTkvYTM5OTVm/M2MtOTY1MC00NWEy/LTgwNTAtYTY1NmE0/MTkzMzU2LmpwZw.webp",
+      price: 3.80,
+      priceDisplay: "3.80€/pot",
+      unit: "pot",
+      category: "Produits laitiers"
     }
   ]
 };
@@ -98,6 +209,38 @@ export default function ProducerShopScreen() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [products, setProducts] = useState<ProductsData>(mockProducts);
   const [newCategoryName, setNewCategoryName] = useState('');
+
+  // Log temporaire pour récupérer votre Producer ID
+  React.useEffect(() => {
+    const fetchAndLogProducerId = async () => {
+      if (authState.isSignedIn && authState.userInfo?.sub) {
+        const keycloakId = authState.userInfo.sub;
+        const email = authState.userInfo.email;
+
+        console.log('========================================');
+        console.log('🔑 KEYCLOAK INFO:');
+        console.log('  - Keycloak ID (UUID):', keycloakId);
+        console.log('  - Email:', email);
+        console.log('  - Roles:', authState.userInfo.roles);
+        console.log('========================================');
+
+        try {
+          const profile = await getUserByKeycloakId(keycloakId);
+          console.log('========================================');
+          console.log('✅ PRODUCER INFO FROM ACCOUNT SERVICE:');
+          console.log('  - Producer ID (Number):', profile.id);
+          console.log('  - Keycloak ID:', profile.keycloakId);
+          console.log('========================================');
+          console.log('💡 UTILISEZ CE PRODUCER ID DANS VOS SEEDS:', profile.id);
+          console.log('========================================');
+        } catch (error) {
+          console.error('❌ Erreur lors de la récupération du Producer ID:', error);
+        }
+      }
+    };
+
+    fetchAndLogProducerId();
+  }, [authState.isSignedIn, authState.userInfo]);
 
   // Determine if this is the producer's own shop
   const isOwnShop = authState.userInfo?.roles?.[0] === 'Producer';
@@ -285,9 +428,13 @@ export default function ProducerShopScreen() {
         </View>
       )}
 
-      <View style={styles.productsGrid}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.productsScrollContainer}
+      >
         {categoryProducts.map(renderProductCard)}
-      </View>
+      </ScrollView>
     </View>
   );
 
@@ -531,17 +678,16 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
 
-  // Products grid
-  productsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
+  // Products scroll container
+  productsScrollContainer: {
+    paddingRight: 24,
+    paddingVertical: 8,
     gap: 12,
   },
 
   // Product card styles
   productCard: {
-    width: 179,
+    width: 160,
     height: 171,
     backgroundColor: "#FFFFFF",
     borderRadius: 15,
@@ -550,9 +696,10 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
-    shadowRadius: 8,
+    shadowRadius: 5,
     elevation: 8,
     paddingVertical: 16,
+    marginRight: 12,
   },
   productImageContainer: {
     width: 60,

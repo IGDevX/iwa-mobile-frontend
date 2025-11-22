@@ -5,7 +5,7 @@
  * Handles JSON parsing, error handling, auth token injection, and retries.
  */
 
-import { API_BASE_URL, API_TIMEOUT, MAX_RETRY_ATTEMPTS, RETRY_BACKOFF_MULTIPLIER, RETRY_DELAY_MS } from '../../constants/Config';
+import { ACCOUNT_SERVICE_BASE_URL, API_TIMEOUT, MAX_RETRY_ATTEMPTS, RETRY_BACKOFF_MULTIPLIER, RETRY_DELAY_MS } from '../../constants/Config';
 import { ApiError, type ApiErrorResponse, type RequestOptions } from '../account/accountApi';
 
 /**
@@ -96,7 +96,7 @@ async function request<T = any>(
   body?: any,
   options: RequestOptions = {}
 ): Promise<T> {
-  const url = path.startsWith('http') ? path : `${API_BASE_URL}${path}`;
+  const url = path.startsWith('http') ? path : `${ACCOUNT_SERVICE_BASE_URL}${path}`;
   const { headers = {}, timeout = API_TIMEOUT, retries = MAX_RETRY_ATTEMPTS } = options;
 
   // Get auth token if available

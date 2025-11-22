@@ -64,7 +64,7 @@ export class StripeConnectError extends Error {
 /**
  * Base URL for account service endpoints
  */
-const ACCOUNT_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:5001';
+const ACCOUNT_BASE_URL = process.env.EXPO_PUBLIC_ACCOUNT_SERVICE_URL || 'http://localhost:5001';
 
 /**
  * Stripe Connect API endpoints
