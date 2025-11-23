@@ -1,8 +1,8 @@
-import React, { useState, useContext } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Image } from "react-native";
-import { useTranslation } from "react-i18next";
-import { router } from "expo-router";
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { router } from "expo-router";
+import React, { useContext, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { AuthContext } from '../../components/AuthContext';
 
 interface Order {
@@ -16,145 +16,42 @@ interface Order {
   time: string;
 }
 
-const mockRestaurantOrders: Order[] = [
-  {
-    id: '1',
-    producerName: 'Les Jardins de Marie',
-    total: 120,
-    status: 'accepted',
-    deliveryMode: 'pickup',
-    date: '2024-09-28',
-    time: '14:00'
-  },
-  {
-    id: '2',
-    producerName: 'Ferme Bio du Soleil',
-    total: 85,
-    status: 'pending',
-    deliveryMode: 'delivery',
-    date: '2024-09-29',
-    time: '10:30'
-  },
-  {
-    id: '3',
-    producerName: 'Ferme des Champs',
-    total: 240,
-    status: 'delivered',
-    deliveryMode: 'delivery',
-    date: '2024-09-27',
-    time: '09:00'
-  },
-  {
-    id: '4',
-    producerName: 'Producteur Martin',
-    total: 65,
-    status: 'paid',
-    deliveryMode: 'pickup',
-    date: '2024-09-26',
-    time: '16:30'
-  },
-  {
-    id: '5',
-    producerName: 'Ferme de la Vallée',
-    total: 150,
-    status: 'unpaid',
-    deliveryMode: 'delivery',
-    date: '2024-09-26',
-    time: '11:00'
-  },
-  {
-    id: '6',
-    producerName: 'Les Vergers du Sud',
-    total: 95,
-    status: 'not_delivered',
-    deliveryMode: 'delivery',
-    date: '2024-09-25',
-    time: '13:30'
-  },
-  {
-    id: '7',
-    producerName: 'Ferme Bio Locale',
-    total: 78,
-    status: 'paid',
-    deliveryMode: 'pickup',
-    date: '2024-09-24',
-    time: '08:45'
-  },
-  {
-    id: '8',
-    producerName: 'Maraîcher du Village',
-    total: 132,
-    status: 'paid',
-    deliveryMode: 'delivery',
-    date: '2024-09-23',
-    time: '15:00'
-  }
-];
-
-const mockProducerOrders: Order[] = [
-  {
-    id: '1',
-    restaurantName: 'Le Petit Bistro',
-    total: 120,
-    status: 'pending',
-    deliveryMode: 'delivery',
-    date: '2024-09-28',
-    time: '14:30'
-  },
-  {
-    id: '2',
-    restaurantName: 'La Table Verte',
-    total: 85,
-    status: 'accepted',
-    deliveryMode: 'pickup',
-    date: '2024-09-27',
-    time: '10:00'
-  },
-  {
-    id: '3',
-    restaurantName: 'Restaurant du Marché',
-    total: 340,
-    status: 'delivered',
-    deliveryMode: 'delivery',
-    date: '2024-09-26',
-    time: '16:00'
-  },
-  {
-    id: '4',
-    restaurantName: 'Chez Marie',
-    total: 75,
-    status: 'paid',
-    deliveryMode: 'pickup',
-    date: '2024-09-26',
-    time: '09:30'
-  },
-  {
-    id: '5',
-    restaurantName: 'L\'Auberge Gourmande',
-    total: 190,
-    status: 'not_delivered',
-    deliveryMode: 'delivery',
-    date: '2024-09-25',
-    time: '12:00'
-  },
-  {
-    id: '6',
-    restaurantName: 'Le Jardin Secret',
-    total: 45,
-    status: 'refused',
-    deliveryMode: 'pickup',
-    date: '2024-09-24',
-    time: '15:00'
-  }
-];
-
 export default function OrdersListScreen() {
   const { t } = useTranslation();
   const { state: authState } = useContext(AuthContext);
   const [searchQuery, setSearchQuery] = useState('');
 
   const isProducer = authState.userInfo?.roles?.[0] === 'Producer';
-  const orders = isProducer ? mockProducerOrders : mockRestaurantOrders;
+  const [orders, setOrders] = React.useState<Order[]>([]);
+  const [loading, setLoading] = React.useState<boolean>(true);
+  const [error, setError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const orderApi = await import('../../services/order/orderApi');
+        let data;
+        if (isProducer) {
+          // request producer-specific orders; backend should infer producerId from token
+          data = await orderApi.listOrders({ producerId: authState.userInfo?.sub });
+        } else {
+          data = await orderApi.listOrders({ customerId: authState.userInfo?.sub });
+        }
+        if (!mounted) return;
+        setOrders(Array.isArray(data) ? data : (data.items || []));
+      } catch (err: any) {
+        console.error('[OrdersList] Failed to load orders', err);
+        setError(err?.message || 'Failed to load orders');
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+    load();
+    return () => { mounted = false; };
+  }, [isProducer]);
 
   const handleBack = () => {
     router.back();
@@ -189,6 +86,22 @@ export default function OrdersListScreen() {
     const searchTerm = isProducer ? order.restaurantName : order.producerName;
     return searchTerm?.toLowerCase().includes(searchQuery.toLowerCase());
   });
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={styles.headerTitle}>{t('orders.loading', 'Loading orders...')}</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={styles.headerTitle}>{error}</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>

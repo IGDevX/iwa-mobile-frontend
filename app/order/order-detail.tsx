@@ -35,28 +35,7 @@ interface OrderDetails {
   subtotal: number;
 }
 
-const mockOrderDetails: OrderDetails = {
-  id: '2',
-  orderNumber: 'ORD-2024-001234',
-  producerName: 'Ferme Bio Du Soleil',
-  producerAddress: '15 Rue des Tomates, Loupian',
-  producerKeycloakId: '1f40acc3-6fa2-4599-a9ac-184773358935', // ⚠️ TODO: Replace with actual producer Keycloak ID
-  total: 93.90,
-  status: 'not_delivered',
-  deliveryMode: 'delivery',
-  orderDate: '2024-09-26 10:30',
-  acceptedDate: '2024-09-26 11:15',
-  deliveryDate: '2024-09-28 14:30',
-  paymentDue: '2024-10-05',
-  subtotal: 78.90,
-  deliveryFee: 15.00,
-  items: [
-    { id: '1', name: 'Organic Tomatoes', quantity: 5, price: 4.50, unit: 'kg', total: 22.50 },
-    { id: '2', name: 'Fresh Basil', quantity: 200, price: 12.00, unit: 'g', total: 12.00 },
-    { id: '3', name: 'Mozzarella di Bufala', quantity: 2, price: 18.00, unit: 'kg', total: 36.00 },
-    { id: '4', name: 'Organic Lettuce', quantity: 3, price: 2.80, unit: 'heads', total: 8.40 }
-  ]
-};
+// Order details will be loaded from backend
 
 export default function OrderDetailScreen() {
   const { t } = useTranslation();
@@ -69,8 +48,33 @@ export default function OrderDetailScreen() {
   const userRole = state.userInfo?.roles?.[0] || 'Producer';
   const isRestaurant = userRole === 'Restaurant Owner';
 
-  // In a real app, you would fetch order details based on orderId
-  const orderDetails = mockOrderDetails;
+  // Load order detail from backend
+  const [orderDetails, setOrderDetails] = React.useState<OrderDetails | null>(null);
+  const [loadingOrder, setLoadingOrder] = React.useState<boolean>(true);
+  const [orderError, setOrderError] = React.useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      if (!orderId) return;
+      setLoadingOrder(true);
+      setOrderError(null);
+      try {
+        // dynamic import to avoid circular deps at top level
+        const orderApi = await import('../../services/order/orderApi');
+        const data = await orderApi.getOrderById(orderId);
+        if (!mounted) return;
+        setOrderDetails(data);
+      } catch (err: any) {
+        console.error('[OrderDetail] Failed to fetch order:', err);
+        setOrderError(err?.message || 'Failed to load order');
+      } finally {
+        if (mounted) setLoadingOrder(false);
+      }
+    };
+    load();
+    return () => { mounted = false; };
+  }, [orderId]);
 
   // Check if payment exists for this order
   const existingPayment = getPaymentByOrderId(orderId);
@@ -78,11 +82,11 @@ export default function OrderDetailScreen() {
 
   // Initialize payment hook with producer info for Stripe Connect
   const { loading, openPaymentSheet } = usePayment({
-    amount: Math.round(orderDetails.total * 100), // Convert to cents
+    amount: Math.round((orderDetails?.total || 0) * 100), // Convert to cents
     currency: 'eur',
-    merchantDisplayName: orderDetails.producerName,
-    producerKeycloakId: orderDetails.producerKeycloakId, // For direct payment to producer
-    orderId: orderDetails.id, // For tracking
+    merchantDisplayName: orderDetails?.producerName || 'Merchant',
+    producerKeycloakId: orderDetails?.producerKeycloakId, // For direct payment to producer
+    orderId: orderDetails?.id || orderId, // For tracking
   });
 
   // Load payment status from backend on component mount
@@ -135,16 +139,22 @@ export default function OrderDetailScreen() {
   };
 
   const handleCallProducer = () => {
-    const phoneNumber = '+33123456789'; // Mock phone number
+    const phoneNumber = (orderDetails as any)?.producerPhone || '+33123456789';
     Linking.openURL(`tel:${phoneNumber}`);
   };
 
   const handleEmailProducer = () => {
-    const email = 'contact@fermebiousoleil.fr'; // Mock email
+    const email = (orderDetails as any)?.producerEmail || 'contact@fermebiousoleil.fr';
     Linking.openURL(`mailto:${email}`);
   };
 
   const didTapCheckoutButton = async () => {
+    // Guard: ensure order details are loaded before attempting payment
+    if (!orderDetails) {
+      Alert.alert('Order not loaded', 'Unable to start payment because order details are missing.');
+      return;
+    }
+
     try {
       // Payment will be split automatically by Stripe Connect:
       // - 90% (€84.51) goes directly to producer's connected account
@@ -253,6 +263,23 @@ export default function OrderDetailScreen() {
       day: '2-digit'
     });
   };
+
+  // Show loading / error states for order fetch
+  if (loadingOrder) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={styles.loadingText}>{t('orders.loading', 'Loading order...')}</Text>
+      </View>
+    );
+  }
+
+  if (!orderDetails) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={styles.loadingText}>{orderError || t('orders.not_found', 'Order not found')}</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -849,5 +876,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#4A4459",
     fontWeight: "500",
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#4A4459',
   },
 });
