@@ -64,17 +64,18 @@ export class StripeConnectError extends Error {
 /**
  * Base URL for account service endpoints
  */
-const ACCOUNT_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:5001';
+// Use gateway base URL so all service calls go through the API gateway
+const ACCOUNT_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
 /**
  * Stripe Connect API endpoints
  */
 export const STRIPE_CONNECT_ENDPOINTS = {
-  CREATE_CONNECTED_ACCOUNT: `${ACCOUNT_BASE_URL}/api/v1/account/stripe/connected-account`,
-  GET_CONNECTED_ACCOUNT: `${ACCOUNT_BASE_URL}/api/v1/account/stripe/connected-account`,
-  REFRESH_ONBOARDING: `${ACCOUNT_BASE_URL}/api/v1/account/stripe/refresh-onboarding`,
-  SYNC_ACCOUNT_STATUS: `${ACCOUNT_BASE_URL}/api/v1/account/stripe/sync-status`,
-  DELETE_CONNECTED_ACCOUNT: `${ACCOUNT_BASE_URL}/api/v1/account/stripe/connected-account`,
+  CREATE_CONNECTED_ACCOUNT: `${ACCOUNT_BASE_URL}/account/stripe/connected-account`,
+  GET_CONNECTED_ACCOUNT: `${ACCOUNT_BASE_URL}/account/stripe/connected-account`,
+  REFRESH_ONBOARDING: `${ACCOUNT_BASE_URL}/account/stripe/refresh-onboarding`,
+  SYNC_ACCOUNT_STATUS: `${ACCOUNT_BASE_URL}/account/stripe/sync-status`,
+  DELETE_CONNECTED_ACCOUNT: `${ACCOUNT_BASE_URL}/account/stripe/connected-account`,
 } as const;
 
 /**

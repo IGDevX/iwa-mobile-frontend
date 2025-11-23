@@ -64,14 +64,15 @@ export interface OrderStatusUpdateResponse {
 // Configuration
 // ============================================
 
-// Use same base URL as payment service
-const PAYMENT_BASE_URL = process.env.EXPO_PUBLIC_PAYMENT_URL || 'http://localhost:5004';
+// Use the API gateway base so frontend talks to gateway which routes to payment service
+const PAYMENT_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
 const ORDER_PAYMENT_ENDPOINTS = {
-  RECORD_PAYMENT: (orderId: string) => `${PAYMENT_BASE_URL}/api/orders/${orderId}/payment`,
-  GET_PAYMENT_STATUS: (orderId: string) => `${PAYMENT_BASE_URL}/api/orders/${orderId}/payment`,
-  UPDATE_ORDER_STATUS: (orderId: string) => `${PAYMENT_BASE_URL}/api/orders/${orderId}/status`,
-  VERIFY_PAYMENT: (paymentIntentId: string) => `${PAYMENT_BASE_URL}/api/payments/verify/${paymentIntentId}`,
+  // Routes are prefixed with /payment so gateway will forward to payment-service
+  RECORD_PAYMENT: (orderId: string) => `${PAYMENT_BASE_URL}/payment/orders/${orderId}/payment`,
+  GET_PAYMENT_STATUS: (orderId: string) => `${PAYMENT_BASE_URL}/payment/orders/${orderId}/payment`,
+  UPDATE_ORDER_STATUS: (orderId: string) => `${PAYMENT_BASE_URL}/payment/orders/${orderId}/status`,
+  VERIFY_PAYMENT: (paymentIntentId: string) => `${PAYMENT_BASE_URL}/payment/payments/verify/${paymentIntentId}`,
 } as const;
 
 // ============================================
