@@ -5,8 +5,10 @@
  * base URLs, timeouts, and retry settings.
  */
 
-// Backend API base URL
-export const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:5001';
+// API Gateway base URL (Architecture centralisée)
+// Tous les services sont accessibles via la Gateway
+export const API_GATEWAY_BASE_URL = process.env.EXPO_PUBLIC_URL_GATEWAY_DEV || 'http://localhost:8080';
+
 
 // Request timeout in milliseconds
 export const API_TIMEOUT = 10000;

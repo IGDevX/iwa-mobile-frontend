@@ -1,12 +1,15 @@
 /**
  * Account Service
  * 
- * API service for interacting with the account backend service.
- * Handles user profile creation, retrieval, and updates.
+ * API service pour interagir avec le Account Service via l'API Gateway.
+ * Gère la création, récupération et mise à jour des profils utilisateurs.
+ *
+ * Architecture : Toutes les requêtes passent par localhost:8080/account
  */
 
-import { httpDelete, httpGet, httpPost, httpPut, isNetworkError } from '../shared/httpClient';
+import { accountDelete, accountGet, accountPost, accountPut } from './accountHttpClient';
 import { addPendingNotification, removePendingNotification } from '../shared/retryQueue';
+import { isNetworkError } from '../shared/httpClient';
 import {
     ApiError,
     type ProducerProfileRequest,
@@ -37,7 +40,7 @@ export async function createProducerProfile(
   request: ProducerProfileRequest
 ): Promise<UserProfileResponse> {
   try {
-    const response = await httpPost<UserProfileResponse>(
+    const response = await accountPost<UserProfileResponse>(
       ACCOUNT_ENDPOINTS.CREATE_PRODUCER,
       request,
       {
@@ -81,7 +84,7 @@ export async function createRestaurantProfile(
   request: RestaurantProfileRequest
 ): Promise<UserProfileResponse> {
   try {
-    const response = await httpPost<UserProfileResponse>(
+    const response = await accountPost<UserProfileResponse>(
       ACCOUNT_ENDPOINTS.CREATE_RESTAURANT,
       request,
       {
@@ -122,7 +125,7 @@ export async function createRestaurantProfile(
  * @returns Full user profile
  */
 export async function getMyProfile(): Promise<UserProfileResponse> {
-  return httpGet<UserProfileResponse>(ACCOUNT_ENDPOINTS.ME);
+  return accountGet<UserProfileResponse>(ACCOUNT_ENDPOINTS.ME);
 }
 
 /**
@@ -134,7 +137,7 @@ export async function getMyProfile(): Promise<UserProfileResponse> {
 export async function getProducerPublicProfile(
   id: string
 ): Promise<ProducerPublicProfileResponse> {
-  return httpGet<ProducerPublicProfileResponse>(
+  return accountGet<ProducerPublicProfileResponse>(
     ACCOUNT_ENDPOINTS.GET_PRODUCER(id)
   );
 }
@@ -148,7 +151,7 @@ export async function getProducerPublicProfile(
 export async function getRestaurantPublicProfile(
   id: string
 ): Promise<RestaurantPublicProfileResponse> {
-  return httpGet<RestaurantPublicProfileResponse>(
+  return accountGet<RestaurantPublicProfileResponse>(
     ACCOUNT_ENDPOINTS.GET_RESTAURANT(id)
   );
 }
@@ -167,7 +170,7 @@ export async function getUserByKeycloakId(
   
   try {
     // Use GET endpoint which auto-creates user if not exists
-    const result = await httpGet<UserProfileResponse>(
+    const result = await accountGet<UserProfileResponse>(
       endpoint,
       {
         headers: {
@@ -195,7 +198,7 @@ export async function getUserByKeycloakId(
  * @returns array of professions
  */
 export async function getProfessions(): Promise<Profession[]> {
-  return httpGet<Profession[]>(ACCOUNT_ENDPOINTS.GET_PROFESSIONS as string);
+  return accountGet<Profession[]>(ACCOUNT_ENDPOINTS.GET_PROFESSIONS as string);
 }
 
 /**
@@ -204,7 +207,7 @@ export async function getProfessions(): Promise<Profession[]> {
  * @returns profession object
  */
 export async function getProfessionById(id: string): Promise<Profession> {
-  return httpGet<Profession>(ACCOUNT_ENDPOINTS.GET_PROFESSION_BY_ID(id));
+  return accountGet<Profession>(ACCOUNT_ENDPOINTS.GET_PROFESSION_BY_ID(id));
 }
 
 // ============================================
@@ -221,7 +224,7 @@ export async function getProfessionById(id: string): Promise<Profession> {
 export async function updatePersonalInfo(
   request: UpdatePersonalInfoRequest
 ): Promise<UserProfileResponse> {
-  return httpPut<UserProfileResponse>(ACCOUNT_ENDPOINTS.UPDATE_ME, request);
+  return accountPut<UserProfileResponse>(ACCOUNT_ENDPOINTS.UPDATE_ME, request);
 }
 
 /**
@@ -236,7 +239,7 @@ export async function updateProducerProfile(
   keycloakId: string,
   request: ProducerProfileRequest
 ): Promise<UserProfileResponse> {
-  return httpPut<UserProfileResponse>(
+  return accountPut<UserProfileResponse>(
     ACCOUNT_ENDPOINTS.UPDATE_PRODUCER,
     request,
     {
@@ -259,7 +262,7 @@ export async function updateRestaurantProfile(
   keycloakId: string,
   request: RestaurantProfileRequest
 ): Promise<UserProfileResponse> {
-  return httpPut<UserProfileResponse>(
+  return accountPut<UserProfileResponse>(
     ACCOUNT_ENDPOINTS.UPDATE_RESTAURANT,
     request,
     {
@@ -286,7 +289,7 @@ export async function addProducerProfession(
   keycloakId: string,
   professionId: number
 ): Promise<UserProfileResponse> {
-  return httpPost<UserProfileResponse>(
+  return accountPost<UserProfileResponse>(
     ACCOUNT_ENDPOINTS.ADD_PRODUCER_PROFESSION(professionId),
     {},
     {
@@ -308,7 +311,7 @@ export async function removeProducerProfession(
   keycloakId: string,
   professionId: number
 ): Promise<void> {
-  await httpDelete(
+  await accountDelete(
     ACCOUNT_ENDPOINTS.REMOVE_PRODUCER_PROFESSION(professionId),
     {
       headers: {
@@ -329,7 +332,7 @@ export async function removeProducerProfession(
  * @param keycloakId - Keycloak user ID
  */
 export async function deleteProducerProfile(keycloakId: string): Promise<void> {
-  await httpDelete(ACCOUNT_ENDPOINTS.DELETE_PRODUCER, {
+  await accountDelete(ACCOUNT_ENDPOINTS.DELETE_PRODUCER, {
     headers: {
       'X-Keycloak-Id': keycloakId,
     },
@@ -343,7 +346,7 @@ export async function deleteProducerProfile(keycloakId: string): Promise<void> {
  * @param keycloakId - Keycloak user ID
  */
 export async function deleteRestaurantProfile(keycloakId: string): Promise<void> {
-  await httpDelete(ACCOUNT_ENDPOINTS.DELETE_RESTAURANT, {
+  await accountDelete(ACCOUNT_ENDPOINTS.DELETE_RESTAURANT, {
     headers: {
       'X-Keycloak-Id': keycloakId,
     },
