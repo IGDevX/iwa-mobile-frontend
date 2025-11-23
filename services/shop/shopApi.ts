@@ -8,6 +8,14 @@
 // Product Types
 // ============================================
 
+export interface PaginatedProductsResponse {
+  products: ProductResponse[];
+  totalElements: number;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
+}
+
 export interface ProductRequest {
   title: string;
   description?: string;
@@ -101,11 +109,17 @@ export interface CurrencyResponse {
 
 export interface ShelfResponse {
   id: number;
-  name: string;
+  label: string;
+  producerId: number;
+  name?: string; // Pour compatibilité ascendante
   nameEn?: string;
   nameFr?: string;
   code?: string;
   description?: string;
+  displayOrder?: number;
+  createdAt?: string;
+  updatedAt?: string;
+  isDeleted?: boolean;
 }
 
 // ============================================

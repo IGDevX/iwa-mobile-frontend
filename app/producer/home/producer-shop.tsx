@@ -17,7 +17,9 @@ import { AuthContext } from '../../../components/AuthContext';
 import { useCart } from '../../../components/CartContext';
 import { useNotifications } from '../../../hooks/useNotifications';
 import { useProfileCompletion } from '../../../hooks/useProfileCompletion';
-import { getUserByKeycloakId } from '../../../services/account';
+import { useProducerShopData } from '../../../hooks/useProducerShopData';
+import { getCompleteUserProfile } from '../../../services/account';
+import type { ProductResponse, ShelfResponse } from '../../../services/shop';
 
 // Mock producer data
 const mockProducer = {
@@ -28,7 +30,7 @@ const mockProducer = {
   profileImage: "https://photo-cdn2.icons8.com/vVsONpHf7-sTgM9mNbSkmX0iCJP6YF9_Ux93NilJJkY/rs:fit:576:384/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvNTA1L2NkNjhm/ODcwLWVjMmMtNDU2/OC1hNmE5LTk3ZGQw/NWE3Mjc3Mi5qcGc.webp"
 };
 
-// Type definitions
+// Type definitions (keeping for backward compatibility with mock data during transition)
 interface Product {
   id: number;
   name: string;
@@ -43,7 +45,7 @@ interface ProductsData {
   [key: string]: Product[];
 }
 
-// Mock products data organized by category
+// Mock products data organized by category (sera remplacé par les vraies données)
 const mockProducts: ProductsData = {
   "Légumes": [
     {
@@ -205,45 +207,142 @@ export default function ProducerShopScreen() {
   const { hasUnreadNotifications } = useNotifications();
   const { isComplete: isProfileComplete, isLoading: isProfileLoading } = useProfileCompletion();
 
+  // Récupération des données depuis le backend
+  const {
+    producerId,
+    shelves,
+    productsByShelf,
+    allProducts,
+    isLoading: isLoadingShopData,
+    error: shopDataError,
+    refreshData,
+  } = useProducerShopData();
+
+  // Producer profile state
+  const [producerProfile, setProducerProfile] = useState({
+    displayName: '',
+    responsibleName: '',
+    biography: '',
+  });
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+
   // Edit mode state
   const [isEditMode, setIsEditMode] = useState(false);
   const [products, setProducts] = useState<ProductsData>(mockProducts);
   const [newCategoryName, setNewCategoryName] = useState('');
 
-  // Log temporaire pour récupérer votre Producer ID
-  React.useEffect(() => {
-    const fetchAndLogProducerId = async () => {
-      if (authState.isSignedIn && authState.userInfo?.sub) {
-        const keycloakId = authState.userInfo.sub;
-        const email = authState.userInfo.email;
-
-        console.log('========================================');
-        console.log('🔑 KEYCLOAK INFO:');
-        console.log('  - Keycloak ID (UUID):', keycloakId);
-        console.log('  - Email:', email);
-        console.log('  - Roles:', authState.userInfo.roles);
-        console.log('========================================');
-
-        try {
-          const profile = await getUserByKeycloakId(keycloakId);
-          console.log('========================================');
-          console.log('✅ PRODUCER INFO FROM ACCOUNT SERVICE:');
-          console.log('  - Producer ID (Number):', profile.id);
-          console.log('  - Keycloak ID:', profile.keycloakId);
-          console.log('========================================');
-          console.log('💡 UTILISEZ CE PRODUCER ID DANS VOS SEEDS:', profile.id);
-          console.log('========================================');
-        } catch (error) {
-          console.error('❌ Erreur lors de la récupération du Producer ID:', error);
-        }
-      }
+  // Helper function pour convertir ProductResponse en format utilisable par l'UI
+  const convertProductResponseToProduct = (productResponse: ProductResponse): Product => {
+    return {
+      id: productResponse.id,
+      name: productResponse.title,
+      image: productResponse.mainImageUrl || 'https://via.placeholder.com/150',
+      price: Number(productResponse.price),
+      priceDisplay: `${productResponse.price}€/${productResponse.unit.abbreviation || productResponse.unit.name}`,
+      unit: productResponse.unit.abbreviation || productResponse.unit.name,
+      category: productResponse.shelf.name,
     };
+  };
 
-    fetchAndLogProducerId();
-  }, [authState.isSignedIn, authState.userInfo]);
+  // Log les données chargées depuis le backend
+  React.useEffect(() => {
+    if (!isLoadingShopData) {
+      console.log('========================================');
+      console.log('📊 PRODUCER SHOP DATA LOADED:');
+      console.log('  - Producer ID:', producerId);
+      console.log('  - Shelves:', shelves.length);
+      console.log('  - Total Products:', allProducts.length);
+      console.log('  - Products by Shelf:', Object.keys(productsByShelf).length);
+      if (shopDataError) {
+        console.error('  - Error:', shopDataError);
+      }
+      console.log('========================================');
+
+      // Log détaillé des shelves et produits
+      shelves.forEach(shelf => {
+        const shelfProducts = productsByShelf[shelf.id] || [];
+        console.log(`📦 Shelf: ${shelf.name} (${shelfProducts.length} products)`);
+      });
+    }
+  }, [isLoadingShopData, producerId, shelves, allProducts, productsByShelf, shopDataError]);
 
   // Determine if this is the producer's own shop
   const isOwnShop = authState.userInfo?.roles?.[0] === 'Producer';
+
+  // Helper function to get admin token (same as my-profile)
+  const getKeycloakAdminToken = async (): Promise<string | null> => {
+    try {
+      const adminUsername = process.env.EXPO_PUBLIC_KEYCLOAK_ADMIN_USERNAME || 'admin';
+      const adminPassword = process.env.EXPO_PUBLIC_KEYCLOAK_ADMIN_PASSWORD || 'admin';
+      const adminRealm = process.env.EXPO_PUBLIC_KEYCLOAK_ADMIN_REALM || 'master';
+      const baseUrl = process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG;
+
+      const formData = new URLSearchParams();
+      formData.append('grant_type', 'password');
+      formData.append('client_id', 'admin-cli');
+      formData.append('username', adminUsername);
+      formData.append('password', adminPassword);
+
+      const response = await fetch(
+        `${baseUrl}/realms/${adminRealm}/protocol/openid-connect/token`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Accept': 'application/json',
+          },
+          body: formData.toString(),
+        }
+      );
+
+      if (!response.ok) {
+        console.error('Failed to get admin token:', response.status);
+        return null;
+      }
+
+      const tokenData = await response.json();
+      return tokenData.access_token;
+    } catch (error) {
+      console.error('Error getting admin token:', error);
+      return null;
+    }
+  };
+
+  // Function to load producer profile data
+  const loadProducerProfile = async () => {
+    try {
+      if (!authState.userInfo?.sub || !isOwnShop) {
+        setIsLoadingProfile(false);
+        return;
+      }
+
+      const keycloakId = authState.userInfo.sub;
+
+      // Use the combined function to get both Keycloak and Account Service data
+      const completeProfile = await getCompleteUserProfile(keycloakId, getKeycloakAdminToken);
+
+      // Set producer profile data (Keycloak + Account Service)
+      setProducerProfile({
+        displayName: completeProfile.keycloak.displayName || mockProducer.name,
+        responsibleName: completeProfile.keycloak.responsibleName || mockProducer.responsibleName,
+        biography: completeProfile.accountService.biography || mockProducer.description,
+      });
+    } catch (error) {
+      console.error('Error loading producer profile:', error);
+      // Keep mock data as fallback
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  };
+
+  // Load profile data when component mounts or auth state changes
+  React.useEffect(() => {
+    if (isOwnShop) {
+      loadProducerProfile();
+    } else {
+      setIsLoadingProfile(false);
+    }
+  }, [authState.userInfo, isOwnShop]);
 
   const handleCartPress = () => {
     // Check if user is logged in
@@ -374,6 +473,87 @@ export default function ProducerShopScreen() {
     }
   };
 
+  // Rendu d'un produit depuis le backend (ProductResponse)
+  const renderRealProductCard = (product: ProductResponse) => (
+    <View key={product.id} style={styles.productCard}>
+      <TouchableOpacity
+        style={styles.productCardContent}
+        onPress={() => handleProductPress(convertProductResponseToProduct(product))}
+      >
+        <View style={styles.productImageContainer}>
+          <Image
+            source={{ uri: product.mainImageUrl || 'https://via.placeholder.com/150' }}
+            style={styles.productImage}
+          />
+        </View>
+        <Text style={styles.productName}>{product.title}</Text>
+        <Text style={styles.productPrice}>
+          {product.price}€/{product.unit.abbreviation || product.unit.name}
+        </Text>
+        {isEditMode && (
+          <Text style={styles.stockText}>Stock: {product.title}</Text>
+        )}
+      </TouchableOpacity>
+
+      {isEditMode && isOwnShop && (
+        <TouchableOpacity
+          style={styles.deleteProductButton}
+          onPress={() => handleDeleteProduct(product.id)}
+        >
+          <Ionicons name="close-circle" size={20} color="#ff4444" />
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+
+  // Rendu d'une shelf (rayon) avec ses produits
+  const renderShelf = (shelf: ShelfResponse) => {
+    const shelfProducts = productsByShelf[shelf.id] || [];
+    const shelfName = shelf.name || shelf.label;
+
+    return (
+      <View key={shelf.id} style={styles.categorySection}>
+        <View style={styles.categoryHeader}>
+          <Text style={styles.categoryTitle}>{shelfName}</Text>
+          <View style={styles.categoryBadge}>
+            <Text style={styles.categoryBadgeText}>{shelfProducts.length}</Text>
+          </View>
+        </View>
+
+        {isEditMode && isOwnShop && (
+          <View style={styles.editActions}>
+            <TouchableOpacity
+              style={styles.deleteCategory}
+              onPress={() => handleDeleteCategory(shelfName)}
+            >
+              <Text style={styles.deleteCategoryText}>
+                {t('producer.delete_category', 'Delete Shelf')}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.addProduct}
+              onPress={() => handleAddProduct(shelfName)}
+            >
+              <Text style={styles.addProductText}>
+                {t('producer.add_product', 'Add Product')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.productsScrollContainer}
+        >
+          {shelfProducts.map(renderRealProductCard)}
+        </ScrollView>
+      </View>
+    );
+  };
+
+  // Rendu d'un produit mock (ancienne version, conservée pour compatibilité)
   const renderProductCard = (product: Product) => (
     <View key={product.id} style={styles.productCard}>
       <TouchableOpacity
@@ -495,13 +675,19 @@ export default function ProducerShopScreen() {
           <Image source={{ uri: mockProducer.profileImage }} style={styles.profileImage} />
 
           <View style={styles.producerInfo}>
-            <Text style={styles.producerName}>{mockProducer.name}</Text>
-            <Text style={styles.responsibleName}>{mockProducer.responsibleName}</Text>
+            <Text style={styles.producerName}>
+              {isLoadingProfile ? mockProducer.name : (producerProfile.displayName || mockProducer.name)}
+            </Text>
+            <Text style={styles.responsibleName}>
+              {isLoadingProfile ? mockProducer.responsibleName : (producerProfile.responsibleName || mockProducer.responsibleName)}
+            </Text>
           </View>
         </View>
 
         {/* Description */}
-        <Text style={styles.description}>{mockProducer.description}</Text>
+        <Text style={styles.description}>
+          {isLoadingProfile ? mockProducer.description : (producerProfile.biography || mockProducer.description)}
+        </Text>
 
         {/* New Category Section - Edit Mode Only */}
         {isEditMode && isOwnShop && (
@@ -525,10 +711,41 @@ export default function ProducerShopScreen() {
           </View>
         )}
 
-        {/* Products and Categories */}
+        {/* Products and Shelves */}
         <View style={styles.productsSection}>
-          {Object.entries(products).map(([categoryName, categoryProducts]) =>
-            renderCategory(categoryName, categoryProducts)
+          {isLoadingShopData ? (
+            <View style={{ padding: 20, alignItems: 'center' }}>
+              <Text style={{ color: '#4A4459', fontSize: 14 }}>
+                {t('common.loading', 'Loading products...')}
+              </Text>
+            </View>
+          ) : shopDataError ? (
+            <View style={{ padding: 20, alignItems: 'center' }}>
+              <Text style={{ color: '#E07A5F', fontSize: 14 }}>
+                {t('common.error', 'Error')}: {shopDataError}
+              </Text>
+              <TouchableOpacity
+                style={{ marginTop: 10, padding: 10, backgroundColor: '#89A083', borderRadius: 8 }}
+                onPress={refreshData}
+              >
+                <Text style={{ color: '#FFFFFF' }}>
+                  {t('common.retry', 'Retry')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : shelves.length > 0 ? (
+            // Afficher les vraies données du backend
+            shelves.map(renderShelf)
+          ) : (
+            // Fallback sur les mocks si pas de données
+            <View>
+              <Text style={{ padding: 20, color: '#4A4459', fontSize: 14, textAlign: 'center' }}>
+                {t('producer.no_products', 'No products yet. Start by adding your first product!')}
+              </Text>
+              {Object.entries(products).map(([categoryName, categoryProducts]) =>
+                renderCategory(categoryName, categoryProducts)
+              )}
+            </View>
           )}
         </View>
 

@@ -8,6 +8,7 @@
 export type {
   CategoryResponse,
   CurrencyResponse,
+  PaginatedProductsResponse,
   ProductCertificationResponse,
   ProductRequest,
   ProductResponse,
@@ -29,9 +30,10 @@ export {
   getCategory,
   getProduct,
   getProductsByProducer,
+  getShelvesByProducer,
   updateProduct,
 } from './shopService';
 
 // Export configuration
-export { SHOP_ENDPOINTS, SHOP_SERVICE_BASE_URL } from './shopConfig';
+export { SHOP_ENDPOINTS } from './shopConfig';
 
