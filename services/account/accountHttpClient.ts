@@ -5,9 +5,11 @@
  * Gère l'authentification selon les règles de sécurité :
  * - Routes publiques : GET sur professions, restaurant, producer, user/username
  * - Routes privées : Toutes les autres (POST/PUT/DELETE + GET user/keycloak)
+ * - Ajoute automatiquement le header X-Keycloak-Id en décodant le JWT
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { extractKeycloakId } from '../../utils/jwtUtils';
 import { isPublicAccountEndpoint } from './accountConfig';
 
 interface RequestOptions {
@@ -56,6 +58,18 @@ async function request<T>(
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
       console.log(`🔐 [ACCOUNT] Route privée - Token ajouté pour ${method} ${url}`);
+
+      // Ajouter automatiquement X-Keycloak-Id en décodant le JWT
+      // Sauf si déjà fourni dans les options
+      if (!options?.headers?.['X-Keycloak-Id']) {
+        const keycloakId = extractKeycloakId(token);
+        if (keycloakId) {
+          headers['X-Keycloak-Id'] = keycloakId;
+          console.log(`🆔 [ACCOUNT] X-Keycloak-Id ajouté automatiquement: ${keycloakId.substring(0, 8)}...`);
+        } else {
+          console.warn(`⚠️ [ACCOUNT] Impossible d'extraire le Keycloak ID du token`);
+        }
+      }
     } else {
       console.warn(`⚠️ [ACCOUNT] Route privée mais pas de token disponible pour ${method} ${url}`);
     }

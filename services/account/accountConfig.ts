@@ -29,77 +29,81 @@ const ACCOUNT_PREFIX = '/account';
  * - POST/PUT/DELETE /account/address (gestion adresses)
  */
 export const ACCOUNT_ENDPOINTS = {
-  // ============================================
-  // User Management
-  // ============================================
+    // ============================================
+    // User Management
+    // ============================================
 
-  // Profil utilisateur (PUBLIC pour consultation, PRIVATE pour modification)
-  GET_USER_BY_KEYCLOAK_ID: (keycloakId: string) =>
-    `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/user/keycloak/${keycloakId}`, // PRIVATE
-  GET_USER_BY_USERNAME: (username: string) =>
-    `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/user/username/${username}`, // PUBLIC
-  UPDATE_USER: `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/user`, // PUT PRIVATE
-  DELETE_USER: (userId: number) =>
-    `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/user/${userId}`, // DELETE PRIVATE
+    // Profil utilisateur actuel (requiert X-Keycloak-Id header)
+    ME: `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/me`, // GET PRIVATE - retourne le profil de l'utilisateur connecté
+    UPDATE_ME: `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/me`, // PUT PRIVATE
 
-  // ============================================
-  // Professions (Référentiel)
-  // ============================================
-  GET_ALL_PROFESSIONS: `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/professions`, // GET PUBLIC
+    // Endpoint interne pour créer/récupérer un user par Keycloak ID (auto-création)
+    GET_OR_CREATE_USER_BY_KEYCLOAK_ID: (keycloakId: string) =>
+        `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/internal/${keycloakId}`, // GET PRIVATE - crée le user s'il n'existe pas
 
-  // ============================================
-  // Restaurant Management
-  // ============================================
-  GET_RESTAURANT_BY_ID: (restaurantId: number) =>
-    `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/restaurant/${restaurantId}`, // GET PUBLIC
-  GET_ALL_RESTAURANTS: `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/restaurant`, // GET PUBLIC
-  CREATE_RESTAURANT: `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/restaurant`, // POST PRIVATE
-  UPDATE_RESTAURANT: `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/restaurant`, // PUT PRIVATE
-  DELETE_RESTAURANT: `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/restaurant`, // DELETE PRIVATE (utilise X-Keycloak-Id)
+    // DEPRECATED: Ces endpoints n'existent pas sur le backend
+    // GET_USER_BY_KEYCLOAK_ID: (keycloakId: string) =>
+    //     `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/user/keycloak/${keycloakId}`,
+    // GET_USER_BY_USERNAME: (username: string) =>
+    //     `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/user/username/${username}`,
 
-  // ============================================
-  // Producer Management
-  // ============================================
-  GET_PRODUCER_BY_ID: (producerId: number) =>
-    `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/producer/${producerId}`, // GET PUBLIC
-  GET_ALL_PRODUCERS: `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/producer`, // GET PUBLIC
-  CREATE_PRODUCER: `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/producer`, // POST PRIVATE
-  UPDATE_PRODUCER: `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/producer`, // PUT PRIVATE
-  DELETE_PRODUCER: `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/producer`, // DELETE PRIVATE (utilise X-Keycloak-Id)
+    // ============================================
+    // Professions (Référentiel)
+    // ============================================
+    GET_ALL_PROFESSIONS: `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/professions`, // GET PUBLIC
 
-  // ============================================
-  // Address Management
-  // ============================================
-  GET_USER_ADDRESSES: `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/address`, // GET PRIVATE
-  CREATE_ADDRESS: `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/address`, // POST PRIVATE
-  UPDATE_ADDRESS: (addressId: number) =>
-    `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/address/${addressId}`, // PUT PRIVATE
-  DELETE_ADDRESS: (addressId: number) =>
-    `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/address/${addressId}`, // DELETE PRIVATE
+    // ============================================
+    // Restaurant Management
+    // ============================================
+    GET_RESTAURANT_BY_ID: (restaurantId: number) =>
+        `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/restaurant/${restaurantId}`, // GET PUBLIC
+    GET_ALL_RESTAURANTS: `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/restaurant`, // GET PUBLIC
+    CREATE_RESTAURANT: `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/restaurant`, // POST PRIVATE
+    UPDATE_RESTAURANT: `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/restaurant`, // PUT PRIVATE
+    DELETE_RESTAURANT: `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/restaurant`, // DELETE PRIVATE (utilise X-Keycloak-Id)
 
-  // ============================================
-  // Legacy/Alternative Endpoints (for backward compatibility)
-  // ============================================
-  ME: `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/user`, // GET PRIVATE (alias for current user)
-  UPDATE_ME: `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/user`, // PUT PRIVATE
-  GET_PROFESSIONS: `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/professions`, // GET PUBLIC
-  GET_PROFESSION_BY_ID: (id: string) =>
-    `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/professions/${id}`, // GET PUBLIC
-  GET_PRODUCER: (id: string | number) =>
-    `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/producer/${id}`, // GET PUBLIC
-  GET_RESTAURANT: (id: string | number) =>
-    `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/restaurant/${id}`, // GET PUBLIC
+    // ============================================
+    // Producer Management
+    // ============================================
+    GET_PRODUCER_BY_ID: (producerId: number) =>
+        `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/producer/${producerId}`, // GET PUBLIC
+    GET_ALL_PRODUCERS: `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/producer`, // GET PUBLIC
+    CREATE_PRODUCER: `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/producer`, // POST PRIVATE
+    UPDATE_PRODUCER: `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/producer`, // PUT PRIVATE
+    DELETE_PRODUCER: `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/producer`, // DELETE PRIVATE (utilise X-Keycloak-Id)
 
-  // Producer Professions Management
-  ADD_PRODUCER_PROFESSION: (professionId: string | number) =>
-    `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/producer/professions/${professionId}`, // POST PRIVATE
-  REMOVE_PRODUCER_PROFESSION: (professionId: string | number) =>
-    `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/producer/professions/${professionId}`, // DELETE PRIVATE
+    // ============================================
+    // Address Management
+    // ============================================
+    GET_USER_ADDRESSES: `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/address`, // GET PRIVATE
+    CREATE_ADDRESS: `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/address`, // POST PRIVATE
+    UPDATE_ADDRESS: (addressId: number) =>
+        `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/address/${addressId}`, // PUT PRIVATE
+    DELETE_ADDRESS: (addressId: number) =>
+        `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/address/${addressId}`, // DELETE PRIVATE
 
-  // Internal endpoint (remplacé par ME qui utilise X-Keycloak-Id header)
-  // Note: Ne pas utiliser directement, utiliser getUserByKeycloakId() qui gère le header
-  INTERNAL_BY_KEYCLOAK_ID: (keycloakId: string) =>
-    `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/me`, // GET PRIVATE avec X-Keycloak-Id header
+    // ============================================
+    // Professions (Référentiel)
+    // ============================================
+    GET_PROFESSIONS: `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/professions`, // GET PUBLIC
+    GET_PROFESSION_BY_ID: (id: string) =>
+        `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/professions/${id}`, // GET PUBLIC
+
+    // ============================================
+    // Producer Professions Management
+    // ============================================
+    ADD_PRODUCER_PROFESSION: (professionId: string | number) =>
+        `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/producer/professions/${professionId}`, // POST PRIVATE
+    REMOVE_PRODUCER_PROFESSION: (professionId: string | number) =>
+        `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/producer/professions/${professionId}`, // DELETE PRIVATE
+
+    // ============================================
+    // Aliases pour compatibilité
+    // ============================================
+    GET_PRODUCER: (id: string | number) =>
+        `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/producer/${id}`, // GET PUBLIC
+    GET_RESTAURANT: (id: string | number) =>
+        `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/restaurant/${id}`, // GET PUBLIC
 } as const;
 
 /**
@@ -108,34 +112,33 @@ export const ACCOUNT_ENDPOINTS = {
  * @param method - Méthode HTTP (GET, POST, etc.)
  */
 export function isPublicAccountEndpoint(url: string, method: string): boolean {
-  const upperMethod = method.toUpperCase();
+    const upperMethod = method.toUpperCase();
 
-  // Tous les GET sur professions, restaurant, producer, user/username sont publics
-  if (upperMethod === 'GET') {
-    if (url.includes('/account/professions') ||
-        url.includes('/account/restaurant') ||
-        url.includes('/account/producer') ||
-        url.includes('/account/user/username/')) {
-      return true;
+    // Tous les GET sur professions, restaurant, producer, user/username sont publics
+    if (upperMethod === 'GET') {
+        if (url.includes('/account/professions') ||
+            url.includes('/account/restaurant') ||
+            url.includes('/account/producer') ||
+            url.includes('/account/user/username/')) {
+            return true;
+        }
     }
-  }
 
-  // Tout le reste nécessite une authentification
-  return false;
+    // Tout le reste nécessite une authentification
+    return false;
 }
 
 /**
  * Storage keys for AsyncStorage
  */
 export const ACCOUNT_STORAGE_KEYS = {
-  PENDING_NOTIFICATIONS: '@account/pending-notifications',
+    PENDING_NOTIFICATIONS: '@account/pending-notifications',
 } as const;
 
 /**
  * Legacy endpoints (for backward compatibility with retry queue)
  */
 export const ACCOUNT_LEGACY_ENDPOINTS = {
-  // Keycloak notification endpoint (used by retry queue)
-  KEYCLOAK_NOTIFICATION: `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/user`, // POST PRIVATE
+    // Keycloak notification endpoint (used by retry queue)
+    KEYCLOAK_NOTIFICATION: `${API_GATEWAY_BASE_URL}${ACCOUNT_PREFIX}/user`, // POST PRIVATE
 } as const;
-
