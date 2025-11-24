@@ -4,26 +4,26 @@
  * Centralized configuration for payment service endpoints
  */
 
-// Base URL for payment service - should be set in environment variables
-const PAYMENT_BASE_URL = process.env.EXPO_PUBLIC_PAYMENT_URL || 'http://localhost:5000';
+// Use the API gateway base so frontend talks to gateway which routes to payment service
+const PAYMENT_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
 /**
  * Payment Service Endpoints
  */
 export const PAYMENT_ENDPOINTS = {
-  // Create payment intent
-  CREATE_PAYMENT_INTENT: `${PAYMENT_BASE_URL}/api/payments/create-intent`,
+  // Create payment intent (gateway path: /payment/**)
+  CREATE_PAYMENT_INTENT: `${PAYMENT_BASE_URL}/payment/create-intent`,
   
   // Get payment intent status
   GET_PAYMENT_INTENT: (paymentIntentId: string) => 
-    `${PAYMENT_BASE_URL}/api/payments/${paymentIntentId}`,
+    `${PAYMENT_BASE_URL}/payment/${paymentIntentId}`,
   
   // Cancel payment intent
   CANCEL_PAYMENT_INTENT: (paymentIntentId: string) => 
-    `${PAYMENT_BASE_URL}/api/payments/${paymentIntentId}`,
+    `${PAYMENT_BASE_URL}/payment/${paymentIntentId}`,
   
   // Health check
-  HEALTH: `${PAYMENT_BASE_URL}/api/payments/health`,
+  HEALTH: `${PAYMENT_BASE_URL}/payment/health`,
 } as const;
 
 /**
