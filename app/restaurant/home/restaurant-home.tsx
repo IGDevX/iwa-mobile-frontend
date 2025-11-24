@@ -1,10 +1,11 @@
 import React from "react";
-import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from "react-native";
+import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator } from "react-native";
 import { useTranslation } from "react-i18next";
 import Button from "../../../components/Button";
 import { router } from "expo-router";
 import Ionicons from "@expo/vector-icons/build/Ionicons";
 import { useNotifications } from "../../../hooks/useNotifications";
+import { useCategories } from "../../../hooks/useCategories";
 
 const { width } = Dimensions.get("window");
 
@@ -48,6 +49,13 @@ const mockProducts = [
 export default function RestaurantHomeScreen() {
   const { t } = useTranslation();
   const { hasUnreadNotifications } = useNotifications();
+  const { categories, isLoading: categoriesLoading } = useCategories();
+
+  // Debug: Log categories
+  React.useEffect(() => {
+    console.log('📦 Categories loaded:', categories.length);
+    console.log('📦 First category:', categories[0]);
+  }, [categories]);
 
   const handleNotificationPress = () => {
     router.push('/notification');
@@ -80,13 +88,6 @@ export default function RestaurantHomeScreen() {
     );
   };
 
-  const categories = [
-    { label: "Vin", icon: require("../../../assets/images/icons8-wine-96.png") },
-    { label: "Légumes", icon: require("../../../assets/images/icons8-broccoli-96.png") },
-    { label: "Fruits", icon: require("../../../assets/images/icons8-watermelon-96.png") },
-    { label: "Viande", icon: require("../../../assets/images/icons8-steak-96.png") },
-    { label: "Miel", icon: require("../../../assets/images/icons8-honeycombs-96.png") },
-  ];
 
   const filters = ["Labels", "Livraison", "Prix"];
 
@@ -166,26 +167,35 @@ export default function RestaurantHomeScreen() {
         </View>
       </View>
 
-      {/* Categories */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesScroll}>
-        <View style={styles.categoriesContainer}>
-          {categories.map((cat) => (
-            <TouchableOpacity key={cat.label} style={styles.categoryCard}>
-              <Image source={cat.icon} style={styles.categoryIcon} />
-              <Text style={styles.categoryText}>{cat.label}</Text>
+      {/* Categories and Filters - Fixed Section */}
+      <View style={styles.categoriesAndFiltersSection}>
+        {/* Categories */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesScroll}>
+          <View style={styles.categoriesContainer}>
+            {categoriesLoading ? (
+              <ActivityIndicator size="small" color="#89A083" style={{ marginLeft: 16 }} />
+            ) : (
+              categories.map((cat) => (
+                <TouchableOpacity key={cat.id} style={styles.categoryCard}>
+                  <Image source={cat.icon} style={styles.categoryIcon} />
+                  <Text style={styles.categoryText} numberOfLines={2}>
+                    {cat.name || 'No name'}
+                  </Text>
+                </TouchableOpacity>
+              ))
+            )}
+          </View>
+        </ScrollView>
+
+        {/* Filters */}
+        <View style={styles.filtersContainer}>
+          {filters.map((filter) => (
+            <TouchableOpacity key={filter} style={styles.filterButton}>
+              <Text style={styles.filterText}>{filter}</Text>
+              <Ionicons name="chevron-down" style={styles.filtersArrow} />
             </TouchableOpacity>
           ))}
         </View>
-      </ScrollView>
-
-      {/* Filters */}
-      <View style={styles.filtersContainer}>
-        {filters.map((filter) => (
-          <TouchableOpacity key={filter} style={styles.filterButton}>
-            <Text style={styles.filterText}>{filter}</Text>
-            <Ionicons name="chevron-down" style={styles.filtersArrow} />
-          </TouchableOpacity>
-        ))}
       </View>
 
       {/* Products List */}
@@ -268,40 +278,53 @@ const styles = StyleSheet.create({
     fontSize: 14, 
     color: "#717182" 
   },
-  
-    filtersArrow: {
-    fontSize: 16,
-    color: "#000000ff",
+
+  // Categories and Filters Section (Fixed)
+  categoriesAndFiltersSection: {
+    backgroundColor: "#F7F6ED",
+    paddingBottom: 12,
+    zIndex: 10,
   },
 
-  // Categories styles
-  categoriesScroll: { 
-    marginBottom: 30, 
+  categoriesScroll: {
+    marginTop: 16,
+    marginBottom: 16,
     paddingLeft: 16,
   },
   categoriesContainer: {
     flexDirection: "row",
-    gap: 28,
-    paddingRight: 20,
+    gap: 12,
+    paddingRight: 16,
   },
   categoryCard: {
-    width: 70,
-    height: 138,
+    width: 90,
+    height: 110,
     alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#F7F6ED",
-    borderRadius: 12,
-    paddingVertical: 8,
+    justifyContent: "flex-start",
+    backgroundColor: "transparent",
+    borderRadius: 16,
+    paddingTop: 8,
+    paddingHorizontal: 6,
   },
   categoryIcon: { 
-    width: 62, 
-    height: 62, 
-    marginBottom: 4,
+    width: 56,
+    height: 56,
+    resizeMode: "contain",
   },
   categoryText: { 
-    fontSize: 12, 
-    textAlign: "center", 
-    color: "#4A4459" 
+    fontSize: 11,
+    textAlign: "center",
+    color: "#4A4459",
+    fontWeight: "500",
+    lineHeight: 13,
+    letterSpacing: -0.2,
+    marginTop: 8,
+    height: 28,
+  },
+
+  filtersArrow: {
+    fontSize: 16,
+    color: "#000000ff",
   },
 
   // Filters styles
@@ -309,7 +332,7 @@ const styles = StyleSheet.create({
     flexDirection: "row", 
     justifyContent: "space-around", 
     marginHorizontal: 16, 
-    marginBottom: 10,
+    marginBottom: 0,
   },
   filterButton: {
     width: 120,

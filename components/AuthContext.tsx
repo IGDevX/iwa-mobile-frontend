@@ -473,26 +473,19 @@ const AuthContext = createContext<AuthContextType>({
             }
           }
 
-          // Step 6: Create profile in Account Service
+          // Step 6: Create base user in Account Service
+          // L'endpoint /internal va créer le user de base automatiquement lors de la première connexion
+          // Pas besoin de le faire maintenant, on le fera après la vérification de l'email
           if (userId) {
             try {
-              if (role === 'Producer') {
-                const { ensureProducerProfileExists } = await import('../services/account');
-                const accountResult = await ensureProducerProfileExists(userId, {
-                  // Informations de base - à compléter plus tard dans complete-profile
-                });
-                console.log('Producer profile created successfully, ID:', accountResult.id);
-              } else if (role === 'Restaurant Owner') {
-                const { ensureRestaurantProfileExists } = await import('../services/account');
-                const accountResult = await ensureRestaurantProfileExists(userId, {
-                  // Informations de base - à compléter plus tard dans complete-profile
-                });
-                console.log('Restaurant profile created successfully, ID:', accountResult.id);
-              }
+              // Créer le user de base via /internal (auto-création idempotente)
+              const { getUserByKeycloakId } = await import('../services/account');
+              const accountResult = await getUserByKeycloakId(userId);
+              console.log('Base user profile created in account service, ID:', accountResult.id);
             } catch (accountError) {
               // Don't fail the registration if account service fails
-              // The notification will be queued for retry
-              console.warn('Failed to create account profile (will retry later):', accountError);
+              // Le user sera créé automatiquement à la prochaine connexion
+              console.warn('Failed to create base user profile (will be auto-created on login):', accountError);
             }
           }
 

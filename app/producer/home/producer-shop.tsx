@@ -17,6 +17,9 @@ import { AuthContext } from '../../../components/AuthContext';
 import { useCart } from '../../../components/CartContext';
 import { useNotifications } from '../../../hooks/useNotifications';
 import { useProfileCompletion } from '../../../hooks/useProfileCompletion';
+import { useProducerShopData } from '../../../hooks/useProducerShopData';
+import { getCompleteUserProfile } from '../../../services/account';
+import type { ProductResponse, ShelfResponse } from '../../../services/shop';
 
 // Mock producer data
 const mockProducer = {
@@ -27,7 +30,7 @@ const mockProducer = {
   profileImage: "https://photo-cdn2.icons8.com/vVsONpHf7-sTgM9mNbSkmX0iCJP6YF9_Ux93NilJJkY/rs:fit:576:384/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvNTA1L2NkNjhm/ODcwLWVjMmMtNDU2/OC1hNmE5LTk3ZGQw/NWE3Mjc3Mi5qcGc.webp"
 };
 
-// Type definitions
+// Type definitions (keeping for backward compatibility with mock data during transition)
 interface Product {
   id: number;
   name: string;
@@ -42,7 +45,7 @@ interface ProductsData {
   [key: string]: Product[];
 }
 
-// Mock products data organized by category
+// Mock products data organized by category (sera remplacé par les vraies données)
 const mockProducts: ProductsData = {
   "Légumes": [
     {
@@ -60,6 +63,42 @@ const mockProducts: ProductsData = {
       image: "https://photo-cdn2.icons8.com/b17y6AdWPJxou6nd6LjjL4z6QztACk3sOJn512kpyaQ/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvMjY5L2UzN2Qz/ZmFkLWQ4MDctNDEz/ZC1hYzFhLWVjZjJl/YmM4YjE5ZS5qcGc.webp",
       price: 2.20,
       priceDisplay: "2.20€/kg",
+      unit: "kg",
+      category: "Légumes"
+    },
+    {
+      id: 5,
+      name: "Courgettes",
+      image: "https://photo-cdn2.icons8.com/WzUVwZCBFjpGJa-vCYcBVrVYdK3zGDGkEGC2v3zZ0vI/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvOTIxL2YyNWRk/MWQxLWM0MmQtNDdl/Yi1iMGRmLWFkMzk0/YTRlMmNlZi5qcGc.webp",
+      price: 2.80,
+      priceDisplay: "2.80€/kg",
+      unit: "kg",
+      category: "Légumes"
+    },
+    {
+      id: 6,
+      name: "Poivrons",
+      image: "https://photo-cdn2.icons8.com/XEBnLz3xjwMuPGiXPSvWKJoKWPXmKT82ZqCXwBdvkts/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvNDU0LzZjNDA2/NjcyLTk3MjMtNGRh/YS05OWNhLTM2YWU4/MWY4YmViMS5qcGc.webp",
+      price: 4.20,
+      priceDisplay: "4.20€/kg",
+      unit: "kg",
+      category: "Légumes"
+    },
+    {
+      id: 7,
+      name: "Aubergines",
+      image: "https://photo-cdn2.icons8.com/GYaRDl_O0nH0xnvfp9YiC2JMbMYoZQfbeLY72kN8Fuw/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvOTg1LzgxZWNi/NjBjLWMzZTQtNDk5/NS05MzUzLTI0MjM2/ZGY4NTdiOS5qcGc.webp",
+      price: 3.80,
+      priceDisplay: "3.80€/kg",
+      unit: "kg",
+      category: "Légumes"
+    },
+    {
+      id: 8,
+      name: "Concombres",
+      image: "https://photo-cdn2.icons8.com/9Vj5Mwb0JZKzMgKqIakrTFXQ1xQp5kMl8tLNALaBHkI/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvMTA5My81ZjRi/MjViMC01MmE1LTQ4/ZTctYWJlZC1iOGMy/MjUyMDRmYmUuanBn.webp",
+      price: 1.90,
+      priceDisplay: "1.90€/kg",
       unit: "kg",
       category: "Légumes"
     }
@@ -82,6 +121,80 @@ const mockProducts: ProductsData = {
       priceDisplay: "3.20€/kg",
       unit: "kg",
       category: "Fruits"
+    },
+    {
+      id: 9,
+      name: "Fraises",
+      image: "https://photo-cdn2.icons8.com/WiXYz-_2CPzrL2QkuN-_PeK9z3BjvgONIGFGE3CJBug/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvOTI0LzUwMzVh/YTE2LTA1NDQtNDM2/My05N2FjLTViM2Rh/NTdjNTgzNC5qcGc.webp",
+      price: 5.50,
+      priceDisplay: "5.50€/kg",
+      unit: "kg",
+      category: "Fruits"
+    },
+    {
+      id: 10,
+      name: "Oranges",
+      image: "https://photo-cdn2.icons8.com/I7TLiYFq_XLVGlmW8dkN8L0EG4e7q6GvJ8iCGRLXdvw/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvNjA5L2YyY2Uz/NjcyLWYzY2ItNGZm/MC04MzdkLTAyYzIy/N2VkZGU5Ni5qcGc.webp",
+      price: 3.00,
+      priceDisplay: "3.00€/kg",
+      unit: "kg",
+      category: "Fruits"
+    },
+    {
+      id: 11,
+      name: "Poires",
+      image: "https://photo-cdn2.icons8.com/xYJHEyQUF_qZo9MBzzNmzrLp0hOxkBRO5EXyXdZfKbE/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvODI0L2UzYzUx/NmE4LTA0ZTQtNGU1/Ny05N2RhLTQ0YTZj/Y2QyZjhmZC5qcGc.webp",
+      price: 3.40,
+      priceDisplay: "3.40€/kg",
+      unit: "kg",
+      category: "Fruits"
+    },
+    {
+      id: 12,
+      name: "Raisins",
+      image: "https://photo-cdn2.icons8.com/IuU5pVz-ZsxFDJ4t5i_GgfXJwLiAWwmAJa0LS2XrXAQ/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvOTc2L2RkYzIz/NmI3LTdhMjYtNDdh/Ny1iNzE1LTQyMTFl/MDI5OGYwZi5qcGc.webp",
+      price: 4.80,
+      priceDisplay: "4.80€/kg",
+      unit: "kg",
+      category: "Fruits"
+    }
+  ],
+  "Produits laitiers": [
+    {
+      id: 13,
+      name: "Fromage de chèvre",
+      image: "https://photo-cdn2.icons8.com/RvQXmn3v-FY4RZWZQ2ZUgPUbMd1EXCvGd1zRZHqD5JI/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvNTkvNTFjY2I5/MzAtNWYyOS00NTk4/LWIwMTgtYjc3ODJl/NjFmNmQ3LmpwZw.webp",
+      price: 6.50,
+      priceDisplay: "6.50€/pièce",
+      unit: "pièce",
+      category: "Produits laitiers"
+    },
+    {
+      id: 14,
+      name: "Yaourt nature",
+      image: "https://photo-cdn2.icons8.com/4qh7MnTtF0jn0BwcADVo8BxJ1aG_7YqKfmPiNQf8pLo/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvOTQ0LzA0YjVl/YTFhLWY4YzItNDMx/NC05NDQ1LWI3Mjdk/ODI2OTM3My5qcGc.webp",
+      price: 3.20,
+      priceDisplay: "3.20€/lot",
+      unit: "lot",
+      category: "Produits laitiers"
+    },
+    {
+      id: 15,
+      name: "Beurre fermier",
+      image: "https://photo-cdn2.icons8.com/eP_PZ9qLfJlREVVUiZvAWTfY4CRO1CdIFy2PqYpTzEE/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvMzg1LzI0MGE3/MzNiLTU1ZjEtNGUx/OC1iZDhjLWU5OGI5/ZDI5ZmRjZS5qcGc.webp",
+      price: 4.50,
+      priceDisplay: "4.50€/250g",
+      unit: "250g",
+      category: "Produits laitiers"
+    },
+    {
+      id: 16,
+      name: "Crème fraîche",
+      image: "https://photo-cdn2.icons8.com/dJnXfhWm9cBrWl8RrfwJrYzMGxEGqnq7vRg0e7g7Hcg/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvNTkvYTM5OTVm/M2MtOTY1MC00NWEy/LTgwNTAtYTY1NmE0/MTkzMzU2LmpwZw.webp",
+      price: 3.80,
+      priceDisplay: "3.80€/pot",
+      unit: "pot",
+      category: "Produits laitiers"
     }
   ]
 };
@@ -94,13 +207,142 @@ export default function ProducerShopScreen() {
   const { hasUnreadNotifications } = useNotifications();
   const { isComplete: isProfileComplete, isLoading: isProfileLoading } = useProfileCompletion();
 
+  // Récupération des données depuis le backend
+  const {
+    producerId,
+    shelves,
+    productsByShelf,
+    allProducts,
+    isLoading: isLoadingShopData,
+    error: shopDataError,
+    refreshData,
+  } = useProducerShopData();
+
+  // Producer profile state
+  const [producerProfile, setProducerProfile] = useState({
+    displayName: '',
+    responsibleName: '',
+    biography: '',
+  });
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+
   // Edit mode state
   const [isEditMode, setIsEditMode] = useState(false);
   const [products, setProducts] = useState<ProductsData>(mockProducts);
   const [newCategoryName, setNewCategoryName] = useState('');
 
+  // Helper function pour convertir ProductResponse en format utilisable par l'UI
+  const convertProductResponseToProduct = (productResponse: ProductResponse): Product => {
+    return {
+      id: productResponse.id,
+      name: productResponse.title,
+      image: productResponse.mainImageUrl || 'https://via.placeholder.com/150',
+      price: Number(productResponse.price),
+      priceDisplay: `${productResponse.price}€/${productResponse.unit.abbreviation || productResponse.unit.name}`,
+      unit: productResponse.unit.abbreviation || productResponse.unit.name,
+      category: productResponse.shelf.name,
+    };
+  };
+
+  // Log les données chargées depuis le backend
+  React.useEffect(() => {
+    if (!isLoadingShopData) {
+      console.log('========================================');
+      console.log('📊 PRODUCER SHOP DATA LOADED:');
+      console.log('  - Producer ID:', producerId);
+      console.log('  - Shelves:', shelves.length);
+      console.log('  - Total Products:', allProducts.length);
+      console.log('  - Products by Shelf:', Object.keys(productsByShelf).length);
+      if (shopDataError) {
+        console.error('  - Error:', shopDataError);
+      }
+      console.log('========================================');
+
+      // Log détaillé des shelves et produits
+      shelves.forEach(shelf => {
+        const shelfProducts = productsByShelf[shelf.id] || [];
+        console.log(`📦 Shelf: ${shelf.name} (${shelfProducts.length} products)`);
+      });
+    }
+  }, [isLoadingShopData, producerId, shelves, allProducts, productsByShelf, shopDataError]);
+
   // Determine if this is the producer's own shop
   const isOwnShop = authState.userInfo?.roles?.[0] === 'Producer';
+
+  // Helper function to get admin token (same as my-profile)
+  const getKeycloakAdminToken = async (): Promise<string | null> => {
+    try {
+      const adminUsername = process.env.EXPO_PUBLIC_KEYCLOAK_ADMIN_USERNAME || 'admin';
+      const adminPassword = process.env.EXPO_PUBLIC_KEYCLOAK_ADMIN_PASSWORD || 'admin';
+      const adminRealm = process.env.EXPO_PUBLIC_KEYCLOAK_ADMIN_REALM || 'master';
+      const baseUrl = process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG;
+
+      const formData = new URLSearchParams();
+      formData.append('grant_type', 'password');
+      formData.append('client_id', 'admin-cli');
+      formData.append('username', adminUsername);
+      formData.append('password', adminPassword);
+
+      const response = await fetch(
+        `${baseUrl}/realms/${adminRealm}/protocol/openid-connect/token`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Accept': 'application/json',
+          },
+          body: formData.toString(),
+        }
+      );
+
+      if (!response.ok) {
+        console.error('Failed to get admin token:', response.status);
+        return null;
+      }
+
+      const tokenData = await response.json();
+      return tokenData.access_token;
+    } catch (error) {
+      console.error('Error getting admin token:', error);
+      return null;
+    }
+  };
+
+  // Function to load producer profile data
+  const loadProducerProfile = async () => {
+    try {
+      if (!authState.userInfo?.sub || !isOwnShop) {
+        setIsLoadingProfile(false);
+        return;
+      }
+
+      const keycloakId = authState.userInfo.sub;
+
+      // Use the combined function to get both Keycloak and Account Service data
+      const completeProfile = await getCompleteUserProfile(keycloakId, getKeycloakAdminToken);
+
+      // Set producer profile data (Keycloak + Account Service)
+      setProducerProfile({
+        displayName: completeProfile.keycloak.displayName || mockProducer.name,
+        responsibleName: completeProfile.keycloak.responsibleName || mockProducer.responsibleName,
+        biography: completeProfile.accountService.biography || mockProducer.description,
+      });
+    } catch (error) {
+      console.error('Error loading producer profile:', error);
+      // Keep mock data as fallback
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  };
+
+  // Load profile data when component mounts or auth state changes
+  React.useEffect(() => {
+    if (isOwnShop) {
+      loadProducerProfile();
+    } else {
+      setIsLoadingProfile(false);
+    }
+  }, [authState.userInfo, isOwnShop]);
 
   const handleCartPress = () => {
     // Check if user is logged in
@@ -231,6 +473,87 @@ export default function ProducerShopScreen() {
     }
   };
 
+  // Rendu d'un produit depuis le backend (ProductResponse)
+  const renderRealProductCard = (product: ProductResponse) => (
+    <View key={product.id} style={styles.productCard}>
+      <TouchableOpacity
+        style={styles.productCardContent}
+        onPress={() => handleProductPress(convertProductResponseToProduct(product))}
+      >
+        <View style={styles.productImageContainer}>
+          <Image
+            source={{ uri: product.mainImageUrl || 'https://via.placeholder.com/150' }}
+            style={styles.productImage}
+          />
+        </View>
+        <Text style={styles.productName}>{product.title}</Text>
+        <Text style={styles.productPrice}>
+          {product.price}€/{product.unit.abbreviation || product.unit.name}
+        </Text>
+        {isEditMode && (
+          <Text style={styles.stockText}>Stock: {product.title}</Text>
+        )}
+      </TouchableOpacity>
+
+      {isEditMode && isOwnShop && (
+        <TouchableOpacity
+          style={styles.deleteProductButton}
+          onPress={() => handleDeleteProduct(product.id)}
+        >
+          <Ionicons name="close-circle" size={20} color="#ff4444" />
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+
+  // Rendu d'une shelf (rayon) avec ses produits
+  const renderShelf = (shelf: ShelfResponse) => {
+    const shelfProducts = productsByShelf[shelf.id] || [];
+    const shelfName = shelf.name || shelf.label;
+
+    return (
+      <View key={shelf.id} style={styles.categorySection}>
+        <View style={styles.categoryHeader}>
+          <Text style={styles.categoryTitle}>{shelfName}</Text>
+          <View style={styles.categoryBadge}>
+            <Text style={styles.categoryBadgeText}>{shelfProducts.length}</Text>
+          </View>
+        </View>
+
+        {isEditMode && isOwnShop && (
+          <View style={styles.editActions}>
+            <TouchableOpacity
+              style={styles.deleteCategory}
+              onPress={() => handleDeleteCategory(shelfName)}
+            >
+              <Text style={styles.deleteCategoryText}>
+                {t('producer.delete_category', 'Delete Shelf')}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.addProduct}
+              onPress={() => handleAddProduct(shelfName)}
+            >
+              <Text style={styles.addProductText}>
+                {t('producer.add_product', 'Add Product')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.productsScrollContainer}
+        >
+          {shelfProducts.map(renderRealProductCard)}
+        </ScrollView>
+      </View>
+    );
+  };
+
+  // Rendu d'un produit mock (ancienne version, conservée pour compatibilité)
   const renderProductCard = (product: Product) => (
     <View key={product.id} style={styles.productCard}>
       <TouchableOpacity
@@ -285,9 +608,13 @@ export default function ProducerShopScreen() {
         </View>
       )}
 
-      <View style={styles.productsGrid}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.productsScrollContainer}
+      >
         {categoryProducts.map(renderProductCard)}
-      </View>
+      </ScrollView>
     </View>
   );
 
@@ -348,13 +675,19 @@ export default function ProducerShopScreen() {
           <Image source={{ uri: mockProducer.profileImage }} style={styles.profileImage} />
 
           <View style={styles.producerInfo}>
-            <Text style={styles.producerName}>{mockProducer.name}</Text>
-            <Text style={styles.responsibleName}>{mockProducer.responsibleName}</Text>
+            <Text style={styles.producerName}>
+              {isLoadingProfile ? mockProducer.name : (producerProfile.displayName || mockProducer.name)}
+            </Text>
+            <Text style={styles.responsibleName}>
+              {isLoadingProfile ? mockProducer.responsibleName : (producerProfile.responsibleName || mockProducer.responsibleName)}
+            </Text>
           </View>
         </View>
 
         {/* Description */}
-        <Text style={styles.description}>{mockProducer.description}</Text>
+        <Text style={styles.description}>
+          {isLoadingProfile ? mockProducer.description : (producerProfile.biography || mockProducer.description)}
+        </Text>
 
         {/* New Category Section - Edit Mode Only */}
         {isEditMode && isOwnShop && (
@@ -378,10 +711,41 @@ export default function ProducerShopScreen() {
           </View>
         )}
 
-        {/* Products and Categories */}
+        {/* Products and Shelves */}
         <View style={styles.productsSection}>
-          {Object.entries(products).map(([categoryName, categoryProducts]) =>
-            renderCategory(categoryName, categoryProducts)
+          {isLoadingShopData ? (
+            <View style={{ padding: 20, alignItems: 'center' }}>
+              <Text style={{ color: '#4A4459', fontSize: 14 }}>
+                {t('common.loading', 'Loading products...')}
+              </Text>
+            </View>
+          ) : shopDataError ? (
+            <View style={{ padding: 20, alignItems: 'center' }}>
+              <Text style={{ color: '#E07A5F', fontSize: 14 }}>
+                {t('common.error', 'Error')}: {shopDataError}
+              </Text>
+              <TouchableOpacity
+                style={{ marginTop: 10, padding: 10, backgroundColor: '#89A083', borderRadius: 8 }}
+                onPress={refreshData}
+              >
+                <Text style={{ color: '#FFFFFF' }}>
+                  {t('common.retry', 'Retry')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : shelves.length > 0 ? (
+            // Afficher les vraies données du backend
+            shelves.map(renderShelf)
+          ) : (
+            // Fallback sur les mocks si pas de données
+            <View>
+              <Text style={{ padding: 20, color: '#4A4459', fontSize: 14, textAlign: 'center' }}>
+                {t('producer.no_products', 'No products yet. Start by adding your first product!')}
+              </Text>
+              {Object.entries(products).map(([categoryName, categoryProducts]) =>
+                renderCategory(categoryName, categoryProducts)
+              )}
+            </View>
           )}
         </View>
 
@@ -531,17 +895,16 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
 
-  // Products grid
-  productsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
+  // Products scroll container
+  productsScrollContainer: {
+    paddingRight: 24,
+    paddingVertical: 8,
     gap: 12,
   },
 
   // Product card styles
   productCard: {
-    width: 179,
+    width: 160,
     height: 171,
     backgroundColor: "#FFFFFF",
     borderRadius: 15,
@@ -550,9 +913,10 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
-    shadowRadius: 8,
+    shadowRadius: 5,
     elevation: 8,
     paddingVertical: 16,
+    marginRight: 12,
   },
   productImageContainer: {
     width: 60,
