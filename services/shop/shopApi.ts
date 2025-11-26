@@ -71,12 +71,11 @@ export interface CategoryResponse {
   id: number;
   name: string;
   slug: string;
-  description: string;
-  displayOrder: number;
+  description?: string;
+  displayOrder?: number;
   createdAt: string;
   updatedAt: string;
   isDeleted: boolean;
-  icon?: string; // Custom field for frontend
 }
 
 // ============================================
@@ -85,11 +84,8 @@ export interface CategoryResponse {
 
 export interface UnitResponse {
   id: number;
-  name: string;
-  nameEn?: string;
-  nameFr?: string;
-  code?: string;
-  abbreviation?: string;
+  code: string;
+  label: string;
 }
 
 // ============================================
@@ -98,9 +94,12 @@ export interface UnitResponse {
 
 export interface CurrencyResponse {
   id: number;
-  name: string;
   code: string;
-  symbol: string;
+  label: string;
+  usdExchangeRate: number;
+  createdAt: string;
+  updatedAt: string;
+  isDeleted: boolean;
 }
 
 // ============================================
@@ -111,15 +110,14 @@ export interface ShelfResponse {
   id: number;
   label: string;
   producerId: number;
-  name?: string; // Pour compatibilité ascendante
-  nameEn?: string;
-  nameFr?: string;
-  code?: string;
-  description?: string;
-  displayOrder?: number;
-  createdAt?: string;
-  updatedAt?: string;
-  isDeleted?: boolean;
+  createdAt: string;
+  updatedAt: string;
+  isDeleted: boolean;
+}
+
+export interface ShelfRequest {
+  label: string;
+  producerId: number;
 }
 
 // ============================================
@@ -128,11 +126,9 @@ export interface ShelfResponse {
 
 export interface ProductCertificationResponse {
   id: number;
-  name: string;
-  nameEn?: string;
-  nameFr?: string;
-  code?: string;
-  description?: string;
-  logoUrl?: string;
+  label: string;
+  createdAt: string;
+  updatedAt: string;
+  isDeleted: boolean;
 }
 

@@ -13,6 +13,7 @@ export type {
   ProductRequest,
   ProductResponse,
   ProductUpdateRequest,
+  ShelfRequest,
   ShelfResponse,
   UnitResponse,
 } from './shopApi';
@@ -20,7 +21,9 @@ export type {
 // Export all service functions
 export {
   createProduct,
+  createShelf,
   deleteProduct,
+  deleteShelf,
   getAllCategories,
   getAllCertifications,
   getAllCurrencies,

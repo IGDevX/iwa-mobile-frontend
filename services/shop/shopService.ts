@@ -155,6 +155,27 @@ export async function getShelvesByProducer(producerId: string | number): Promise
   return shopGet<ShelfResponse[]>(SHOP_ENDPOINTS.GET_SHELVES_BY_PRODUCER(producerId));
 }
 
+/**
+ * Create a new shelf (PRIVATE - Requires JWT)
+ * @param label - Shelf label/name
+ * @param producerId - Producer ID
+ * @returns Created shelf
+ */
+export async function createShelf(label: string, producerId: number): Promise<ShelfResponse> {
+  return shopPost<ShelfResponse>(SHOP_ENDPOINTS.CREATE_SHELF, {
+    label,
+    producerId,
+  });
+}
+
+/**
+ * Delete a shelf (PRIVATE - Requires JWT)
+ * @param shelfId - Shelf ID to delete
+ */
+export async function deleteShelf(shelfId: number): Promise<void> {
+  return shopDelete<void>(SHOP_ENDPOINTS.DELETE_SHELF(shelfId));
+}
+
 // ============================================
 // Certification Functions
 // ============================================

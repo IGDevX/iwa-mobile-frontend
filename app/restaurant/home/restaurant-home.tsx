@@ -51,11 +51,6 @@ export default function RestaurantHomeScreen() {
   const { hasUnreadNotifications } = useNotifications();
   const { categories, isLoading: categoriesLoading } = useCategories();
 
-  // Debug: Log categories
-  React.useEffect(() => {
-    console.log('📦 Categories loaded:', categories.length);
-    console.log('📦 First category:', categories[0]);
-  }, [categories]);
 
   const handleNotificationPress = () => {
     router.push('/notification');
