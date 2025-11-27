@@ -20,7 +20,7 @@ import { useNotifications } from '../../../hooks/useNotifications';
 import { useProfileCompletion } from '../../../hooks/useProfileCompletion';
 import { useProducerShopData } from '../../../hooks/useProducerShopData';
 import { getCompleteUserProfile } from '../../../services/account';
-import { createShelf, deleteShelf, type ProductResponse, type ShelfResponse } from '../../../services/shop';
+import { createShelf, deleteProduct, deleteShelf, updateShelf, type ProductResponse, type ShelfResponse } from '../../../services/shop';
 
 
 export default function ProducerShopScreen() {
@@ -49,11 +49,16 @@ export default function ProducerShopScreen() {
     biography: '',
   });
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const isFetchingProfile = React.useRef(false); // Flag pour éviter les appels multiples
 
   // Edit mode state
   const [isEditMode, setIsEditMode] = useState(false);
   const [newShelfName, setNewShelfName] = useState('');
   const [isCreatingShelf, setIsCreatingShelf] = useState(false);
+
+  // Shelf editing state
+  const [editingShelfId, setEditingShelfId] = useState<number | null>(null);
+  const [editingShelfName, setEditingShelfName] = useState('');
 
   // Track first load to avoid refreshing on initial mount
   const isFirstLoad = useRef(true);
@@ -188,6 +193,10 @@ export default function ProducerShopScreen() {
       return;
     }
     setIsEditMode(value);
+    // Annuler l'édition en cours si on désactive le mode Edit
+    if (!value) {
+      handleCancelEditShelf();
+    }
   };
 
   const handleNotificationPress = () => {
@@ -230,12 +239,103 @@ export default function ProducerShopScreen() {
         {
           text: t('producer.delete', 'Delete'),
           style: 'destructive',
-          onPress: () => {
-            // TODO: Implement product deletion with backend
+          onPress: async () => {
+            try {
+              console.log('🗑️ [DELETE-PRODUCT] Deleting product:', productId);
+              await deleteProduct(productId);
+              console.log('✅ [DELETE-PRODUCT] Product deleted successfully');
+
+              // Rafraîchir les données
+              await refreshData();
+
+              Alert.alert(
+                t('producer.success', 'Success'),
+                t('producer.product_deleted', 'Product deleted successfully!')
+              );
+            } catch (error: any) {
+              console.error('❌ [DELETE-PRODUCT] Delete failed:', error);
+
+              // Gérer le cas 404 (produit déjà supprimé ou inexistant)
+              if (error.message && error.message.includes('404')) {
+                // Le produit n'existe plus, on rafraîchit quand même pour mettre à jour l'affichage
+                await refreshData();
+                Alert.alert(
+                  t('producer.info', 'Information'),
+                  t('producer.product_not_found', 'This product has already been deleted or does not exist.')
+                );
+              } else {
+                Alert.alert(
+                  t('producer.error', 'Error'),
+                  t('producer.product_deletion_failed', 'Failed to delete product. Please try again.')
+                );
+              }
+            }
           }
         }
       ]
     );
+  };
+
+  const handleEditShelf = (shelfId: number, currentName: string) => {
+    setEditingShelfId(shelfId);
+    setEditingShelfName(currentName);
+  };
+
+  const handleCancelEditShelf = () => {
+    setEditingShelfId(null);
+    setEditingShelfName('');
+  };
+
+  const handleSaveShelfName = async (shelfId: number) => {
+    console.log('🔵 [EDIT-SHELF] Starting shelf update:', {
+      shelfId,
+      newName: editingShelfName.trim(),
+      producerId,
+    });
+
+    if (!editingShelfName.trim()) {
+      console.log('❌ [EDIT-SHELF] Validation failed: empty name');
+      Alert.alert(
+        t('producer.error', 'Error'),
+        t('producer.shelf_name_required', 'Please enter a shelf name')
+      );
+      return;
+    }
+
+    if (!producerId) {
+      console.log('❌ [EDIT-SHELF] Validation failed: no producerId');
+      Alert.alert(
+        t('producer.error', 'Error'),
+        t('producer.producer_id_missing', 'Producer ID not found')
+      );
+      return;
+    }
+
+    try {
+      console.log('📤 [EDIT-SHELF] Calling updateShelf API...');
+      const result = await updateShelf(shelfId, editingShelfName.trim(), producerId);
+      console.log('✅ [EDIT-SHELF] Update successful:', result);
+
+      // Rafraîchir les données
+      console.log('🔄 [EDIT-SHELF] Refreshing data...');
+      await refreshData();
+
+      // Réinitialiser l'état d'édition
+      setEditingShelfId(null);
+      setEditingShelfName('');
+
+      Alert.alert(
+        t('producer.success', 'Success'),
+        t('producer.shelf_updated', 'Shelf updated successfully!')
+      );
+    } catch (error) {
+      console.error('❌ [EDIT-SHELF] Update failed:', error);
+      console.error('❌ [EDIT-SHELF] Error details:', JSON.stringify(error, null, 2));
+      Alert.alert(
+        t('producer.error', 'Error'),
+        t('producer.shelf_update_failed', 'Failed to update shelf. Please try again.')
+      );
+    }
   };
 
   const handleDeleteShelf = async (shelfId: number, shelfName: string) => {
@@ -374,18 +474,55 @@ export default function ProducerShopScreen() {
   const renderShelf = (shelf: ShelfResponse) => {
     const shelfProducts = productsByShelf[shelf.id] || [];
     const shelfName = shelf.name || shelf.label;
+    const isEditing = editingShelfId === shelf.id;
 
     return (
       <View key={shelf.id} style={styles.shelfSection}>
         <View style={styles.shelfHeader}>
-          <Text style={styles.shelfTitle}>{shelfName}</Text>
-          <View style={styles.shelfBadge}>
-            <Text style={styles.shelfBadgeText}>{shelfProducts.length}</Text>
-          </View>
+          {isEditing ? (
+            <View style={styles.editShelfNameContainer}>
+              <TextInput
+                style={styles.editShelfNameInput}
+                value={editingShelfName}
+                onChangeText={setEditingShelfName}
+                placeholder={t('producer.shelf_name', 'Shelf Name')}
+                placeholderTextColor="rgba(74, 68, 89, 0.5)"
+                autoFocus
+              />
+              <TouchableOpacity
+                style={styles.cancelShelfButton}
+                onPress={handleCancelEditShelf}
+              >
+                <Ionicons name="close" size={20} color="#FFFFFF" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.validateShelfButton}
+                onPress={() => handleSaveShelfName(shelf.id)}
+              >
+                <Ionicons name="checkmark" size={20} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <>
+              <Text style={styles.shelfTitle}>{shelfName}</Text>
+              <View style={styles.shelfBadge}>
+                <Text style={styles.shelfBadgeText}>{shelfProducts.length}</Text>
+              </View>
+            </>
+          )}
         </View>
 
-        {isEditMode && isOwnShop && (
+        {isEditMode && isOwnShop && !isEditing && (
           <View style={styles.editActions}>
+            <TouchableOpacity
+              style={styles.editShelfButton}
+              onPress={() => handleEditShelf(shelf.id, shelfName)}
+            >
+              <Text style={styles.editShelfText}>
+                {t('producer.edit_shelf', 'Edit Shelf')}
+              </Text>
+            </TouchableOpacity>
+
             <TouchableOpacity
               style={styles.deleteShelf}
               onPress={() => handleDeleteShelf(shelf.id, shelfName)}
@@ -850,6 +987,51 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#016630",
     fontWeight: "500",
+  },
+  editShelfButton: {
+    backgroundColor: "#dbeafe",
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 3,
+  },
+  editShelfText: {
+    fontSize: 12,
+    color: "#1e40af",
+    fontWeight: "500",
+  },
+  editShelfNameContainer: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  editShelfNameInput: {
+    flex: 1,
+    height: 36,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#4A4459",
+    borderWidth: 2,
+    borderColor: "#4A90E2",
+  },
+  cancelShelfButton: {
+    width: 36,
+    height: 36,
+    backgroundColor: "#E07A5F",
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  validateShelfButton: {
+    width: 36,
+    height: 36,
+    backgroundColor: "#4A90E2",
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
   },
   newShelfSection: {
     backgroundColor: "#EAE9E1",

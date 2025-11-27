@@ -35,6 +35,7 @@ export {
   getProductsByProducer,
   getShelvesByProducer,
   updateProduct,
+  updateShelf,
 } from './shopService';
 
 // Export configuration

@@ -27,9 +27,9 @@ export const SHOP_ENDPOINTS = {
   UPDATE_PRODUCT: (id: string | number) => `/products/${id}`, // PUT/PATCH PRIVATE
   DELETE_PRODUCT: (id: string | number) => `/products/${id}`, // DELETE PRIVATE
   GET_PRODUCTS_BY_PRODUCER: (producerId: string | number, shelfId?: string | number) => {
-    let url = `/products/producer/${producerId}`;
+    let url = `/products/producer/${producerId}?onlyDeleted=false`;
     if (shelfId) {
-      url += `?shelfId=${shelfId}`;
+      url += `&shelfId=${shelfId}`;
     }
     return url;
   }, // GET PUBLIC
@@ -49,6 +49,7 @@ export const SHOP_ENDPOINTS = {
   GET_SHELVES_BY_PRODUCER: (producerId: string | number) =>
     `/shelves/producer/${producerId}`, // GET PUBLIC
   CREATE_SHELF: '/shelves', // POST PRIVATE
+  UPDATE_SHELF: (shelfId: string | number) => `/shelves/${shelfId}`, // PUT PRIVATE
   DELETE_SHELF: (shelfId: string | number) => `/shelves/${shelfId}`, // DELETE PRIVATE
 
   // Certifications (GET = public)
