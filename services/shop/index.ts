@@ -32,6 +32,7 @@ export {
   getAllUnits,
   getCategory,
   getProduct,
+  getProduct as getProductById, // Alias pour plus de clarté
   getProductsByProducer,
   getShelvesByProducer,
   updateProduct,

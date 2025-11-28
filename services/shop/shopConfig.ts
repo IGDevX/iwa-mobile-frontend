@@ -27,7 +27,7 @@ export const SHOP_ENDPOINTS = {
   UPDATE_PRODUCT: (id: string | number) => `/products/${id}`, // PUT/PATCH PRIVATE
   DELETE_PRODUCT: (id: string | number) => `/products/${id}`, // DELETE PRIVATE
   GET_PRODUCTS_BY_PRODUCER: (producerId: string | number, shelfId?: string | number) => {
-    let url = `/products/producer/${producerId}?onlyDeleted=false`;
+    let url = `/products/producer/${producerId}?onlyDeleted=false&page=0&size=100`;
     if (shelfId) {
       url += `&shelfId=${shelfId}`;
     }

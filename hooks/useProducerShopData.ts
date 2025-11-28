@@ -71,6 +71,7 @@ export function useProducerShopData(): UseProducerShopDataReturn {
 
       // 3. Récupérer tous les produits du producteur
       const productsData = await getProductsByProducer(fetchedProducerId);
+
       setAllProducts(productsData);
 
       // 4. Organiser les produits par shelf
@@ -90,6 +91,7 @@ export function useProducerShopData(): UseProducerShopDataReturn {
           organizedProducts[shelfId] = [product];
         }
       });
+
 
       setProductsByShelf(organizedProducts);
 

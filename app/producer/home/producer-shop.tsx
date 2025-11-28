@@ -145,13 +145,18 @@ export default function ProducerShopScreen() {
   // Rafraîchir les données quand on revient sur la page (après ajout de produit par exemple)
   useFocusEffect(
     useCallback(() => {
+      console.log('🔄 [PRODUCER-SHOP] useFocusEffect triggered');
+      console.log('🔄 [PRODUCER-SHOP] isFirstLoad:', isFirstLoad.current);
+
       // Ne pas rafraîchir au premier chargement (déjà fait par useEffect)
       if (isFirstLoad.current) {
+        console.log('🔄 [PRODUCER-SHOP] First load, skipping refresh');
         isFirstLoad.current = false;
         return;
       }
 
       // Rafraîchir les shelves et produits seulement quand on revient sur la page
+      console.log('🔄 [PRODUCER-SHOP] Refreshing shop data...');
       refreshData();
     }, [refreshData])
   );
@@ -208,26 +213,26 @@ export default function ProducerShopScreen() {
       // Handle product editing
       handleEditProduct(product);
     } else {
+      // Navigate to product detail page
+      console.log('👀 [PRODUCER-SHOP] Viewing product:', product.id);
       router.push({
-        pathname: '../../restaurant/order/product-detail',
+        pathname: './product-detail',
         params: {
-          productId: product.id,
-          productName: product.name,
-          productPrice: product.priceDisplay
+          id: product.id.toString(),
+          isOwner: isOwnShop ? 'true' : 'false'
         }
       });
     }
   };
 
   const handleEditProduct = (product: any) => {
-    Alert.alert(
-      t('producer.edit_product', 'Edit Product'),
-      `${t('producer.edit_product_message', 'Edit')} ${product.name}`,
-      [
-        { text: t('common.cancel', 'Cancel'), style: 'cancel' },
-        { text: t('producer.edit', 'Edit'), onPress: () => {} }
-      ]
-    );
+    console.log('✏️ [PRODUCER-SHOP] Editing product:', product.id);
+    router.push({
+      pathname: './edit-product',
+      params: {
+        product: JSON.stringify(product),
+      },
+    });
   };
 
   const handleDeleteProduct = (productId: number) => {
