@@ -132,3 +132,29 @@ export interface ProductCertificationResponse {
   isDeleted: boolean;
 }
 
+// ============================================
+// Product Search Types
+// ============================================
+
+export interface ProductSearchRequest {
+  q?: string;
+  categoryIds?: number[];
+  priceMin?: number;
+  priceMax?: number;
+  currencyId?: number;
+  fresh?: boolean;
+  certificationIds?: number[];
+  onlyDeleted?: boolean;
+  sort?: string;
+  page?: number;
+  size?: number;
+}
+
+export interface ProductSearchResponse {
+  products: ProductResponse[];
+  totalElements: number;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
+}
+

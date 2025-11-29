@@ -42,6 +42,17 @@ export async function getProduct(id: string | number): Promise<ProductResponse> 
 }
 
 /**
+ * Search products with filters and pagination (PUBLIC)
+ * @param searchParams - Search filters and pagination parameters
+ * @returns Paginated search results
+ */
+export async function searchProducts(
+  searchParams: ProductSearchRequest
+): Promise<ProductSearchResponse> {
+  return shopPost<ProductSearchResponse>(SHOP_ENDPOINTS.SEARCH_PRODUCTS, searchParams);
+}
+
+/**
  * Get all products for a specific producer (PUBLIC)
  * @param producerId - Producer ID from Account Service
  * @param shelfId - Optional shelf ID to filter by

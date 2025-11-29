@@ -95,7 +95,31 @@
     "profile": "Profil",
     "cart": "Panier"
   },
-  
+
+  "search": {
+    "title": "Rechercher des produits",
+    "placeholder": "Rechercher des produits...",
+    "search": "Rechercher",
+    "show_filters": "Afficher les filtres",
+    "hide_filters": "Masquer les filtres",
+    "clear_filters": "Effacer tous les filtres",
+    "results_count": "{{count}} résultats",
+    "no_results": "Aucun produit trouvé",
+    "try_different": "Essayez d'ajuster votre recherche ou vos filtres",
+    "load_more": "Voir plus",
+    "error": "Échec de la recherche de produits. Veuillez réessayer.",
+    "filter": {
+      "category": "Catégorie",
+      "fresh": "Fraîcheur",
+      "price": "Fourchette de prix",
+      "min_price": "Min",
+      "max_price": "Max",
+      "all": "Tous",
+      "fresh_only": "Frais",
+      "not_fresh": "Non frais"
+    }
+  },
+
   "profile": {
     "title": "Mon Profil",
     "loading": "Chargement du profil...",
@@ -269,6 +293,8 @@
     "created_at": "Créé le",
     "updated_at": "Modifié le",
     "not_found": "Produit introuvable",
+    "load_error": "Échec du chargement des détails du produit",
+    "information": "Informations",
     "add_product_title": "Ajouter un Produit",
     "product_name": "Nom du Produit",
     "product_name_placeholder": "Entrez le nom du produit",
@@ -413,14 +439,16 @@
     "terms_info": "Les informations des conditions d'utilisation seront affichées ici.",
     "help_info": "Contactez le support à support@yourapp.com ou visitez notre centre d'aide."
   },
-  
   "common": {
+    "loading": "Chargement...",
     "error": "Erreur",
     "ok": "OK",
     "cancel": "Annuler",
     "done": "Terminé",
     "delete": "Supprimer",
-    "success": "Succès"
+    "success": "Succès",
+    "apply": "Appliquer",
+    "go_back": "Retour"
   },
 
   "producer": {

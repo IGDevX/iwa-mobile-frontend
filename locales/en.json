@@ -95,7 +95,31 @@
     "profile": "Profile",
     "cart": "Cart"
   },
-  
+
+  "search": {
+    "title": "Search Products",
+    "placeholder": "Search products...",
+    "search": "Search",
+    "show_filters": "Show Filters",
+    "hide_filters": "Hide Filters",
+    "clear_filters": "Clear All Filters",
+    "results_count": "{{count}} results",
+    "no_results": "No products found",
+    "try_different": "Try adjusting your search or filters",
+    "load_more": "Load More",
+    "error": "Failed to search products. Please try again.",
+    "filter": {
+      "category": "Category",
+      "fresh": "Freshness",
+      "price": "Price Range",
+      "min_price": "Min",
+      "max_price": "Max",
+      "all": "All",
+      "fresh_only": "Fresh",
+      "not_fresh": "Not Fresh"
+    }
+  },
+
   "profile": {
     "title": "My Profile",
     "loading": "Loading profile...",
@@ -413,14 +437,16 @@
     "terms_info": "Terms of service information will be displayed here.",
     "help_info": "Contact support at support@yourapp.com or visit our help center."
   },
-  
   "common": {
+    "loading": "Loading...",
     "error": "Error",
     "ok": "OK",
     "cancel": "Cancel",
     "done": "Done",
     "delete": "Delete",
-    "success": "Success"
+    "success": "Success",
+    "apply": "Apply",
+    "go_back": "Go Back"
   },
 
   "producer": {

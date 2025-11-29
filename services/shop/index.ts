@@ -18,6 +18,8 @@ export type {
   UnitResponse,
 } from './shopApi';
 
+// Note: ProductSearchRequest and ProductSearchResponse can be imported directly from './shopApi'
+
 // Export all service functions
 export {
   createProduct,
@@ -35,6 +37,7 @@ export {
   getProduct as getProductById, // Alias pour plus de clarté
   getProductsByProducer,
   getShelvesByProducer,
+  searchProducts,
   updateProduct,
   updateShelf,
 } from './shopService';

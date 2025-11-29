@@ -1,40 +1,14 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from "react-native";
 import { AuthContext } from "../../../components/AuthContext";
 import { useCart } from "../../../components/CartContext";
 import { useProfileCompletion } from "../../../hooks/useProfileCompletion";
-
-// Mock producer data
-const mockProducer = {
-  name: "Ferme Bio Laurent",
-  type: "Maraîcher bio",
-  rating: 4.8,
-  address: "123 Route de Montpellier, 34000",
-  badges: ["Bio", "Local", "Éco-responsable"],
-  image: "https://photo-cdn2.icons8.com/vVsONpHf7-sTgM9mNbSkmX0iCJP6YF9_Ux93NilJJkY/rs:fit:576:384/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvNTA1L2NkNjhm/ODcwLWVjMmMtNDU2/OC1hNmE5LTk3ZGQw/NWE3Mjc3Mi5qcGc.webp"
-};
-
-// Mock product data (this would normally come from navigation params)
-const mockProductDetails = {
-  id: 1,
-  name: "Tomates bio",
-  price: 3.50, // Price as number for calculations
-  priceDisplay: "3.50€/kg",
-  unit: "kg",
-  category: "Légumes",
-  emoji: "🍅",
-  description: "Tomates bio cultivées localement dans notre ferme. Variété ancienne, goût authentique et savoureux. Idéales pour vos préparations culinaires.",
-  characteristicKeys: [
-    "product.agriculture_bio",
-    "product.no_pesticides",
-    "product.heritage_variety",
-    "product.daily_harvest"
-  ],
-  image: "https://photo-cdn2.icons8.com/6-T_VL6CNAS2Ye_pJTjt3Ng2XCJizRvKF6QbAJQCif4/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvOTU5L2NlNjZj/YTIxLTE4MmItNGI0/My1hMzY1LTI0YjA0/M2EyYjI5My5qcGc.webp"
-};
+import { getProduct } from "../../../services/shop/shopService";
+import { getProducerPublicProfile } from "../../../services/account/accountService";
+import type { ProductResponse } from "../../../services/shop/shopApi";
 
 export default function ProductDetailScreen() {
   const { t } = useTranslation();
@@ -42,15 +16,65 @@ export default function ProductDetailScreen() {
   const { addItem, getItemQuantity } = useCart();
   const { state } = useContext(AuthContext);
   const { isComplete: isProfileComplete, isLoading: isProfileLoading } = useProfileCompletion();
+
+  // State for product and producer data
+  const [product, setProduct] = useState<ProductResponse | null>(null);
+  const [producer, setProducer] = useState<any>(null);
+  const [isLoadingData, setIsLoadingData] = useState(true);
   const [quantity, setQuantity] = useState(1);
+
+  // Get product ID from params
+  const productId = params.productId as string;
+
+  // Load product and producer data
+  useEffect(() => {
+    const loadProductData = async () => {
+      if (!productId) {
+        Alert.alert(
+          t('common.error', 'Error'),
+          t('product.not_found', 'Product not found')
+        );
+        router.back();
+        return;
+      }
+
+      try {
+        setIsLoadingData(true);
+
+        // Load product details
+        const productData = await getProduct(productId);
+        setProduct(productData);
+
+        // Load producer details
+        try {
+          const producerData = await getProducerPublicProfile(productData.producerId.toString());
+          setProducer(producerData);
+        } catch (error) {
+          console.log('Producer details not available:', error);
+          // Continue without producer details
+        }
+      } catch (error) {
+        console.error('Error loading product:', error);
+        Alert.alert(
+          t('common.error', 'Error'),
+          t('product.load_error', 'Failed to load product details')
+        );
+        router.back();
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+
+    loadProductData();
+  }, [productId]);
 
   // Determine user role
   const userRole = state.userInfo?.roles?.[0];
-  const isProducer = userRole === 'Producer';
+  const isProducerUser = userRole === 'Producer';
   const isRestaurantOwner = userRole === 'Restaurant Owner';
 
   // Get current quantity in cart for this product (only for restaurant owners)
-  const cartQuantity = !isProducer ? getItemQuantity(mockProductDetails.id) : 0;
+  const cartQuantity = !isProducerUser && product ? getItemQuantity(product.id) : 0;
 
   const handleBack = () => {
     router.back();
@@ -62,8 +86,10 @@ export default function ProductDetailScreen() {
   };
 
   const handleAddToCart = () => {
+    if (!product) return;
+
     // Producers cannot add their own products to cart
-    if (isProducer) {
+    if (isProducerUser) {
       Alert.alert(
         t('common.info', 'Information'),
         t('producer.cannot_add_own_product', 'You cannot add your own products to cart.'),
@@ -106,32 +132,35 @@ export default function ProductDetailScreen() {
 
     // Add to cart using CartContext
     addItem({
-      id: mockProductDetails.id,
-      name: mockProductDetails.name,
-      price: mockProductDetails.price,
-      unit: mockProductDetails.unit,
+      id: product.id,
+      name: product.title,
+      price: product.price,
+      unit: product.unit.code,
       quantity: quantity,
-      category: mockProductDetails.category,
-      image: mockProductDetails.image,
-      producerId: 1,
-      producerName: mockProducer.name
+      category: product.category.name,
+      image: product.mainImageUrl || 'https://via.placeholder.com/150',
+      producerId: product.producerId,
+      producerName: producer?.name || 'Unknown Producer'
     });
   };
 
   const handleViewShop = () => {
+    if (!product) return;
+
     // Navigate to producer's shop
     router.push({
       pathname: '/producer/home/producer-shop',
       params: {
-        producerId: 1,
-        producerName: mockProducer.name
+        producerId: product.producerId,
+        producerName: producer?.name || 'Producer',
+        isViewMode: 'true' // Mode restaurateur POV (sans édition)
       }
     });
   };
 
   const handleCartPress = () => {
     // Producers don't have cart access
-    if (isProducer) {
+    if (isProducerUser) {
       return;
     }
 
@@ -154,6 +183,28 @@ export default function ProductDetailScreen() {
     router.push('/restaurant/order/cart');
   };
 
+  // Show loading state
+  if (isLoadingData) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color="#7B61FF" />
+        <Text style={styles.loadingText}>{t('common.loading', 'Loading...')}</Text>
+      </View>
+    );
+  }
+
+  // Show error if product not found
+  if (!product) {
+    return (
+      <View style={[styles.container, styles.errorContainer]}>
+        <Text style={styles.errorText}>{t('product.not_found', 'Product not found')}</Text>
+        <TouchableOpacity style={styles.backToSearchButton} onPress={() => router.back()}>
+          <Text style={styles.backToSearchText}>{t('common.go_back', 'Go Back')}</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -163,7 +214,7 @@ export default function ProductDetailScreen() {
         </TouchableOpacity>
 
         {/* Only show cart button for restaurant owners */}
-        {!isProducer && (
+        {!isProducerUser && (
           <TouchableOpacity style={styles.cartButton} onPress={handleCartPress}>
             <Image
               source={require('../../../assets/images/icons8-cart-96.png')}
@@ -180,17 +231,22 @@ export default function ProductDetailScreen() {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Product Image */}
-        <Image source={{ uri: mockProductDetails.image }} style={styles.productImage} />
+        <Image
+          source={{ uri: product.mainImageUrl || 'https://via.placeholder.com/400?text=No+Image' }}
+          style={styles.productImage}
+        />
         {/* Product Info Card */}
         <View style={styles.productCard}>
-          <Text style={styles.productTitle}>{mockProductDetails.name}</Text>
+          <Text style={styles.productTitle}>{product.title}</Text>
 
           <View style={styles.priceContainer}>
             <View style={styles.priceInfo}>
-              <Text style={styles.price}>{mockProductDetails.priceDisplay}</Text>
+              <Text style={styles.price}>
+                {product.price.toFixed(2)} {product.currency.code}/{product.unit.code}
+              </Text>
             </View>
 
-            {!isProducer && (
+            {!isProducerUser && (
             <View style={styles.quantityContainer}>
               <TouchableOpacity
                 style={styles.quantityButton}
@@ -210,68 +266,100 @@ export default function ProductDetailScreen() {
           </View>
 
           {/* Description */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('product.description')}</Text>
-            <Text style={styles.description}>{mockProductDetails.description}</Text>
-          </View>
+          {product.description && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>{t('product.description')}</Text>
+              <Text style={styles.description}>{product.description}</Text>
+            </View>
+          )}
 
-          {/* Characteristics */}
+          {/* Category and Shelf Info */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('product.characteristics')}</Text>
-            {mockProductDetails.characteristicKeys.map((charKey, index) => (
-              <View key={index} style={styles.characteristicItem}>
+            <Text style={styles.sectionTitle}>{t('product.information', 'Information')}</Text>
+            <View style={styles.characteristicItem}>
+              <View style={styles.bullet} />
+              <Text style={styles.characteristicText}>
+                {t('product.category', 'Category')}: {product.category.name}
+              </Text>
+            </View>
+            <View style={styles.characteristicItem}>
+              <View style={styles.bullet} />
+              <Text style={styles.characteristicText}>
+                {t('product.shelf', 'Shelf')}: {product.shelf.label}
+              </Text>
+            </View>
+            {product.isFresh && (
+              <View style={styles.characteristicItem}>
                 <View style={styles.bullet} />
-                <Text style={styles.characteristicText}>{t(charKey)}</Text>
+                <Text style={styles.characteristicText}>
+                  ✓ {t('product.fresh', 'Fresh Product')}
+                </Text>
               </View>
-            ))}
+            )}
+            {product.certifications && product.certifications.length > 0 && (
+              <View style={styles.characteristicItem}>
+                <View style={styles.bullet} />
+                <Text style={styles.characteristicText}>
+                  {t('product.certifications', 'Certifications')}: {product.certifications.map(c => c.label).join(', ')}
+                </Text>
+              </View>
+            )}
           </View>
         </View>
 
         {/* Producer Card */}
+        {producer && (
         <View style={styles.producerCard}>
           <Text style={styles.producerTitle}>{t('product.producer_section')}</Text>
 
-          <View style={styles.producerInfo}>
-            <Image source={{ uri: mockProducer.image }} style={styles.producerImage} />
+          <TouchableOpacity onPress={handleViewShop} style={styles.producerInfo}>
+            <Image
+              source={{
+                uri: producer.profilePictureUrl || 'https://via.placeholder.com/80?text=Producer'
+              }}
+              style={styles.producerImage}
+            />
 
             <View style={styles.producerDetails}>
-              <Text style={styles.producerName}>{mockProducer.name}</Text>
-              <Text style={styles.producerType}>{mockProducer.type}</Text>
+              <TouchableOpacity onPress={handleViewShop}>
+                <Text style={styles.producerName}>{producer.name}</Text>
+              </TouchableOpacity>
+              {producer.organizationType && (
+                <Text style={styles.producerType}>{producer.organizationType}</Text>
+              )}
 
-              <View style={styles.ratingContainer}>
-                <Image source={require('../../../assets/images/icons8-star-96.png')} style={styles.ratingIcon} />
-                <Text style={styles.rating}>{mockProducer.rating}</Text>
-              </View>
-
-              <View style={styles.addressContainer}>
-                <Image source={require('../../../assets/images/icons8-map-pin-96.png')} style={styles.ratingIcon} />
-                <Text style={styles.address}>{mockProducer.address}</Text>
-              </View>
-
-              <View style={styles.badgesContainer}>
-                {mockProducer.badges.map((badge, index) => (
-                  <View key={index} style={styles.badge}>
-                    <Text style={styles.badgeText}>{badge}</Text>
-                  </View>
-                ))}
-              </View>
+              {producer.address && (
+                <View style={styles.addressContainer}>
+                  <Image source={require('../../../assets/images/icons8-map-pin-96.png')} style={styles.ratingIcon} />
+                  <Text style={styles.address}>
+                    {[producer.address.street, producer.address.city, producer.address.postalCode]
+                      .filter(Boolean)
+                      .join(', ')}
+                  </Text>
+                </View>
+              )}
             </View>
-          </View>
+          </TouchableOpacity>
 
           <TouchableOpacity style={styles.shopButton} onPress={handleViewShop}>
             <Text style={styles.shopButtonText}>{t('product.view_shop')}</Text>
           </TouchableOpacity>
         </View>
+        )}
 
         <View style={{ height: 200 }} />
       </ScrollView>
 
       {/* Bottom Cart Section - Only for Restaurant Owners */}
-      {!isProducer && (
+      {!isProducerUser && (
         <View style={styles.bottomSection}>
           <View style={styles.totalContainer}>
-            <Text style={styles.totalLabel}>{t('product.total')} ({quantity} {mockProductDetails.unit})</Text>
-            <Text style={styles.totalPrice}>{(mockProductDetails.price * quantity).toFixed(2)}€</Text>
+            <Text style={styles.totalLabel}>
+              {t('product.total')} ({quantity} {product.unit.code})
+            </Text>
+            <Text style={styles.totalPrice}>
+              {(product.price * quantity).toFixed(2)} {product.currency.code}
+            </Text>
           </View>
 
           <TouchableOpacity style={styles.addToCartButton} onPress={handleAddToCart}>
@@ -612,5 +700,38 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontWeight: "500",
     letterSpacing: -0.15,
+  },
+
+  // Loading and error states
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#4A4459',
+  },
+  errorContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  errorText: {
+    fontSize: 18,
+    color: '#FF6B6B',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  backToSearchButton: {
+    backgroundColor: '#7B61FF',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  backToSearchText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
