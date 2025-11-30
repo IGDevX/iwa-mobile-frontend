@@ -12,13 +12,13 @@ export type {
   ProductCertificationResponse,
   ProductRequest,
   ProductResponse,
+  ProductSearchRequest,
   ProductUpdateRequest,
   ShelfRequest,
   ShelfResponse,
   UnitResponse,
 } from './shopApi';
 
-// Note: ProductSearchRequest and ProductSearchResponse can be imported directly from './shopApi'
 
 // Export all service functions
 export {

@@ -23,8 +23,7 @@ export class HttpClient {
    */
   async request<T>(
     endpoint: string,
-    options: RequestInit = {},
-    requiresAuth: boolean = true
+    options: RequestInit = {}
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     console.log(`📡 [HTTP-CLIENT] ${options.method || 'GET'} ${url}`);
@@ -34,17 +33,13 @@ export class HttpClient {
       ...(options.headers as Record<string, string>),
     };
 
-    // Ajouter le token si la route nécessite une authentification
-    if (requiresAuth) {
-      const token = await TokenManager.getAccessToken();
-
-      if (!token) {
-        console.error('❌ [HTTP-CLIENT] No token available');
-        throw new Error('UNAUTHENTICATED');
-      }
-
+    // Toujours ajouter le token s'il existe (même pour routes publiques)
+    const token = await TokenManager.getAccessToken();
+    if (token) {
       headers['Authorization'] = `Bearer ${token}`;
       console.log('🔐 [HTTP-CLIENT] Auth token added');
+    } else {
+      console.log('ℹ️ [HTTP-CLIENT] No token available (user not logged in)');
     }
 
     if (options.body) {
@@ -59,12 +54,17 @@ export class HttpClient {
     console.log(`📥 [HTTP-CLIENT] Response: ${response.status} ${response.statusText}`);
 
     // Gérer le cas 401 (token invalide)
-    if (response.status === 401 && requiresAuth) {
-      // Le token a été rejeté par le backend
-      // Le TokenManager a déjà tenté un refresh, si on est ici c'est que ça a échoué
-      console.error('❌ [HTTP-CLIENT] 401 Unauthorized - clearing tokens');
-      await TokenManager.clearTokens();
-      throw new Error('UNAUTHENTICATED');
+    if (response.status === 401) {
+      // Si un token était présent, cela signifie qu'il est invalide/expiré
+      if (token) {
+        console.error('❌ [HTTP-CLIENT] 401 Unauthorized - token invalid, clearing tokens');
+        await TokenManager.clearTokens();
+        throw new Error('UNAUTHENTICATED');
+      } else {
+        // Pas de token = route nécessite authentification mais user pas connecté
+        console.warn('⚠️ [HTTP-CLIENT] 401 - Authentication required (user not logged in)');
+        throw new Error('AUTHENTICATION_REQUIRED');
+      }
     }
 
     if (!response.ok) {
@@ -85,8 +85,8 @@ export class HttpClient {
    * GET request with automatic deduplication
    * If the same GET request is already pending, return the existing promise
    */
-  async get<T>(endpoint: string, requiresAuth: boolean = true): Promise<T> {
-    const cacheKey = `${endpoint}|${requiresAuth}`;
+  async get<T>(endpoint: string): Promise<T> {
+    const cacheKey = endpoint;
 
     // Check if the same GET request is already in progress
     if (this.pendingGetRequests.has(cacheKey)) {
@@ -95,7 +95,7 @@ export class HttpClient {
     }
 
     // Create new request promise
-    const requestPromise = this.request<T>(endpoint, { method: 'GET' }, requiresAuth)
+    const requestPromise = this.request<T>(endpoint, { method: 'GET' })
       .finally(() => {
         // Clean up the cache after request completes (success or failure)
         this.pendingGetRequests.delete(cacheKey);
@@ -110,76 +110,47 @@ export class HttpClient {
   /**
    * POST request
    */
-  async post<T>(
-    endpoint: string,
-    body?: any,
-    requiresAuth: boolean = true
-  ): Promise<T> {
+  async post<T>(endpoint: string, body?: any): Promise<T> {
     return this.request<T>(
       endpoint,
       {
         method: 'POST',
         body: body ? JSON.stringify(body) : undefined,
-      },
-      requiresAuth
+      }
     );
   }
 
   /**
    * PUT request
    */
-  async put<T>(
-    endpoint: string,
-    body: any,
-    requiresAuth: boolean = true
-  ): Promise<T> {
-    console.log('🔵 [HTTP-CLIENT] PUT request:', {
-      baseUrl: this.baseUrl,
+  async put<T>(endpoint: string, body: any): Promise<T> {
+    return this.request<T>(
       endpoint,
-      body,
-      requiresAuth,
-    });
-
-    try {
-      const result = await this.request<T>(
-        endpoint,
-        {
-          method: 'PUT',
-          body: JSON.stringify(body),
-        },
-        requiresAuth
-      );
-      console.log('✅ [HTTP-CLIENT] PUT success');
-      return result;
-    } catch (error) {
-      console.error('❌ [HTTP-CLIENT] PUT failed:', error);
-      throw error;
-    }
+      {
+        method: 'PUT',
+        body: JSON.stringify(body),
+      }
+    );
   }
 
   /**
    * PATCH request
    */
-  async patch<T>(
-    endpoint: string,
-    body: any,
-    requiresAuth: boolean = true
-  ): Promise<T> {
+  async patch<T>(endpoint: string, body: any): Promise<T> {
     return this.request<T>(
       endpoint,
       {
         method: 'PATCH',
         body: JSON.stringify(body),
-      },
-      requiresAuth
+      }
     );
   }
 
   /**
    * DELETE request
    */
-  async delete<T>(endpoint: string, requiresAuth: boolean = true): Promise<T> {
-    return this.request<T>(endpoint, { method: 'DELETE' }, requiresAuth);
+  async delete<T>(endpoint: string): Promise<T> {
+    return this.request<T>(endpoint, { method: 'DELETE' });
   }
 }
 

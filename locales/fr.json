@@ -281,6 +281,8 @@
     "characteristics": "Caractéristiques",
     "producer_section": "Le producteur",
     "view_shop": "Voir la boutique",
+    "login_prompt_prefix": "Pour ajouter un produit au panier et parcourir les boutiques de producteurs, veuillez",
+    "login_prompt_link": "vous connecter",
     "stock_available": "Stock disponible :",
     "agriculture_bio": "Agriculture biologique certifiée",
     "no_pesticides": "Cultivé sans pesticides",

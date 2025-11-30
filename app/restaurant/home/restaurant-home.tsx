@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Alert } from "react-native";
 import { useTranslation } from "react-i18next";
 import { router } from "expo-router";
 import Ionicons from "@expo/vector-icons/build/Ionicons";
 import { useNotifications } from "../../../hooks/useNotifications";
 import { useCategories } from "../../../hooks/useCategories";
-import { searchProducts } from "../../../services/shop/shopService";
-import type { ProductSearchRequest, ProductResponse } from "../../../services/shop/shopApi";
+import { searchProducts, type ProductSearchRequest, type ProductResponse } from "../../../services/shop";
 
 const ITEMS_PER_PAGE = 20;
 
@@ -29,7 +28,7 @@ export default function RestaurantHomeScreen() {
   const [totalPages, setTotalPages] = useState(0);
 
   // Perform search
-  const performSearch = async (page: number = 0, append: boolean = false) => {
+  const performSearch = useCallback(async (page: number = 0, append: boolean = false) => {
     setIsLoadingProducts(true);
     try {
       const searchParams: ProductSearchRequest = {
@@ -37,7 +36,6 @@ export default function RestaurantHomeScreen() {
         size: ITEMS_PER_PAGE,
       };
 
-      // Add filters only if they are set
       if (searchText.trim()) {
         searchParams.q = searchText.trim();
       }
@@ -70,12 +68,12 @@ export default function RestaurantHomeScreen() {
     } finally {
       setIsLoadingProducts(false);
     }
-  };
+  }, [searchText, selectedCategoryId, minPrice, maxPrice, t]);
 
   // Initial load - show all products
   useEffect(() => {
     performSearch();
-  }, []);
+  }, [performSearch]);
 
   // Trigger search when filters change
   useEffect(() => {
@@ -84,7 +82,7 @@ export default function RestaurantHomeScreen() {
     }, 500); // Debounce de 500ms
 
     return () => clearTimeout(delaySearch);
-  }, [searchText, selectedCategoryId, minPrice, maxPrice]);
+  }, [searchText, selectedCategoryId, minPrice, maxPrice, performSearch]);
 
   // Handle category selection
   const handleCategorySelect = (categoryId: number) => {
@@ -106,50 +104,58 @@ export default function RestaurantHomeScreen() {
     router.push('/notification');
   };
 
-  const renderProductCard = (product: ProductResponse) => (
-    <TouchableOpacity
-      key={product.id} 
-      style={styles.productCard}
-      onPress={() => router.push({
+  const renderProductCard = (product: ProductResponse) => {
+    const handleProductPress = () => {
+      // Naviguer vers les détails du produit
+      // Les détails du producteur seront masqués si l'utilisateur n'est pas connecté
+      router.push({
         pathname: '../order/product-detail',
-        params: { 
+        params: {
           productId: product.id,
-        }
-      })}
-    >
-      <Image
-        source={{ uri: product.mainImageUrl || 'https://via.placeholder.com/150?text=No+Image' }}
-        style={styles.productImage}
-      />
-      <View style={styles.productInfo}>
-        <View style={styles.productDetails}>
-          <Text style={styles.productName} numberOfLines={2}>{product.title}</Text>
-          <Text style={styles.productCategory}>{product.category.name}</Text>
+        },
+      });
+    };
 
-          {/* Badges */}
-          <View style={styles.badgesContainer}>
-            {product.isFresh && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{t('product.fresh', 'Fresh')}</Text>
-              </View>
-            )}
-            {product.certifications && product.certifications.slice(0, 2).map((cert) => (
-              <View key={cert.id} style={styles.badge}>
-                <Text style={styles.badgeText}>{cert.label}</Text>
-              </View>
-            ))}
+    return (
+      <TouchableOpacity
+        key={product.id}
+        style={styles.productCard}
+        onPress={handleProductPress}
+      >
+        <Image
+          source={{ uri: product.mainImageUrl || 'https://via.placeholder.com/150?text=No+Image' }}
+          style={styles.productImage}
+        />
+        <View style={styles.productInfo}>
+          <View style={styles.productDetails}>
+            <Text style={styles.productName} numberOfLines={2}>{product.title}</Text>
+            <Text style={styles.productCategory}>{product.category.name}</Text>
+
+            {/* Badges */}
+            <View style={styles.badgesContainer}>
+              {product.isFresh && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{t('product.fresh', 'Fresh')}</Text>
+                </View>
+              )}
+              {product.certifications && product.certifications.slice(0, 2).map((cert: { id: number; label: string }) => (
+                <View key={cert.id} style={styles.badge}>
+                  <Text style={styles.badgeText}>{cert.label}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          {/* Bottom info: price */}
+          <View style={styles.productFooter}>
+            <Text style={styles.priceText}>
+              {product.price.toFixed(2)} {product.currency.code}/{product.unit.code}
+            </Text>
           </View>
         </View>
-
-        {/* Bottom info: price */}
-        <View style={styles.productFooter}>
-          <Text style={styles.priceText}>
-            {product.price.toFixed(2)} {product.currency.code}/{product.unit.code}
-          </Text>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -213,7 +219,7 @@ export default function RestaurantHomeScreen() {
             {categoriesLoading ? (
               <ActivityIndicator size="small" color="#89A083" style={{ marginLeft: 16 }} />
             ) : (
-              categories.map((cat) => (
+              categories.map((cat: { id: number; icon: any; name: string }) => (
                 <TouchableOpacity
                   key={cat.id}
                   style={[
@@ -270,7 +276,7 @@ export default function RestaurantHomeScreen() {
               {selectedCategoryId && (
                 <View style={styles.filterChip}>
                   <Text style={styles.filterChipText}>
-                    {categories.find(c => c.id === selectedCategoryId)?.name}
+                    {categories.find((c: { id: number }) => c.id === selectedCategoryId)?.name}
                   </Text>
                   <TouchableOpacity onPress={() => setSelectedCategoryId(null)}>
                     <Ionicons name="close" size={16} color="#89A083" />

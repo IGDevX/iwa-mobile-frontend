@@ -6,12 +6,25 @@ import {
     Modal,
     TouchableWithoutFeedback,
     Image,
-    Alert
+    Alert,
+    Dimensions,
+    Platform,
+    SafeAreaView,
+    KeyboardAvoidingView
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
 import Button from './Button';
 import { AuthContext } from '../components/AuthContext';
+
+// Get screen dimensions
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+// Calculate responsive sizes
+const isSmallDevice = SCREEN_WIDTH < 375;
+const MODAL_WIDTH = Math.min(SCREEN_WIDTH * 0.9, 380);
+const ICON_SIZE = isSmallDevice ? 60 : 70;
+const BUTTON_PADDING = isSmallDevice ? 12 : 18;
 
 interface SignupChoiceModalProps {
     visible: boolean;
@@ -74,171 +87,185 @@ export default function SignupChoiceModal({
             transparent={true}
             animationType="fade"
             onRequestClose={onClose}
+            statusBarTranslucent={true}
         >
-            <TouchableWithoutFeedback onPress={onClose}>
-                <View style={styles.modalOverlay}>
-                    <TouchableWithoutFeedback>
-                        <View style={styles.modalContainer}>
-                            <View style={styles.modalContent}>
-                                {/* Main Buttons */}
-                                <View style={styles.buttonsContainer}>
-                                    <Text style={styles.modalTitle}>{t("auth.signup_choice.join_us")}</Text>
-                                    <View style={styles.rowContainer1}>
-                                        <Image
-                                            source={require('../assets/images/icons8-farmer-96.png')}
-                                            style={styles.logo}
-                                        />
-                                        <Button
-                                            title={t("auth.signup_choice.are_you_producer")}
-                                            onPress={handleProducerPress}
-                                            variant="secondary"
-                                            style={styles.choiceButton1}
-                                            textStyle={styles.choiceButtonText1}
-                                        />
+            <SafeAreaView style={styles.safeArea}>
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    style={styles.keyboardAvoid}
+                >
+                    <TouchableWithoutFeedback onPress={onClose}>
+                        <View style={styles.modalOverlay}>
+                            <TouchableWithoutFeedback>
+                                <View style={styles.modalContainer}>
+                                    <View style={styles.modalContent}>
+                                            {/* Main Buttons */}
+                                            <View style={styles.buttonsContainer}>
+                                                <Text style={styles.modalTitle}>{t("auth.signup_choice.join_us")}</Text>
+                                                <View style={styles.rowContainer1}>
+                                                    <Image
+                                                        source={require('../assets/images/icons8-farmer-96.png')}
+                                                        style={styles.logo}
+                                                        resizeMode="contain"
+                                                    />
+                                                    <Button
+                                                        title={t("auth.signup_choice.are_you_producer")}
+                                                        onPress={handleProducerPress}
+                                                        variant="secondary"
+                                                        style={styles.choiceButton1}
+                                                        textStyle={styles.choiceButtonText1}
+                                                    />
+                                                </View>
+                                                <View style={styles.rowContainer2}>
+                                                    <Button
+                                                        title={t("auth.signup_choice.are_you_restaurant")}
+                                                        onPress={handleRestaurantPress}
+                                                        variant="primary"
+                                                        style={styles.choiceButton2}
+                                                        textStyle={styles.choiceButtonText2}
+                                                    />
+                                                    <Image
+                                                        source={require('../assets/images/icons8-chef-96.png')}
+                                                        style={styles.logo}
+                                                        resizeMode="contain"
+                                                    />
+                                                </View>
+                                            </View>
+
+                                            {/* Divider */}
+                                            <View style={styles.dividerContainer}>
+                                                <View style={styles.dividerLine} />
+                                                <Text style={styles.dividerText}>{t("auth.signup_choice.or")}</Text>
+                                                <View style={styles.dividerLine} />
+                                            </View>
+
+                                            {/* Login Button */}
+                                            <Button
+                                                title={t("auth.signup_choice.already_have_account")}
+                                                onPress={handleLoginPress}
+                                                style={styles.loginButton}
+                                                textStyle={styles.loginButtonText}
+                                                variant="primary"
+                                            />
+
+                                            {/* Decorative Images - Removed for better alignment */}
+                                        </View>
                                     </View>
-                                    <View style={styles.rowContainer2}>
-                                        <Button
-                                            title={t("auth.signup_choice.are_you_restaurant")}
-                                            onPress={handleRestaurantPress}
-                                            variant="primary"
-                                            style={styles.choiceButton2}
-                                            textStyle={styles.choiceButtonText2}
-                                        />
-                                        <Image
-                                            source={require('../assets/images/icons8-chef-96.png')}
-                                            style={styles.logo}
-                                        />
-                                    </View>
-
-                                </View>
-
-                                {/* Divider */}
-                                <View style={styles.dividerContainer}>
-                                    <View style={styles.dividerLine} />
-                                    <Text style={styles.dividerText}>{t("auth.signup_choice.or")}</Text>
-                                    <View style={styles.dividerLine} />
-                                </View>
-
-                                {/* Login Button */}
-                                <Button
-                                    title={t("auth.signup_choice.already_have_account")}
-                                    onPress={handleLoginPress}
-                                    style={styles.loginButton}
-                                    textStyle={styles.loginButtonText}
-                                    variant="primary"
-                                />
-
-                                {/* Decorative Images */}
-                                <View style={styles.decorativeContainer}>
-                                    <Image
-                                        source={{ uri: 'https://placehold.co/80x80' }}
-                                        style={styles.decorativeImage1}
-                                    />
-                                    <Image
-                                        source={{ uri: 'https://placehold.co/60x60' }}
-                                        style={styles.decorativeImage2}
-                                    />
-                                </View>
-                            </View>
+                            </TouchableWithoutFeedback>
                         </View>
                     </TouchableWithoutFeedback>
-                </View>
-            </TouchableWithoutFeedback>
+                </KeyboardAvoidingView>
+            </SafeAreaView>
         </Modal>
     );
 }
 
 const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+    },
+    keyboardAvoid: {
+        flex: 1,
+    },
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.08)',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 20,
+        paddingVertical: 20,
     },
     modalContainer: {
-        width: '100%',
+        width: MODAL_WIDTH,
         maxWidth: 380,
     },
     modalContent: {
         backgroundColor: '#FFFEF4',
         borderRadius: 25,
-        padding: 30,
+        padding: isSmallDevice ? 20 : 30,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 10 },
         shadowOpacity: 0.25,
         shadowRadius: 20,
         elevation: 10,
         alignItems: 'center',
-        paddingTop: 30,
+        width: '100%',
     },
     modalTitle: {
-        fontSize: 18,
-        lineHeight: 27,
+        fontSize: isSmallDevice ? 16 : 18,
+        lineHeight: isSmallDevice ? 24 : 27,
         color: '#4A4459',
         fontWeight: '600',
-        marginBottom: 40,
-        alignSelf: 'center',
+        marginBottom: isSmallDevice ? 25 : 30,
+        textAlign: 'center',
+        width: '100%',
     },
     rowContainer1: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 25,
+        marginBottom: 20,
+        width: '100%',
+        gap: 10,
     },
     rowContainer2: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center'
-    },
-    logoContainer: {
-        marginBottom: 30,
+        alignItems: 'center',
+        width: '100%',
+        gap: 10,
     },
     logo: {
-        width: 80,
-        height: 80,
+        width: ICON_SIZE,
+        height: ICON_SIZE,
         borderRadius: 12,
     },
     buttonsContainer: {
         width: '100%',
-        marginBottom: 25,
+        marginBottom: isSmallDevice ? 20 : 25,
     },
     choiceButton1: {
-        marginBottom: 16,
-        paddingVertical: 18,
-        paddingHorizontal: 30,
+        flex: 1,
+        marginBottom: 0,
+        paddingVertical: BUTTON_PADDING,
+        paddingHorizontal: isSmallDevice ? 12 : 16,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.25,
         shadowRadius: 10,
         elevation: 5,
+        minHeight: 50,
     },
     choiceButton2: {
-        marginBottom: 16,
-        marginRight: 10,
-        paddingVertical: 18,
-        paddingHorizontal: 30,
+        flex: 1,
+        marginBottom: 0,
+        marginRight: 0,
+        paddingVertical: BUTTON_PADDING,
+        paddingHorizontal: isSmallDevice ? 12 : 16,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.25,
         shadowRadius: 10,
         elevation: 5,
+        minHeight: 50,
     },
     choiceButtonText1: {
-        fontSize: 16,
+        fontSize: isSmallDevice ? 13 : 14,
         fontWeight: '600',
-        color: '#FFFFFF'
+        color: '#FFFFFF',
+        textAlign: 'center',
     },
     choiceButtonText2: {
-        fontSize: 16,
+        fontSize: isSmallDevice ? 13 : 14,
         fontWeight: '600',
         color: '#4A4459',
+        textAlign: 'center',
     },
     dividerContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         width: '100%',
-        marginVertical: 20,
+        marginVertical: isSmallDevice ? 15 : 20,
     },
     dividerLine: {
         flex: 1,
@@ -246,8 +273,8 @@ const styles = StyleSheet.create({
         backgroundColor: '#E0E0E0',
     },
     dividerText: {
-        marginHorizontal: 20,
-        fontSize: 14,
+        marginHorizontal: 15,
+        fontSize: isSmallDevice ? 12 : 14,
         fontWeight: '600',
         color: '#6B6B6B',
     },
@@ -256,34 +283,13 @@ const styles = StyleSheet.create({
         backgroundColor: '#f6f5e9ff',
         shadowOpacity: 0,
         elevation: 0,
+        paddingVertical: isSmallDevice ? 12 : 14,
+        minHeight: 50,
     },
     loginButtonText: {
         color: '#4A4459',
-        fontSize: 16,
+        fontSize: isSmallDevice ? 14 : 16,
         fontWeight: '600',
-    },
-    decorativeContainer: {
-        position: 'absolute',
-        width: '100%',
-        height: '100%',
-        pointerEvents: 'none',
-    },
-    decorativeImage1: {
-        position: 'absolute',
-        top: 20,
-        right: -10,
-        width: 40,
-        height: 40,
-        opacity: 0.3,
-        borderRadius: 20,
-    },
-    decorativeImage2: {
-        position: 'absolute',
-        bottom: 20,
-        left: -10,
-        width: 35,
-        height: 35,
-        opacity: 0.3,
-        borderRadius: 17.5,
+        textAlign: 'center',
     },
 });

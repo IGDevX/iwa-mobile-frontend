@@ -281,6 +281,8 @@
     "characteristics": "Characteristics",
     "producer_section": "Producer",
     "view_shop": "View shop",
+    "login_prompt_prefix": "To add products to cart and browse producer shops, please",
+    "login_prompt_link": "sign in",
     "stock_available": "Stock available:",
     "agriculture_bio": "Certified organic farming",
     "no_pesticides": "Grown without pesticides",

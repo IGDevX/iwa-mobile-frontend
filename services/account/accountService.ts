@@ -133,9 +133,24 @@ export async function getMyProfile(): Promise<UserProfileResponse> {
 }
 
 /**
- * Get producer's public profile
+ * Get producer's public profile by producer account ID
+ * Use this when you have the producer account ID (e.g., from a product's producerId)
  *
- * @param id - Producer ID
+ * @param producerId - Producer account ID (not user ID)
+ * @returns Public producer profile
+ */
+export async function getProducerById(
+    producerId: number
+): Promise<ProducerPublicProfileResponse> {
+    return accountGet<ProducerPublicProfileResponse>(
+        ACCOUNT_ENDPOINTS.GET_PRODUCER_BY_ID(producerId)
+    );
+}
+
+/**
+ * Get producer's public profile by user/keycloak ID
+ *
+ * @param id - User/Keycloak ID
  * @returns Public producer profile
  */
 export async function getProducerPublicProfile(

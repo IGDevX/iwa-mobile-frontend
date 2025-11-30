@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useFocusEffect } from '@react-navigation/native';
-import { router, useLocalSearchParams } from "expo-router";
+import { router } from "expo-router";
 import React, { useCallback, useContext, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -25,7 +25,6 @@ import { createShelf, deleteProduct, deleteShelf, updateShelf, type ProductRespo
 
 export default function ProducerShopScreen() {
   const { t } = useTranslation();
-  const params = useLocalSearchParams();
   const { state } = useCart();
   const { state: authState } = useContext(AuthContext);
   const { hasUnreadNotifications } = useNotifications();
@@ -36,7 +35,6 @@ export default function ProducerShopScreen() {
     producerId,
     shelves,
     productsByShelf,
-    allProducts,
     isLoading: isLoadingShopData,
     error: shopDataError,
     refreshData,
@@ -49,7 +47,6 @@ export default function ProducerShopScreen() {
     biography: '',
   });
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
-  const isFetchingProfile = React.useRef(false); // Flag pour éviter les appels multiples
 
   // Edit mode state
   const [isEditMode, setIsEditMode] = useState(false);
@@ -106,7 +103,7 @@ export default function ProducerShopScreen() {
   };
 
   // Function to load producer profile data
-  const loadProducerProfile = async () => {
+  const loadProducerProfile = useCallback(async () => {
     try {
       // Vérifier que l'utilisateur est authentifié
       if (!authState.isSignedIn || !authState.userInfo?.sub || !isOwnShop) {
@@ -125,12 +122,12 @@ export default function ProducerShopScreen() {
         responsibleName: completeProfile.keycloak.responsibleName || '',
         biography: completeProfile.accountService.biography || '',
       });
-    } catch (error) {
+    } catch (_error) {
       // Keep empty data on error
     } finally {
       setIsLoadingProfile(false);
     }
-  };
+  }, [authState.isSignedIn, authState.userInfo?.sub, isOwnShop]);
 
   // Load profile data when component mounts or auth state changes
   React.useEffect(() => {
@@ -140,7 +137,7 @@ export default function ProducerShopScreen() {
     } else {
       setIsLoadingProfile(false);
     }
-  }, [authState.isSignedIn, authState.userInfo, isOwnShop]);
+  }, [authState.isSignedIn, authState.userInfo, isOwnShop, loadProducerProfile]);
 
   // Rafraîchir les données quand on revient sur la page (après ajout de produit par exemple)
   useFocusEffect(
@@ -363,7 +360,7 @@ export default function ProducerShopScreen() {
 
               // Rafraîchir les données
               await refreshData();
-            } catch (error) {
+            } catch (_error) {
               Alert.alert(
                 t('producer.error', 'Error'),
                 t('producer.shelf_deletion_failed', 'Failed to delete shelf. Please try again.')
@@ -425,7 +422,7 @@ export default function ProducerShopScreen() {
         t('producer.success', 'Success'),
         t('producer.shelf_created', 'Shelf created successfully!')
       );
-    } catch (error) {
+    } catch (_error) {
       Alert.alert(
         t('producer.error', 'Error'),
         t('producer.shelf_creation_failed', 'Failed to create shelf. Please try again.')
@@ -457,7 +454,7 @@ export default function ProducerShopScreen() {
         </View>
         <Text style={styles.productName}>{product.title}</Text>
         <Text style={styles.productPrice}>
-          {product.price}€/{product.unit.abbreviation || product.unit.name}
+          {product.price}€/{product.unit.code || product.unit.label}
         </Text>
         {isEditMode && (
           <Text style={styles.stockText}>Stock: {product.title}</Text>
@@ -478,7 +475,7 @@ export default function ProducerShopScreen() {
   // Rendu d'une shelf (rayon) avec ses produits
   const renderShelf = (shelf: ShelfResponse) => {
     const shelfProducts = productsByShelf[shelf.id] || [];
-    const shelfName = shelf.name || shelf.label;
+    const shelfName = shelf.label;
     const isEditing = editingShelfId === shelf.id;
 
     return (
@@ -630,7 +627,7 @@ export default function ProducerShopScreen() {
         {/* Description */}
         {isLoadingProfile ? (
           <Text style={styles.description}>
-            Ferme responsable située à Loupian. Large variété de fruits et légumes issues de l'agriculture biologique.
+            Ferme responsable située à Loupian. Large variété de fruits et légumes issues de l&apos;agriculture biologique.
           </Text>
         ) : producerProfile.biography ? (
           <Text style={styles.description}>

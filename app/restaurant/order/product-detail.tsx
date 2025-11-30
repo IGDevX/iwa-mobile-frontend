@@ -6,8 +6,9 @@ import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View, Act
 import { AuthContext } from "../../../components/AuthContext";
 import { useCart } from "../../../components/CartContext";
 import { useProfileCompletion } from "../../../hooks/useProfileCompletion";
+import SignupChoiceModal from "../../../components/SignupChoiceModal";
 import { getProduct } from "../../../services/shop/shopService";
-import { getProducerPublicProfile } from "../../../services/account/accountService";
+import { getProducerById } from "../../../services/account/accountService";
 import type { ProductResponse } from "../../../services/shop/shopApi";
 
 export default function ProductDetailScreen() {
@@ -22,6 +23,9 @@ export default function ProductDetailScreen() {
   const [producer, setProducer] = useState<any>(null);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [quantity, setQuantity] = useState(1);
+
+  // Modal state
+  const [showSignupChoice, setShowSignupChoice] = useState(false);
 
   // Get product ID from params
   const productId = params.productId as string;
@@ -45,15 +49,17 @@ export default function ProductDetailScreen() {
         const productData = await getProduct(productId);
         setProduct(productData);
 
-        // Load producer details
-        try {
-          const producerData = await getProducerPublicProfile(productData.producerId.toString());
-          setProducer(producerData);
-        } catch (error) {
-          console.log('Producer details not available:', error);
-          // Continue without producer details
+        // Load producer details only if user is logged in
+        if (state.isSignedIn && productData.producerId) {
+          try {
+            const producerData = await getProducerById(productData.producerId);
+            setProducer(producerData);
+          } catch (error: any) {
+            console.error('Error loading producer:', error);
+            // Producer data is optional, continue without it
+          }
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error loading product:', error);
         Alert.alert(
           t('common.error', 'Error'),
@@ -83,6 +89,22 @@ export default function ProductDetailScreen() {
   const handleQuantityChange = (change: number) => {
     const newQuantity = Math.max(1, quantity + change);
     setQuantity(newQuantity);
+  };
+
+  // Handler to open signup/login modal
+  const handleOpenSignupModal = () => {
+    setShowSignupChoice(true);
+  };
+
+  // Handler to close modal
+  const handleCloseModal = () => {
+    setShowSignupChoice(false);
+  };
+
+  // Handler for existing user (from modal)
+  const handleExistingUserPress = () => {
+    setShowSignupChoice(false);
+    // The modal itself handles navigation to login
   };
 
   const handleAddToCart = () => {
@@ -213,14 +235,14 @@ export default function ProductDetailScreen() {
           <Ionicons name="chevron-back" size={20} color="#4A4459" />
         </TouchableOpacity>
 
-        {/* Only show cart button for restaurant owners */}
-        {!isProducerUser && (
+        {/* Only show cart button for logged in restaurant owners */}
+        {!isProducerUser && state.isSignedIn && (
           <TouchableOpacity style={styles.cartButton} onPress={handleCartPress}>
             <Image
               source={require('../../../assets/images/icons8-cart-96.png')}
               style={styles.cartIcon}
             />
-            {state.isSignedIn && cartQuantity > 0 && (
+            {cartQuantity > 0 && (
               <View style={styles.cartBadge}>
                 <Text style={styles.cartBadgeText}>{cartQuantity}</Text>
               </View>
@@ -246,7 +268,7 @@ export default function ProductDetailScreen() {
               </Text>
             </View>
 
-            {!isProducerUser && (
+            {!isProducerUser && state.isSignedIn && (
             <View style={styles.quantityContainer}>
               <TouchableOpacity
                 style={styles.quantityButton}
@@ -307,44 +329,54 @@ export default function ProductDetailScreen() {
           </View>
         </View>
 
-        {/* Producer Card */}
-        {producer && (
-        <View style={styles.producerCard}>
-          <Text style={styles.producerTitle}>{t('product.producer_section')}</Text>
+        {/* Producer Card - Only show if user is logged in */}
+        {state.isSignedIn && (
+          <View style={styles.producerCard}>
+            <Text style={styles.producerTitle}>{t('product.producer_section', 'Producteur')}</Text>
 
-          <TouchableOpacity onPress={handleViewShop} style={styles.producerInfo}>
-            <Image
-              source={{
-                uri: producer.profilePictureUrl || 'https://via.placeholder.com/80?text=Producer'
-              }}
-              style={styles.producerImage}
-            />
+            <TouchableOpacity onPress={handleViewShop} style={styles.producerInfo}>
+              {/* Profile Image - Mock if not available */}
+              <Image
+                source={{
+                  uri: producer?.profilePictureUrl || 'https://ui-avatars.com/api/?name=' +
+                       encodeURIComponent(producer?.name || product.producerId.toString()) +
+                       '&background=89A083&color=fff&size=80'
+                }}
+                style={styles.producerImage}
+              />
 
-            <View style={styles.producerDetails}>
-              <TouchableOpacity onPress={handleViewShop}>
-                <Text style={styles.producerName}>{producer.name}</Text>
-              </TouchableOpacity>
-              {producer.organizationType && (
-                <Text style={styles.producerType}>{producer.organizationType}</Text>
-              )}
-
-              {producer.address && (
-                <View style={styles.addressContainer}>
-                  <Image source={require('../../../assets/images/icons8-map-pin-96.png')} style={styles.ratingIcon} />
-                  <Text style={styles.address}>
-                    {[producer.address.street, producer.address.city, producer.address.postalCode]
-                      .filter(Boolean)
-                      .join(', ')}
+              <View style={styles.producerDetails}>
+                <TouchableOpacity onPress={handleViewShop}>
+                  <Text style={styles.producerName}>
+                    {producer?.name || producer?.shopName || `Producteur #${product.producerId}`}
                   </Text>
-                </View>
-              )}
-            </View>
-          </TouchableOpacity>
+                </TouchableOpacity>
 
-          <TouchableOpacity style={styles.shopButton} onPress={handleViewShop}>
-            <Text style={styles.shopButtonText}>{t('product.view_shop')}</Text>
-          </TouchableOpacity>
-        </View>
+                {producer?.organizationType && (
+                  <Text style={styles.producerType}>{producer.organizationType}</Text>
+                )}
+
+                {producer?.address ? (
+                  <View style={styles.addressContainer}>
+                    <Image source={require('../../../assets/images/icons8-map-pin-96.png')} style={styles.ratingIcon} />
+                    <Text style={styles.address}>
+                      {[producer.address.street, producer.address.city, producer.address.postalCode]
+                        .filter(Boolean)
+                        .join(', ')}
+                    </Text>
+                  </View>
+                ) : (
+                  <Text style={styles.producerType}>
+                    {t('product.view_shop', 'Voir la boutique')} →
+                  </Text>
+                )}
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.shopButton} onPress={handleViewShop}>
+              <Text style={styles.shopButtonText}>{t('product.view_shop', 'Voir la boutique')}</Text>
+            </TouchableOpacity>
+          </View>
         )}
 
         <View style={{ height: 200 }} />
@@ -353,22 +385,45 @@ export default function ProductDetailScreen() {
       {/* Bottom Cart Section - Only for Restaurant Owners */}
       {!isProducerUser && (
         <View style={styles.bottomSection}>
-          <View style={styles.totalContainer}>
-            <Text style={styles.totalLabel}>
-              {t('product.total')} ({quantity} {product.unit.code})
-            </Text>
-            <Text style={styles.totalPrice}>
-              {(product.price * quantity).toFixed(2)} {product.currency.code}
-            </Text>
-          </View>
+          {state.isSignedIn ? (
+            <>
+              <View style={styles.totalContainer}>
+                <Text style={styles.totalLabel}>
+                  {t('product.total')} ({quantity} {product.unit.code})
+                </Text>
+                <Text style={styles.totalPrice}>
+                  {(product.price * quantity).toFixed(2)} {product.currency.code}
+                </Text>
+              </View>
 
-          <TouchableOpacity style={styles.addToCartButton} onPress={handleAddToCart}>
-            <Text style={styles.addToCartText}>
-              {t('product.add_to_cart')}
-            </Text>
-          </TouchableOpacity>
+              <TouchableOpacity style={styles.addToCartButton} onPress={handleAddToCart}>
+                <Text style={styles.addToCartText}>
+                  {t('product.add_to_cart')}
+                </Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <View style={styles.loginPromptContainer}>
+              <Text style={styles.loginPromptText}>
+                {t('product.login_prompt_prefix', 'Pour ajouter un produit au panier et parcourir les boutiques de producteurs, veuillez ')}{' '}
+                <Text
+                  style={styles.loginPromptLink}
+                  onPress={handleOpenSignupModal}
+                >
+                  {t('product.login_prompt_link', 'vous connecter')}
+                </Text>
+              </Text>
+            </View>
+          )}
         </View>
       )}
+
+      {/* Signup/Login Choice Modal */}
+      <SignupChoiceModal
+        visible={showSignupChoice}
+        onClose={handleCloseModal}
+        onExistingUser={handleExistingUserPress}
+      />
     </View>
   );
 }
@@ -700,6 +755,26 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontWeight: "500",
     letterSpacing: -0.15,
+  },
+  loginPromptContainer: {
+    backgroundColor: "#F3F4F6",
+    borderRadius: 15,
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loginPromptText: {
+    fontSize: 14,
+    color: "#4A4459",
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  loginPromptLink: {
+    fontSize: 14,
+    color: "#89A083",
+    fontWeight: "600",
+    textDecorationLine: "underline",
   },
 
   // Loading and error states
