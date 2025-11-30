@@ -210,6 +210,40 @@ export async function getUserByKeycloakId(
 }
 
 /**
+ * Get Keycloak ID from Account Service User ID
+ *
+ * IMPORTANT: Utilise le nouvel endpoint /internal/user/{userId}/keycloak-id
+ * pour obtenir le Keycloak ID à partir d'un Account Service User ID.
+ * Ceci permet ensuite d'utiliser getCompleteUserProfile() pour récupérer
+ * toutes les informations du producteur.
+ *
+ * @param userId - Account Service User ID (ex: producerId d'un produit)
+ * @returns Keycloak ID string
+ * @throws ApiError if the request fails
+ */
+export async function getKeycloakIdByUserId(
+    userId: number
+): Promise<string> {
+    const endpoint = ACCOUNT_ENDPOINTS.GET_KEYCLOAK_ID_BY_USER_ID(userId);
+
+    try {
+        const response = await accountGet<{ userId: number; keycloakId: string }>(endpoint);
+        console.log(`✅ [getKeycloakIdByUserId] Keycloak ID retrieved for userId ${userId}:`, response.keycloakId);
+        return response.keycloakId;
+    } catch (error) {
+        console.error(`❌ [getKeycloakIdByUserId] Failed to get Keycloak ID for userId ${userId}:`, error);
+        if (error instanceof ApiError) {
+            console.error('[getKeycloakIdByUserId] API Error Details:', {
+                status: error.statusCode,
+                message: error.message,
+                response: error.response
+            });
+        }
+        throw error;
+    }
+}
+
+/**
  * Get available professions managed by Account Service
  * Master data for all available professions
  * @returns array of professions

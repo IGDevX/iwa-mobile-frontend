@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useFocusEffect } from '@react-navigation/native';
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useContext, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -25,10 +25,23 @@ import { createShelf, deleteProduct, deleteShelf, updateShelf, type ProductRespo
 
 export default function ProducerShopScreen() {
   const { t } = useTranslation();
+  const params = useLocalSearchParams();
   const { state } = useCart();
   const { state: authState } = useContext(AuthContext);
   const { hasUnreadNotifications } = useNotifications();
   const { isComplete: isProfileComplete, isLoading: isProfileLoading } = useProfileCompletion();
+
+  // Check if we're viewing another producer's shop (restaurateur mode)
+  const isViewMode = params.isViewMode === 'true';
+  const externalProducerKeycloakId = params.producerKeycloakId as string | undefined;
+  const externalProducerName = params.producerName as string | undefined;
+
+  console.log('🏪 [PRODUCER-SHOP] Initialization:', {
+    isViewMode,
+    externalProducerKeycloakId,
+    externalProducerName,
+    currentUserKeycloakId: authState.userInfo?.sub,
+  });
 
   // Récupération des données depuis le backend
   const {
@@ -38,7 +51,9 @@ export default function ProducerShopScreen() {
     isLoading: isLoadingShopData,
     error: shopDataError,
     refreshData,
-  } = useProducerShopData();
+  } = useProducerShopData({
+    externalProducerKeycloakId: isViewMode ? externalProducerKeycloakId : undefined,
+  });
 
   // Producer profile state
   const [producerProfile, setProducerProfile] = useState({
@@ -105,39 +120,53 @@ export default function ProducerShopScreen() {
   // Function to load producer profile data
   const loadProducerProfile = useCallback(async () => {
     try {
-      // Vérifier que l'utilisateur est authentifié
-      if (!authState.isSignedIn || !authState.userInfo?.sub || !isOwnShop) {
+      // Determine which Keycloak ID to use
+      let keycloakIdToLoad: string;
+
+      if (isViewMode && externalProducerKeycloakId) {
+        // We're viewing another producer's shop
+        keycloakIdToLoad = externalProducerKeycloakId;
+        console.log('🔄 [PRODUCER-SHOP] Loading external producer profile:', keycloakIdToLoad);
+      } else if (isOwnShop && authState.isSignedIn && authState.userInfo?.sub) {
+        // We're viewing our own shop
+        keycloakIdToLoad = authState.userInfo.sub;
+        console.log('🔄 [PRODUCER-SHOP] Loading own producer profile:', keycloakIdToLoad);
+      } else {
+        // No valid scenario to load profile
         setIsLoadingProfile(false);
         return;
       }
 
-      const keycloakId = authState.userInfo.sub;
-
       // Use the combined function to get both Keycloak and Account Service data
-      const completeProfile = await getCompleteUserProfile(keycloakId, getKeycloakAdminToken);
+      const completeProfile = await getCompleteUserProfile(keycloakIdToLoad, getKeycloakAdminToken);
 
       // Set producer profile data (Keycloak + Account Service)
       setProducerProfile({
-        displayName: completeProfile.keycloak.displayName || '',
+        displayName: completeProfile.keycloak.displayName || externalProducerName || '',
         responsibleName: completeProfile.keycloak.responsibleName || '',
         biography: completeProfile.accountService.biography || '',
       });
-    } catch (_error) {
+
+      console.log('✅ [PRODUCER-SHOP] Producer profile loaded successfully');
+    } catch (error) {
+      console.error('❌ [PRODUCER-SHOP] Error loading producer profile:', error);
       // Keep empty data on error
     } finally {
       setIsLoadingProfile(false);
     }
-  }, [authState.isSignedIn, authState.userInfo?.sub, isOwnShop]);
+  }, [authState.isSignedIn, authState.userInfo?.sub, isOwnShop, isViewMode, externalProducerKeycloakId, externalProducerName]);
 
   // Load profile data when component mounts or auth state changes
   React.useEffect(() => {
-    // Ne charger le profil que si l'utilisateur est authentifié
-    if (isOwnShop && authState.isSignedIn) {
+    // Load profile if:
+    // 1. Own shop and authenticated, OR
+    // 2. View mode with external producer Keycloak ID
+    if ((isOwnShop && authState.isSignedIn) || (isViewMode && externalProducerKeycloakId)) {
       loadProducerProfile();
     } else {
       setIsLoadingProfile(false);
     }
-  }, [authState.isSignedIn, authState.userInfo, isOwnShop, loadProducerProfile]);
+  }, [authState.isSignedIn, authState.userInfo, isOwnShop, isViewMode, externalProducerKeycloakId, loadProducerProfile]);
 
   // Rafraîchir les données quand on revient sur la page (après ajout de produit par exemple)
   useFocusEffect(
@@ -562,7 +591,22 @@ export default function ProducerShopScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>{t('producer.shop.my_shop', 'My Shop')}</Text>
+        {/* Back button for visitors (view mode) */}
+        {isViewMode && (
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="chevron-back" size={24} color="#4A4459" />
+          </TouchableOpacity>
+        )}
+
+        <Text style={styles.title}>
+          {isViewMode
+            ? (externalProducerName || t('producer.shop.producer_shop', 'Boutique'))
+            : t('producer.shop.my_shop', 'My Shop')
+          }
+        </Text>
 
         {isOwnShop && (
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -720,10 +764,18 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     backgroundColor: "#F7F6ED",
   },
+  backButton: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 8,
+  },
   title: {
     fontSize: 20,
     fontWeight: "600",
     color: "#4A4459",
+    flex: 1,
   },
   cartButton: {
     width: 40,

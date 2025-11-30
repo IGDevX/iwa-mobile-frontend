@@ -454,6 +454,7 @@
   "producer": {
     "shop": {
       "my_shop": "My Shop",
+      "producer_shop": "Shop",
       "edit_mode": "Edit mode",
       "add_new_category": "Add new category",
       "category_name": "Category name",

@@ -8,7 +8,7 @@ import { useCart } from "../../../components/CartContext";
 import { useProfileCompletion } from "../../../hooks/useProfileCompletion";
 import SignupChoiceModal from "../../../components/SignupChoiceModal";
 import { getProduct } from "../../../services/shop/shopService";
-import { getProducerById } from "../../../services/account/accountService";
+import { getKeycloakIdByUserId, getCompleteUserProfile } from "../../../services/account/accountService";
 import type { ProductResponse } from "../../../services/shop/shopApi";
 
 export default function ProductDetailScreen() {
@@ -29,6 +29,45 @@ export default function ProductDetailScreen() {
 
   // Get product ID from params
   const productId = params.productId as string;
+
+  // Helper function to get Keycloak admin token
+  const getKeycloakAdminToken = async (): Promise<string | null> => {
+    try {
+      const adminUsername = process.env.EXPO_PUBLIC_KEYCLOAK_ADMIN_USERNAME || 'admin';
+      const adminPassword = process.env.EXPO_PUBLIC_KEYCLOAK_ADMIN_PASSWORD || 'admin';
+      const adminRealm = process.env.EXPO_PUBLIC_KEYCLOAK_ADMIN_REALM || 'master';
+      const baseUrl = process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG;
+
+      const formData = new URLSearchParams();
+      formData.append('grant_type', 'password');
+      formData.append('client_id', 'admin-cli');
+      formData.append('username', adminUsername);
+      formData.append('password', adminPassword);
+
+      const response = await fetch(
+        `${baseUrl}/realms/${adminRealm}/protocol/openid-connect/token`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Accept': 'application/json',
+          },
+          body: formData.toString(),
+        }
+      );
+
+      if (!response.ok) {
+        console.error('Failed to get admin token:', response.status);
+        return null;
+      }
+
+      const tokenData = await response.json();
+      return tokenData.access_token;
+    } catch (error) {
+      console.error('Error getting admin token:', error);
+      return null;
+    }
+  };
 
   // Load product and producer data
   useEffect(() => {
@@ -52,11 +91,43 @@ export default function ProductDetailScreen() {
         // Load producer details only if user is logged in
         if (state.isSignedIn && productData.producerId) {
           try {
-            const producerData = await getProducerById(productData.producerId);
+            console.log('🔄 Loading producer data for producerId:', productData.producerId);
+
+            // Step 1: Get Keycloak ID from Account Service User ID
+            const producerKeycloakId = await getKeycloakIdByUserId(productData.producerId);
+            console.log('✅ Producer Keycloak ID retrieved:', producerKeycloakId);
+
+            // Step 2: Get complete producer profile using Keycloak ID
+            const completeProfile = await getCompleteUserProfile(producerKeycloakId, getKeycloakAdminToken);
+            console.log('✅ Complete producer profile loaded:', completeProfile);
+
+            // Step 3: Format producer data for display
+            const producerData = {
+              id: productData.producerId,
+              keycloakId: producerKeycloakId,
+              name: completeProfile.keycloak.displayName || `Producteur #${productData.producerId}`,
+              shopName: completeProfile.keycloak.displayName || `Boutique du producteur`,
+              responsibleName: completeProfile.keycloak.responsibleName,
+              phoneNumber: completeProfile.keycloak.phoneNumber,
+              email: completeProfile.keycloak.email,
+              address: completeProfile.keycloak.address,
+              biography: completeProfile.accountService.biography,
+              organizationType: completeProfile.keycloak.profession,
+            };
+
             setProducer(producerData);
+            console.log('✅ Producer data set successfully');
           } catch (error: any) {
-            console.error('Error loading producer:', error);
-            // Producer data is optional, continue without it
+            console.error('❌ Error loading producer data:', error);
+            console.log('ℹ️ Producer ID:', productData.producerId);
+            console.log('ℹ️ Using fallback producer data');
+
+            // Set fallback producer data so the UI can still display something
+            setProducer({
+              id: productData.producerId,
+              name: `Producteur #${productData.producerId}`,
+              shopName: `Boutique du producteur #${productData.producerId}`,
+            });
           }
         }
       } catch (error: any) {
@@ -167,14 +238,21 @@ export default function ProductDetailScreen() {
   };
 
   const handleViewShop = () => {
-    if (!product) return;
+    if (!product || !producer) return;
+
+    console.log('🏪 Navigating to producer shop with:', {
+      producerId: product.producerId,
+      producerKeycloakId: producer.keycloakId,
+      producerName: producer.name,
+    });
 
     // Navigate to producer's shop
     router.push({
       pathname: '/producer/home/producer-shop',
       params: {
-        producerId: product.producerId,
-        producerName: producer?.name || 'Producer',
+        producerId: product.producerId.toString(),
+        producerKeycloakId: producer.keycloakId || '', // Pass Keycloak ID for external producer view
+        producerName: producer.name || 'Producer',
         isViewMode: 'true' // Mode restaurateur POV (sans édition)
       }
     });

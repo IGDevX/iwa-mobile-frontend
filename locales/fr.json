@@ -456,6 +456,7 @@
   "producer": {
     "shop": {
       "my_shop": "Ma boutique",
+      "producer_shop": "Boutique",
       "edit_mode": "Mode édition",
       "add_new_category": "Ajouter une nouvelle catégorie",
       "category_name": "Nom de la catégorie",
