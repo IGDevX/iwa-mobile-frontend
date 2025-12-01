@@ -434,19 +434,14 @@ export default function ProductDetailScreen() {
                   <Text style={styles.producerType}>{producer.organizationType}</Text>
                 )}
 
-                {producer?.address ? (
+                {/* Afficher l'adresse avec l'épingle uniquement si l'adresse est disponible */}
+                {producer?.address && (
                   <View style={styles.addressContainer}>
-                    <Image source={require('../../../assets/images/icons8-map-pin-96.png')} style={styles.ratingIcon} />
+                    <Image source={require('../../../assets/images/icons8-map-pin-96.png')} style={styles.addressIcon} />
                     <Text style={styles.address}>
-                      {[producer.address.street, producer.address.city, producer.address.postalCode]
-                        .filter(Boolean)
-                        .join(', ')}
+                      {producer.address}
                     </Text>
                   </View>
-                ) : (
-                  <Text style={styles.producerType}>
-                    {t('product.view_shop', 'Voir la boutique')} →
-                  </Text>
                 )}
               </View>
             </TouchableOpacity>
@@ -752,8 +747,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   addressIcon: {
-    fontSize: 12,
-    opacity: 0.7,
+    width: 14,
+    height: 14,
+    tintColor: "rgba(74, 68, 89, 0.7)",
   },
   address: {
     fontSize: 12,

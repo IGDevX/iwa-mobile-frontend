@@ -240,12 +240,13 @@ export default function ProducerShopScreen() {
       // Handle product editing
       handleEditProduct(product);
     } else {
-      // Navigate to product detail page
+      // Navigate to product detail page (centralisé)
       console.log('👀 [PRODUCER-SHOP] Viewing product:', product.id);
       router.push({
-        pathname: './product-detail',
+        pathname: '/restaurant/order/product-detail',
         params: {
-          id: product.id.toString(),
+          productId: product.id.toString(),
+          fromShop: 'true', // Pour gérer le bouton retour
           isOwner: isOwnShop ? 'true' : 'false'
         }
       });
