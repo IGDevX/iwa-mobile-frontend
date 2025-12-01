@@ -109,11 +109,13 @@
     "load_more": "Voir plus",
     "error": "Échec de la recherche de produits. Veuillez réessayer.",
     "filter": {
+      "title": "Filtres",
       "category": "Catégorie",
       "fresh": "Fraîcheur",
       "price": "Fourchette de prix",
-      "min_price": "Min",
-      "max_price": "Max",
+      "certifications": "Certifications",
+      "min_price": "De",
+      "max_price": "À",
       "all": "Tous",
       "fresh_only": "Frais",
       "not_fresh": "Non frais"
@@ -450,7 +452,8 @@
     "delete": "Supprimer",
     "success": "Succès",
     "apply": "Appliquer",
-    "go_back": "Retour"
+    "go_back": "Retour",
+    "retry": "Réessayer"
   },
 
   "producer": {
@@ -464,6 +467,9 @@
       "delete_category": "Supprimer la catégorie",
       "add_product": "Ajouter un produit"
     },
+    "new_shelf": "Nouveau rayon",
+    "shelf_name": "Nom du rayon",
+    "no_products": "Aucun produit pour le moment. Commencez par ajouter votre premier produit !",
     "cannot_add_own_product": "Vous ne pouvez pas ajouter vos propres produits au panier.",
     "delivery": "Livraison"
   },

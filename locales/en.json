@@ -109,11 +109,13 @@
     "load_more": "Load More",
     "error": "Failed to search products. Please try again.",
     "filter": {
+      "title": "Filters",
       "category": "Category",
       "fresh": "Freshness",
       "price": "Price Range",
-      "min_price": "Min",
-      "max_price": "Max",
+      "certifications": "Certifications",
+      "min_price": "From",
+      "max_price": "To",
       "all": "All",
       "fresh_only": "Fresh",
       "not_fresh": "Not Fresh"
@@ -448,7 +450,8 @@
     "delete": "Delete",
     "success": "Success",
     "apply": "Apply",
-    "go_back": "Go Back"
+    "go_back": "Go Back",
+    "retry": "Retry"
   },
 
   "producer": {
@@ -462,6 +465,9 @@
       "delete_category": "Delete category",
       "add_product": "Add product"
     },
+    "new_shelf": "New Shelf",
+    "shelf_name": "Shelf Name",
+    "no_products": "No products yet. Start by adding your first product!",
     "cannot_add_own_product": "You cannot add your own products to cart.",
     "delivery": "Delivery"
   },

@@ -5,6 +5,7 @@ import { router } from "expo-router";
 import Ionicons from "@expo/vector-icons/build/Ionicons";
 import { useNotifications } from "../../../hooks/useNotifications";
 import { useCategories } from "../../../hooks/useCategories";
+import { useCertifications } from "../../../hooks/useCertifications";
 import { searchProducts, type ProductSearchRequest, type ProductResponse } from "../../../services/shop";
 
 const ITEMS_PER_PAGE = 20;
@@ -13,13 +14,16 @@ export default function RestaurantHomeScreen() {
   const { t } = useTranslation();
   const { hasUnreadNotifications } = useNotifications();
   const { categories, isLoading: categoriesLoading } = useCategories();
+  const { certifications, isLoading: certificationsLoading } = useCertifications();
 
   // States for search and filters
   const [searchText, setSearchText] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [selectedCertificationIds, setSelectedCertificationIds] = useState<number[]>([]);
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
+  const [showPriceFilter, setShowPriceFilter] = useState(false);
+  const [showCertificationFilter, setShowCertificationFilter] = useState(false);
 
   // States for products
   const [products, setProducts] = useState<ProductResponse[]>([]);
@@ -41,6 +45,9 @@ export default function RestaurantHomeScreen() {
       }
       if (selectedCategoryId) {
         searchParams.categoryIds = [selectedCategoryId];
+      }
+      if (selectedCertificationIds.length > 0) {
+        searchParams.certificationIds = selectedCertificationIds;
       }
       if (minPrice && !isNaN(parseFloat(minPrice))) {
         searchParams.priceMin = parseFloat(minPrice);
@@ -68,7 +75,7 @@ export default function RestaurantHomeScreen() {
     } finally {
       setIsLoadingProducts(false);
     }
-  }, [searchText, selectedCategoryId, minPrice, maxPrice, t]);
+  }, [searchText, selectedCategoryId, selectedCertificationIds, minPrice, maxPrice, t]);
 
   // Initial load - show all products
   useEffect(() => {
@@ -82,7 +89,7 @@ export default function RestaurantHomeScreen() {
     }, 500); // Debounce de 500ms
 
     return () => clearTimeout(delaySearch);
-  }, [searchText, selectedCategoryId, minPrice, maxPrice, performSearch]);
+  }, [searchText, selectedCategoryId, selectedCertificationIds, minPrice, maxPrice, performSearch]);
 
   // Handle category selection
   const handleCategorySelect = (categoryId: number) => {
@@ -91,6 +98,19 @@ export default function RestaurantHomeScreen() {
     } else {
       setSelectedCategoryId(categoryId);
     }
+  };
+
+  // Handle certification selection (multi-select)
+  const handleCertificationToggle = (certificationId: number) => {
+    setSelectedCertificationIds(prev => {
+      if (prev.includes(certificationId)) {
+        // Remove if already selected
+        return prev.filter(id => id !== certificationId);
+      } else {
+        // Add if not selected
+        return [...prev, certificationId];
+      }
+    });
   };
 
   // Handle load more
@@ -129,20 +149,43 @@ export default function RestaurantHomeScreen() {
         <View style={styles.productInfo}>
           <View style={styles.productDetails}>
             <Text style={styles.productName} numberOfLines={2}>{product.title}</Text>
-            <Text style={styles.productCategory}>{product.category.name}</Text>
 
-            {/* Badges */}
-            <View style={styles.badgesContainer}>
+            {/* Category with fresh icon */}
+            <View style={styles.categoryRow}>
+              <Text style={styles.productCategory}>{product.category.name}</Text>
               {product.isFresh && (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{t('product.fresh', 'Fresh')}</Text>
-                </View>
+                <Image
+                  source={require('../../../assets/images/icons8-fresh-96.png')}
+                  style={styles.freshIcon}
+                />
               )}
-              {product.certifications && product.certifications.slice(0, 2).map((cert: { id: number; label: string }) => (
-                <View key={cert.id} style={styles.badge}>
-                  <Text style={styles.badgeText}>{cert.label}</Text>
-                </View>
-              ))}
+            </View>
+
+            {/* Badges - Certifications only */}
+            <View style={styles.badgesContainer}>
+              {product.certifications && (() => {
+                // Éliminer les doublons basés sur l'ID
+                const uniqueCerts = Array.from(
+                  new Map(product.certifications.map(cert => [cert.id, cert])).values()
+                );
+                const displayCerts = uniqueCerts.slice(0, 2);
+                const hasMore = uniqueCerts.length > 2;
+
+                return (
+                  <>
+                    {displayCerts.map((cert) => (
+                      <View key={cert.id} style={styles.badge}>
+                        <Text style={styles.badgeText}>{cert.label}</Text>
+                      </View>
+                    ))}
+                    {hasMore && (
+                      <View style={styles.badge}>
+                        <Text style={styles.badgeText}>...</Text>
+                      </View>
+                    )}
+                  </>
+                );
+              })()}
             </View>
           </View>
 
@@ -253,7 +296,7 @@ export default function RestaurantHomeScreen() {
                 styles.filterButton,
                 (minPrice || maxPrice) && styles.filterButtonActive
               ]}
-              onPress={() => setShowFilters(true)}
+              onPress={() => setShowPriceFilter(true)}
             >
               <Text style={[
                 styles.filterButtonText,
@@ -267,10 +310,30 @@ export default function RestaurantHomeScreen() {
                 color={(minPrice || maxPrice) ? "#89A083" : "#4A4459"}
               />
             </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.filterButton,
+                selectedCertificationIds.length > 0 && styles.filterButtonActive
+              ]}
+              onPress={() => setShowCertificationFilter(true)}
+            >
+              <Text style={[
+                styles.filterButtonText,
+                selectedCertificationIds.length > 0 && styles.filterButtonTextActive
+              ]}>
+                {t('search.filter.certifications', 'Certifications')}
+              </Text>
+              <Ionicons
+                name="chevron-down"
+                size={16}
+                color={selectedCertificationIds.length > 0 ? "#89A083" : "#4A4459"}
+              />
+            </TouchableOpacity>
           </View>
 
           {/* Active Filters Chips - Below Selection */}
-          {(selectedCategoryId || minPrice || maxPrice) && (
+          {(selectedCategoryId || selectedCertificationIds.length > 0 || minPrice || maxPrice) && (
             <View style={styles.activeFiltersRow}>
               {/* Category Filter Chip */}
               {selectedCategoryId && (
@@ -283,6 +346,21 @@ export default function RestaurantHomeScreen() {
                   </TouchableOpacity>
                 </View>
               )}
+
+              {/* Certification Filter Chips */}
+              {selectedCertificationIds.map(certId => {
+                const cert = certifications.find(c => c.id === certId);
+                return cert ? (
+                  <View key={certId} style={styles.filterChip}>
+                    <Text style={styles.filterChipText}>
+                      {cert.label}
+                    </Text>
+                    <TouchableOpacity onPress={() => handleCertificationToggle(certId)}>
+                      <Ionicons name="close" size={16} color="#89A083" />
+                    </TouchableOpacity>
+                  </View>
+                ) : null;
+              })}
 
               {/* Price Filter Chip - Without € symbol */}
               {(minPrice || maxPrice) && (
@@ -346,13 +424,13 @@ export default function RestaurantHomeScreen() {
         )}
       </ScrollView>
 
-      {/* Price Filter Modal - Vinted Style - Outside ScrollView */}
-      {showFilters && (
+      {/* Price Filter Modal */}
+      {showPriceFilter && (
         <View style={styles.priceModal}>
           <TouchableOpacity
             style={styles.priceModalOverlay}
             activeOpacity={1}
-            onPress={() => setShowFilters(false)}
+            onPress={() => setShowPriceFilter(false)}
           >
             <TouchableOpacity
               activeOpacity={1}
@@ -361,9 +439,9 @@ export default function RestaurantHomeScreen() {
               <View style={styles.priceModalContent}>
                 <View style={styles.priceModalHeader}>
                   <Text style={styles.priceModalTitle}>
-                    {t('search.filter.price', 'Price')}
+                    {t('search.filter.price', 'Fourchette de prix')}
                   </Text>
-                  <TouchableOpacity onPress={() => setShowFilters(false)}>
+                  <TouchableOpacity onPress={() => setShowPriceFilter(false)}>
                     <Ionicons name="close" size={24} color="#4A4459" />
                   </TouchableOpacity>
                 </View>
@@ -371,7 +449,7 @@ export default function RestaurantHomeScreen() {
                 <View style={styles.priceInputsRow}>
                   <View style={styles.priceInputGroup}>
                     <Text style={styles.priceInputLabel}>
-                      {t('search.filter.min_price', 'From')}
+                      {t('search.filter.min_price', 'De')}
                     </Text>
                     <TextInput
                       style={styles.priceInputField}
@@ -385,7 +463,7 @@ export default function RestaurantHomeScreen() {
 
                   <View style={styles.priceInputGroup}>
                     <Text style={styles.priceInputLabel}>
-                      {t('search.filter.max_price', 'To')}
+                      {t('search.filter.max_price', 'À')}
                     </Text>
                     <TextInput
                       style={styles.priceInputField}
@@ -400,10 +478,74 @@ export default function RestaurantHomeScreen() {
 
                 <TouchableOpacity
                   style={styles.priceModalApplyButton}
-                  onPress={() => setShowFilters(false)}
+                  onPress={() => setShowPriceFilter(false)}
                 >
                   <Text style={styles.priceModalApplyText}>
-                    {t('common.apply', 'Apply')}
+                    {t('common.apply', 'Appliquer')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Certification Filter Modal */}
+      {showCertificationFilter && (
+        <View style={styles.priceModal}>
+          <TouchableOpacity
+            style={styles.priceModalOverlay}
+            activeOpacity={1}
+            onPress={() => setShowCertificationFilter(false)}
+          >
+            <TouchableOpacity
+              activeOpacity={1}
+              onPress={(e) => e.stopPropagation()}
+            >
+              <View style={styles.priceModalContent}>
+                <View style={styles.priceModalHeader}>
+                  <Text style={styles.priceModalTitle}>
+                    {t('search.filter.certifications', 'Certifications')}
+                  </Text>
+                  <TouchableOpacity onPress={() => setShowCertificationFilter(false)}>
+                    <Ionicons name="close" size={24} color="#4A4459" />
+                  </TouchableOpacity>
+                </View>
+
+                <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 400 }}>
+                  {certificationsLoading ? (
+                    <ActivityIndicator size="small" color="#89A083" />
+                  ) : (
+                    <View style={styles.certificationsContainer}>
+                      {certifications.map((cert) => (
+                        <TouchableOpacity
+                          key={cert.id}
+                          style={styles.certificationItem}
+                          onPress={() => handleCertificationToggle(cert.id)}
+                        >
+                          <View style={[
+                            styles.checkbox,
+                            selectedCertificationIds.includes(cert.id) && styles.checkboxChecked
+                          ]}>
+                            {selectedCertificationIds.includes(cert.id) && (
+                              <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                            )}
+                          </View>
+                          <Text style={styles.certificationLabel}>
+                            {cert.label}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+                </ScrollView>
+
+                <TouchableOpacity
+                  style={styles.priceModalApplyButton}
+                  onPress={() => setShowCertificationFilter(false)}
+                >
+                  <Text style={styles.priceModalApplyText}>
+                    {t('common.apply', 'Appliquer')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -505,7 +647,7 @@ const styles = StyleSheet.create({
 
   // Categories Section
   categoriesSection: {
-    paddingVertical: 12,
+    paddingVertical: 4,
   },
   categoriesContent: {
     paddingHorizontal: 16,
@@ -627,11 +769,21 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     letterSpacing: -0.31,
   },
+  categoryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginBottom: 4,
+  },
   productCategory: {
     fontSize: 14,
     color: "rgba(74, 68, 89, 0.6)",
-    marginBottom: 4,
     letterSpacing: -0.15,
+  },
+  freshIcon: {
+    width: 14,
+    height: 14,
+    tintColor: "#81B29A",
   },
   productProducer: {
     fontSize: 14,
@@ -641,23 +793,28 @@ const styles = StyleSheet.create({
   },
   badgesContainer: {
     flexDirection: "row",
-    gap: 4,
-    marginBottom: 8,
+    flexWrap: "wrap",
+    gap: 6,
+    marginTop: 6,
+    marginBottom: 4,
   },
   badge: {
-    backgroundColor: "rgba(129, 178, 154, 0.1)",
-    borderRadius: 8,
+    backgroundColor: "rgba(129, 178, 154, 0.15)",
+    borderRadius: 6,
     paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: "rgba(129, 178, 154, 0.3)",
   },
   badgeText: {
-    fontSize: 12,
-    color: "#81B29A",
-    fontWeight: "500",
+    fontSize: 11,
+    color: "#5a9279",
+    fontWeight: "600",
+    letterSpacing: 0.2,
   },
   productFooter: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "flex-end",
     alignItems: "center",
   },
   distanceContainer: {
@@ -782,7 +939,7 @@ const styles = StyleSheet.create({
   // Filters Wrapper
   filtersWrapper: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 2,
   },
 
   // Filter Selection Row - First Line (buttons)
@@ -906,5 +1063,36 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#fff",
     fontWeight: "600",
+  },
+
+
+  // Certifications
+  certificationsContainer: {
+    gap: 12,
+  },
+  certificationItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    gap: 12,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: "#E0E0E0",
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  checkboxChecked: {
+    backgroundColor: "#89A083",
+    borderColor: "#89A083",
+  },
+  certificationLabel: {
+    fontSize: 15,
+    color: "#4A4459",
+    flex: 1,
   },
 });

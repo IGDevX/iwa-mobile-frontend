@@ -4,6 +4,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useContext, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  ActivityIndicator,
   Alert,
   Image,
   ScrollView,
@@ -650,35 +651,37 @@ export default function ProducerShopScreen() {
         )}
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Banner Image */}
-        <Image source={{ uri: 'https://www.pretajardiner.com/modules/ph_simpleblog/featured/12.jpg' }} style={styles.bannerImage} />
-
-        {/* Producer Info */}
-        <View style={styles.producerSection}>
-          <Image source={{ uri: 'https://photo-cdn2.icons8.com/vVsONpHf7-sTgM9mNbSkmX0iCJP6YF9_Ux93NilJJkY/rs:fit:576:384/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvNTA1L2NkNjhm/ODcwLWVjMmMtNDU2/OC1hNmE5LTk3ZGQw/NWE3Mjc3Mi5qcGc.webp' }} style={styles.profileImage} />
-
-          <View style={styles.producerInfo}>
-            <Text style={styles.producerName}>
-              {producerProfile.displayName || 'Ferme Bio Laurent'}
-            </Text>
-            <Text style={styles.responsibleName}>
-              {producerProfile.responsibleName || 'Laurent Dupont'}
-            </Text>
-          </View>
+      {/* Loading State */}
+      {(isLoadingProfile || isLoadingShopData) ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#89A083" />
+          <Text style={styles.loadingText}>{t('common.loading', 'Chargement...')}</Text>
         </View>
+      ) : (
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          {/* Producer Info */}
+          <View style={styles.producerSection}>
+            {producerProfile.displayName && (
+              <View style={styles.producerInfo}>
+                <Text style={styles.producerName}>
+                  {producerProfile.displayName}
+                </Text>
+                {producerProfile.responsibleName && (
+                  <Text style={styles.responsibleName}>
+                    {producerProfile.responsibleName}
+                  </Text>
+                )}
+              </View>
+            )}
+          </View>
 
-        {/* Description */}
-        {isLoadingProfile ? (
-          <Text style={styles.description}>
-            Ferme responsable située à Loupian. Large variété de fruits et légumes issues de l&apos;agriculture biologique.
-          </Text>
-        ) : producerProfile.biography ? (
-          <Text style={styles.description}>
-            {producerProfile.biography}
-          </Text>
-        ) : (
-          <Text style={[styles.description, styles.noBiography]}>
+          {/* Description */}
+          {producerProfile.biography ? (
+            <Text style={styles.description}>
+              {producerProfile.biography}
+            </Text>
+          ) : (
+            <Text style={[styles.description, styles.noBiography]}>
             Pas de biographie
           </Text>
         )}
@@ -742,8 +745,9 @@ export default function ProducerShopScreen() {
           )}
         </View>
 
-        <View style={{ height: 100 }} />
-      </ScrollView>
+          <View style={{ height: 100 }} />
+        </ScrollView>
+      )}
     </View>
   );
 }
@@ -868,6 +872,20 @@ const styles = StyleSheet.create({
   noBiography: {
     color: "#999999",
     fontStyle: "italic",
+  },
+
+  // Loading state
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 100,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#4A4459',
+    fontWeight: '500',
   },
 
   // Products section
