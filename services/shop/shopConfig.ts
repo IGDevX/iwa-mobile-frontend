@@ -27,9 +27,9 @@ export const SHOP_ENDPOINTS = {
   UPDATE_PRODUCT: (id: string | number) => `/products/${id}`, // PUT/PATCH PRIVATE
   DELETE_PRODUCT: (id: string | number) => `/products/${id}`, // DELETE PRIVATE
   GET_PRODUCTS_BY_PRODUCER: (producerId: string | number, shelfId?: string | number) => {
-    let url = `/products/producer/${producerId}`;
+    let url = `/products/producer/${producerId}?onlyDeleted=false&page=0&size=100`;
     if (shelfId) {
-      url += `?shelfId=${shelfId}`;
+      url += `&shelfId=${shelfId}`;
     }
     return url;
   }, // GET PUBLIC
@@ -49,6 +49,7 @@ export const SHOP_ENDPOINTS = {
   GET_SHELVES_BY_PRODUCER: (producerId: string | number) =>
     `/shelves/producer/${producerId}`, // GET PUBLIC
   CREATE_SHELF: '/shelves', // POST PRIVATE
+  UPDATE_SHELF: (shelfId: string | number) => `/shelves/${shelfId}`, // PUT PRIVATE
   DELETE_SHELF: (shelfId: string | number) => `/shelves/${shelfId}`, // DELETE PRIVATE
 
   // Certifications (GET = public)
@@ -56,23 +57,30 @@ export const SHOP_ENDPOINTS = {
 } as const;
 
 /**
- * Détermine si un endpoint est public (pas de token requis)
+ * Détermine si un endpoint est public (ne nécessite pas d'authentification)
  * @param endpoint - Path relatif de l'endpoint (ex: /products, /categories)
  * @param method - Méthode HTTP (GET, POST, etc.)
  */
 export function isPublicShopEndpoint(endpoint: string, method: string): boolean {
   const upperMethod = method.toUpperCase();
 
-  // Tous les GET sont publics
-  if (upperMethod === 'GET') {
+  // Liste des endpoints publics (lecture seule, sans données utilisateur)
+  const publicEndpoints = [
+    '/categories',           // GET /categories
+    '/units',               // GET /units
+    '/currencies',          // GET /currencies
+    '/certifications',      // GET /certifications
+    '/products/search',     // POST /products/search
+  ];
+
+  // Vérifier si l'endpoint correspond à un endpoint public
+  const isPublic = publicEndpoints.some(publicPath => endpoint.includes(publicPath));
+
+  if (isPublic) {
     return true;
   }
 
-  // POST /products/search est public
-  if (upperMethod === 'POST' && endpoint.includes('/products/search')) {
-    return true;
-  }
-
+  // Tous les autres endpoints nécessitent une authentification
   return false;
 }
 

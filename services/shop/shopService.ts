@@ -42,6 +42,17 @@ export async function getProduct(id: string | number): Promise<ProductResponse> 
 }
 
 /**
+ * Search products with filters and pagination (PUBLIC)
+ * @param searchParams - Search filters and pagination parameters
+ * @returns Paginated search results
+ */
+export async function searchProducts(
+  searchParams: ProductSearchRequest
+): Promise<ProductSearchResponse> {
+  return shopPost<ProductSearchResponse>(SHOP_ENDPOINTS.SEARCH_PRODUCTS, searchParams);
+}
+
+/**
  * Get all products for a specific producer (PUBLIC)
  * @param producerId - Producer ID from Account Service
  * @param shelfId - Optional shelf ID to filter by
@@ -86,7 +97,16 @@ export async function updateProduct(
  * @param id - Product ID
  */
 export async function deleteProduct(id: string | number): Promise<void> {
-  return shopDelete<void>(SHOP_ENDPOINTS.DELETE_PRODUCT(id));
+  const endpoint = SHOP_ENDPOINTS.DELETE_PRODUCT(id);
+  console.log('🗑️ [SHOP-SERVICE] deleteProduct called:', { id, endpoint });
+
+  try {
+    await shopDelete<void>(endpoint);
+    console.log('✅ [SHOP-SERVICE] deleteProduct success');
+  } catch (error) {
+    console.error('❌ [SHOP-SERVICE] deleteProduct failed:', error);
+    throw error;
+  }
 }
 
 // ============================================
@@ -166,6 +186,36 @@ export async function createShelf(label: string, producerId: number): Promise<Sh
     label,
     producerId,
   });
+}
+
+/**
+ * Update a shelf (PRIVATE - Requires JWT)
+ * @param shelfId - Shelf ID to update
+ * @param label - New shelf label
+ * @param producerId - Producer ID
+ * @returns Updated shelf
+ */
+export async function updateShelf(shelfId: number, label: string, producerId: number): Promise<ShelfResponse> {
+  const endpoint = SHOP_ENDPOINTS.UPDATE_SHELF(shelfId);
+  const payload = {
+    label,
+    producerId,
+  };
+
+  console.log('📤 [SHOP-SERVICE] updateShelf called:', {
+    shelfId,
+    endpoint,
+    payload,
+  });
+
+  try {
+    const result = await shopPut<ShelfResponse>(endpoint, payload);
+    console.log('✅ [SHOP-SERVICE] updateShelf success:', result);
+    return result;
+  } catch (error) {
+    console.error('❌ [SHOP-SERVICE] updateShelf failed:', error);
+    throw error;
+  }
 }
 
 /**

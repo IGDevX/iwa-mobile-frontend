@@ -1,135 +1,208 @@
-import React from "react";
-import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator } from "react-native";
+import React, { useState, useEffect, useCallback } from "react";
+import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Alert } from "react-native";
 import { useTranslation } from "react-i18next";
-import Button from "../../../components/Button";
 import { router } from "expo-router";
 import Ionicons from "@expo/vector-icons/build/Ionicons";
 import { useNotifications } from "../../../hooks/useNotifications";
 import { useCategories } from "../../../hooks/useCategories";
+import { useCertifications } from "../../../hooks/useCertifications";
+import { searchProducts, type ProductSearchRequest, type ProductResponse } from "../../../services/shop";
 
-const { width } = Dimensions.get("window");
-
-// Mockup data for products
-const mockProducts = [
-  {
-    id: 1,
-    name: "Tomates Bio du Var",
-    category: "Légume",
-    producer: "Ferme des Oliviers",
-    price: "4.50€/kg",
-    distance: "3 km",
-    badges: ["Bio", "Local"],
-    image: "https://photo-cdn2.icons8.com/6-T_VL6CNAS2Ye_pJTjt3Ng2XCJizRvKF6QbAJQCif4/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvOTU5L2NlNjZj/YTIxLTE4MmItNGI0/My1hMzY1LTI0YjA0/M2EyYjI5My5qcGc.webp",
-    pickupMode: "Both"
-  },
-  {
-    id: 2,
-    name: "Miel de lavande",
-    category: "Epicerie",
-    producer: "Apiculteur",
-    price: "11.50€/kg",
-    distance: "6 km",
-    badges: ["Local"],
-    image: "https://photo-cdn2.icons8.com/nNIReTJu1PtvM-SzNMkYt3ofHtYPHnMhMisoc4IoFIo/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvNTA4LzFjOGRi/NzU5LWUyNTctNDA1/Yy1iMmU3LTc1ZDdl/ZjdhZGNkNy5qcGc.webp",
-    pickupMode: "Domicile"
-  },
-  {
-    id: 3,
-    name: "Fromage de chèvre",
-    category: "Fromage",
-    producer: "Ferme des Oliviers",
-    price: "9.0€/kg",
-    distance: "3 km",
-    badges: ["Bio", "Local"],
-    image: "https://photo-cdn2.icons8.com/FrhVLQsz0DqYKwdDxVIrFoyDSuXqaL7rUZl7H9XJ18I/rs:fit:576:384/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvOTM3L2NiM2Ux/ZDZiLWI1MjctNDY5/Ni1hZDU0LWZkYTI4/N2YzZDc0MS5qcGc.webp",
-    pickupMode: "Livraison"
-  }
-];
+const ITEMS_PER_PAGE = 20;
 
 export default function RestaurantHomeScreen() {
   const { t } = useTranslation();
   const { hasUnreadNotifications } = useNotifications();
   const { categories, isLoading: categoriesLoading } = useCategories();
+  const { certifications, isLoading: certificationsLoading } = useCertifications();
 
+  // States for search and filters
+  const [searchText, setSearchText] = useState('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [selectedCertificationIds, setSelectedCertificationIds] = useState<number[]>([]);
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  const [showPriceFilter, setShowPriceFilter] = useState(false);
+  const [showCertificationFilter, setShowCertificationFilter] = useState(false);
+
+  // States for products
+  const [products, setProducts] = useState<ProductResponse[]>([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
+  // Perform search
+  const performSearch = useCallback(async (page: number = 0, append: boolean = false) => {
+    setIsLoadingProducts(true);
+    try {
+      const searchParams: ProductSearchRequest = {
+        page,
+        size: ITEMS_PER_PAGE,
+      };
+
+      if (searchText.trim()) {
+        searchParams.q = searchText.trim();
+      }
+      if (selectedCategoryId) {
+        searchParams.categoryIds = [selectedCategoryId];
+      }
+      if (selectedCertificationIds.length > 0) {
+        searchParams.certificationIds = selectedCertificationIds;
+      }
+      if (minPrice && !isNaN(parseFloat(minPrice))) {
+        searchParams.priceMin = parseFloat(minPrice);
+      }
+      if (maxPrice && !isNaN(parseFloat(maxPrice))) {
+        searchParams.priceMax = parseFloat(maxPrice);
+      }
+
+      const response = await searchProducts(searchParams);
+
+      if (append) {
+        setProducts((prev) => [...prev, ...response.products]);
+      } else {
+        setProducts(response.products);
+      }
+
+      setCurrentPage(response.currentPage);
+      setTotalPages(response.totalPages);
+    } catch (error) {
+      console.error('Search error:', error);
+      Alert.alert(
+        t('common.error', 'Error'),
+        t('search.error', 'Failed to search products. Please try again.')
+      );
+    } finally {
+      setIsLoadingProducts(false);
+    }
+  }, [searchText, selectedCategoryId, selectedCertificationIds, minPrice, maxPrice, t]);
+
+  // Initial load - show all products
+  useEffect(() => {
+    performSearch();
+  }, [performSearch]);
+
+  // Trigger search when filters change
+  useEffect(() => {
+    const delaySearch = setTimeout(() => {
+      performSearch(0, false);
+    }, 500); // Debounce de 500ms
+
+    return () => clearTimeout(delaySearch);
+  }, [searchText, selectedCategoryId, selectedCertificationIds, minPrice, maxPrice, performSearch]);
+
+  // Handle category selection
+  const handleCategorySelect = (categoryId: number) => {
+    if (selectedCategoryId === categoryId) {
+      setSelectedCategoryId(null);
+    } else {
+      setSelectedCategoryId(categoryId);
+    }
+  };
+
+  // Handle certification selection (multi-select)
+  const handleCertificationToggle = (certificationId: number) => {
+    setSelectedCertificationIds(prev => {
+      if (prev.includes(certificationId)) {
+        // Remove if already selected
+        return prev.filter(id => id !== certificationId);
+      } else {
+        // Add if not selected
+        return [...prev, certificationId];
+      }
+    });
+  };
+
+  // Handle load more
+  const handleLoadMore = () => {
+    if (currentPage < totalPages - 1 && !isLoadingProducts) {
+      performSearch(currentPage + 1, true);
+    }
+  };
 
   const handleNotificationPress = () => {
     router.push('/notification');
   };
 
-  // Optimized function to render pickup mode icons
-  const renderPickupModeIcons = (pickupMode: string, distance: string) => {
-    const iconStyle = { width: 14, height: 14, marginRight: 8 };
-    const deliveryIcon = require("../../../assets/images/icons8-delivery-96.png");
-    const homeIcon = require("../../../assets/images/icons8-home-96.png");
-
-    const iconComponents = {
-      Livraison: [
-        <Image key="delivery" source={deliveryIcon} style={iconStyle} />
-      ],
-      Domicile: [
-        <Image key="home" source={homeIcon} style={iconStyle} />
-      ],
-      Both: [
-        <Image key="delivery" source={deliveryIcon} style={iconStyle} />,
-        <Image key="home" source={homeIcon} style={iconStyle} />
-      ]
+  const renderProductCard = (product: ProductResponse) => {
+    const handleProductPress = () => {
+      // Naviguer vers les détails du produit
+      // Les détails du producteur seront masqués si l'utilisateur n'est pas connecté
+      router.push({
+        pathname: '../order/product-detail',
+        params: {
+          productId: product.id,
+        },
+      });
     };
 
     return (
-      <>
-        {iconComponents[pickupMode as keyof typeof iconComponents] || iconComponents.Both}
-        <Text style={styles.distanceText}>{distance}</Text>
-      </>
+      <TouchableOpacity
+        key={product.id}
+        style={styles.productCard}
+        onPress={handleProductPress}
+      >
+        <Image
+          source={{ uri: product.mainImageUrl || 'https://via.placeholder.com/150?text=No+Image' }}
+          style={styles.productImage}
+        />
+        <View style={styles.productInfo}>
+          <View style={styles.productDetails}>
+            <Text style={styles.productName} numberOfLines={2}>{product.title}</Text>
+
+            {/* Category with fresh icon */}
+            <View style={styles.categoryRow}>
+              <Text style={styles.productCategory}>{product.category.name}</Text>
+              {product.isFresh && (
+                <Image
+                  source={require('../../../assets/images/icons8-fresh-96.png')}
+                  style={styles.freshIcon}
+                />
+              )}
+            </View>
+
+            {/* Badges - Certifications only */}
+            <View style={styles.badgesContainer}>
+              {product.certifications && (() => {
+                // Éliminer les doublons basés sur l'ID
+                const uniqueCerts = Array.from(
+                  new Map(product.certifications.map(cert => [cert.id, cert])).values()
+                );
+                const displayCerts = uniqueCerts.slice(0, 2);
+                const hasMore = uniqueCerts.length > 2;
+
+                return (
+                  <>
+                    {displayCerts.map((cert) => (
+                      <View key={cert.id} style={styles.badge}>
+                        <Text style={styles.badgeText}>{cert.label}</Text>
+                      </View>
+                    ))}
+                    {hasMore && (
+                      <View style={styles.badge}>
+                        <Text style={styles.badgeText}>...</Text>
+                      </View>
+                    )}
+                  </>
+                );
+              })()}
+            </View>
+          </View>
+
+          {/* Bottom info: price */}
+          <View style={styles.productFooter}>
+            <Text style={styles.priceText}>
+              {product.price.toFixed(2)} {product.currency.code}/{product.unit.code}
+            </Text>
+          </View>
+        </View>
+      </TouchableOpacity>
     );
   };
 
-
-  const filters = ["Labels", "Livraison", "Prix"];
-
-  const renderProductCard = (product: typeof mockProducts[0]) => (
-    <TouchableOpacity 
-      key={product.id} 
-      style={styles.productCard}
-      onPress={() => router.push({
-        pathname: '../order/product-detail',
-        params: { 
-          productId: product.id,
-          productName: product.name,
-          productPrice: product.price
-        }
-      })}
-    >
-      <Image source={{ uri: product.image }} style={styles.productImage} />
-      <View style={styles.productInfo}>
-        <View style={styles.productDetails}>
-          <Text style={styles.productName}>{product.name}</Text>
-          <Text style={styles.productCategory}>{product.category}</Text>
-          <Text style={styles.productProducer}>{product.producer}</Text>
-          
-          {/* Badges */}
-          <View style={styles.badgesContainer}>
-            {product.badges.map((badge, index) => (
-              <View key={index} style={styles.badge}>
-                <Text style={styles.badgeText}>{badge}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-        
-        {/* Bottom info: distance and price */}
-        <View style={styles.productFooter}>
-          <View style={styles.distanceContainer}>
-            {renderPickupModeIcons(product.pickupMode, product.distance)}
-          </View>
-          <Text style={styles.priceText}>{product.price}</Text>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-
   return (
     <View style={styles.container}>
-      {/* Header */}
+      {/* Header - Fixed */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.locationButton}>
           <Text style={styles.locationText}>Montpellier</Text>
@@ -151,52 +224,335 @@ export default function RestaurantHomeScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <Image 
-            source={require("../../../assets/images/icons8-search-96.png")} 
-            style={{ width: 20, height: 20, marginRight: 8 }} 
-          />
-          <Text style={styles.searchText}>Search products or producers…</Text>
+      {/* Main ScrollView */}
+      <ScrollView
+        style={styles.mainScroll}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
+          <View style={styles.searchBar}>
+            <Image
+              source={require("../../../assets/images/icons8-search-96.png")}
+              style={{ width: 20, height: 20, marginRight: 8 }}
+            />
+            <TextInput
+              style={styles.searchInput}
+              placeholder={t('home.search_placeholder', 'Search products...')}
+              value={searchText}
+              onChangeText={setSearchText}
+              placeholderTextColor="#999"
+            />
+            {searchText.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchText('')}>
+                <Ionicons name="close-circle" size={20} color="#999" />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
-      </View>
 
-      {/* Categories and Filters - Fixed Section */}
-      <View style={styles.categoriesAndFiltersSection}>
-        {/* Categories */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesScroll}>
-          <View style={styles.categoriesContainer}>
+        {/* Categories - Horizontal Scroll */}
+        <View style={styles.categoriesSection}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoriesContent}
+          >
             {categoriesLoading ? (
               <ActivityIndicator size="small" color="#89A083" style={{ marginLeft: 16 }} />
             ) : (
-              categories.map((cat) => (
-                <TouchableOpacity key={cat.id} style={styles.categoryCard}>
+              categories.map((cat: { id: number; icon: any; name: string }) => (
+                <TouchableOpacity
+                  key={cat.id}
+                  style={[
+                    styles.categoryCard,
+                    selectedCategoryId === cat.id && styles.categoryCardSelected
+                  ]}
+                  onPress={() => handleCategorySelect(cat.id)}
+                >
                   <Image source={cat.icon} style={styles.categoryIcon} />
-                  <Text style={styles.categoryText} numberOfLines={2}>
+                  <Text
+                    style={[
+                      styles.categoryText,
+                      selectedCategoryId === cat.id && styles.categoryTextSelected
+                    ]}
+                    numberOfLines={2}
+                  >
                     {cat.name || 'No name'}
                   </Text>
                 </TouchableOpacity>
               ))
             )}
-          </View>
-        </ScrollView>
-
-        {/* Filters */}
-        <View style={styles.filtersContainer}>
-          {filters.map((filter) => (
-            <TouchableOpacity key={filter} style={styles.filterButton}>
-              <Text style={styles.filterText}>{filter}</Text>
-              <Ionicons name="chevron-down" style={styles.filtersArrow} />
-            </TouchableOpacity>
-          ))}
+          </ScrollView>
         </View>
-      </View>
 
-      {/* Products List */}
-      <ScrollView style={styles.productsList} contentContainerStyle={{ paddingBottom: 120 }}>
-        {mockProducts.map(renderProductCard)}
+        {/* Filters Section - Vinted Style */}
+        <View style={styles.filtersWrapper}>
+          {/* Filter Selection Buttons - First Line */}
+          <View style={styles.filterSelectionRow}>
+            <TouchableOpacity
+              style={[
+                styles.filterButton,
+                (minPrice || maxPrice) && styles.filterButtonActive
+              ]}
+              onPress={() => setShowPriceFilter(true)}
+            >
+              <Text style={[
+                styles.filterButtonText,
+                (minPrice || maxPrice) && styles.filterButtonTextActive
+              ]}>
+                {t('search.filter.price', 'Fourchette de prix')}
+              </Text>
+              <Ionicons
+                name="chevron-down"
+                size={16}
+                color={(minPrice || maxPrice) ? "#89A083" : "#4A4459"}
+              />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.filterButton,
+                selectedCertificationIds.length > 0 && styles.filterButtonActive
+              ]}
+              onPress={() => setShowCertificationFilter(true)}
+            >
+              <Text style={[
+                styles.filterButtonText,
+                selectedCertificationIds.length > 0 && styles.filterButtonTextActive
+              ]}>
+                {t('search.filter.certifications', 'Certifications')}
+              </Text>
+              <Ionicons
+                name="chevron-down"
+                size={16}
+                color={selectedCertificationIds.length > 0 ? "#89A083" : "#4A4459"}
+              />
+            </TouchableOpacity>
+          </View>
+
+          {/* Active Filters Chips - Below Selection */}
+          {(selectedCategoryId || selectedCertificationIds.length > 0 || minPrice || maxPrice) && (
+            <View style={styles.activeFiltersRow}>
+              {/* Category Filter Chip */}
+              {selectedCategoryId && (
+                <View style={styles.filterChip}>
+                  <Text style={styles.filterChipText}>
+                    {categories.find((c: { id: number }) => c.id === selectedCategoryId)?.name}
+                  </Text>
+                  <TouchableOpacity onPress={() => setSelectedCategoryId(null)}>
+                    <Ionicons name="close" size={16} color="#89A083" />
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {/* Certification Filter Chips */}
+              {selectedCertificationIds.map(certId => {
+                const cert = certifications.find(c => c.id === certId);
+                return cert ? (
+                  <View key={certId} style={styles.filterChip}>
+                    <Text style={styles.filterChipText}>
+                      {cert.label}
+                    </Text>
+                    <TouchableOpacity onPress={() => handleCertificationToggle(certId)}>
+                      <Ionicons name="close" size={16} color="#89A083" />
+                    </TouchableOpacity>
+                  </View>
+                ) : null;
+              })}
+
+              {/* Price Filter Chip - Without € symbol */}
+              {(minPrice || maxPrice) && (
+                <View style={styles.filterChip}>
+                  <Text style={styles.filterChipText}>
+                    {minPrice && maxPrice
+                      ? `${minPrice} - ${maxPrice}`
+                      : minPrice
+                        ? `De ${minPrice}`
+                        : `À ${maxPrice}`
+                    }
+                  </Text>
+                  <TouchableOpacity onPress={() => { setMinPrice(''); setMaxPrice(''); }}>
+                    <Ionicons name="close" size={16} color="#89A083" />
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          )}
+        </View>
+
+        {/* Products Grid */}
+        {isLoadingProducts && currentPage === 0 ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#89A083" />
+            <Text style={styles.loadingText}>
+              {t('common.loading', 'Loading...')}
+            </Text>
+          </View>
+        ) : products.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Ionicons name="search-outline" size={64} color="#ccc" />
+            <Text style={styles.emptyText}>
+              {t('search.no_results', 'No products found')}
+            </Text>
+            <Text style={styles.emptySubtext}>
+              {t('search.try_different', 'Try adjusting your search or filters')}
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.productsContainer}>
+            {products.map(renderProductCard)}
+
+            {/* Load More Button */}
+            {currentPage < totalPages - 1 && (
+              <TouchableOpacity
+                style={styles.loadMoreButton}
+                onPress={handleLoadMore}
+                disabled={isLoadingProducts}
+              >
+                {isLoadingProducts ? (
+                  <ActivityIndicator size="small" color="#89A083" />
+                ) : (
+                  <Text style={styles.loadMoreText}>
+                    {t('search.load_more', 'Load More')}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
       </ScrollView>
+
+      {/* Price Filter Modal */}
+      {showPriceFilter && (
+        <View style={styles.priceModal}>
+          <TouchableOpacity
+            style={styles.priceModalOverlay}
+            activeOpacity={1}
+            onPress={() => setShowPriceFilter(false)}
+          >
+            <TouchableOpacity
+              activeOpacity={1}
+              onPress={(e) => e.stopPropagation()}
+            >
+              <View style={styles.priceModalContent}>
+                <View style={styles.priceModalHeader}>
+                  <Text style={styles.priceModalTitle}>
+                    {t('search.filter.price', 'Fourchette de prix')}
+                  </Text>
+                  <TouchableOpacity onPress={() => setShowPriceFilter(false)}>
+                    <Ionicons name="close" size={24} color="#4A4459" />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.priceInputsRow}>
+                  <View style={styles.priceInputGroup}>
+                    <Text style={styles.priceInputLabel}>
+                      {t('search.filter.min_price', 'De')}
+                    </Text>
+                    <TextInput
+                      style={styles.priceInputField}
+                      placeholder="0,00"
+                      value={minPrice}
+                      onChangeText={setMinPrice}
+                      keyboardType="decimal-pad"
+                      placeholderTextColor="#999"
+                    />
+                  </View>
+
+                  <View style={styles.priceInputGroup}>
+                    <Text style={styles.priceInputLabel}>
+                      {t('search.filter.max_price', 'À')}
+                    </Text>
+                    <TextInput
+                      style={styles.priceInputField}
+                      placeholder="0,00"
+                      value={maxPrice}
+                      onChangeText={setMaxPrice}
+                      keyboardType="decimal-pad"
+                      placeholderTextColor="#999"
+                    />
+                  </View>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.priceModalApplyButton}
+                  onPress={() => setShowPriceFilter(false)}
+                >
+                  <Text style={styles.priceModalApplyText}>
+                    {t('common.apply', 'Appliquer')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Certification Filter Modal */}
+      {showCertificationFilter && (
+        <View style={styles.priceModal}>
+          <TouchableOpacity
+            style={styles.priceModalOverlay}
+            activeOpacity={1}
+            onPress={() => setShowCertificationFilter(false)}
+          >
+            <TouchableOpacity
+              activeOpacity={1}
+              onPress={(e) => e.stopPropagation()}
+            >
+              <View style={styles.priceModalContent}>
+                <View style={styles.priceModalHeader}>
+                  <Text style={styles.priceModalTitle}>
+                    {t('search.filter.certifications', 'Certifications')}
+                  </Text>
+                  <TouchableOpacity onPress={() => setShowCertificationFilter(false)}>
+                    <Ionicons name="close" size={24} color="#4A4459" />
+                  </TouchableOpacity>
+                </View>
+
+                <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 400 }}>
+                  {certificationsLoading ? (
+                    <ActivityIndicator size="small" color="#89A083" />
+                  ) : (
+                    <View style={styles.certificationsContainer}>
+                      {certifications.map((cert) => (
+                        <TouchableOpacity
+                          key={cert.id}
+                          style={styles.certificationItem}
+                          onPress={() => handleCertificationToggle(cert.id)}
+                        >
+                          <View style={[
+                            styles.checkbox,
+                            selectedCertificationIds.includes(cert.id) && styles.checkboxChecked
+                          ]}>
+                            {selectedCertificationIds.includes(cert.id) && (
+                              <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                            )}
+                          </View>
+                          <Text style={styles.certificationLabel}>
+                            {cert.label}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+                </ScrollView>
+
+                <TouchableOpacity
+                  style={styles.priceModalApplyButton}
+                  onPress={() => setShowCertificationFilter(false)}
+                >
+                  <Text style={styles.priceModalApplyText}>
+                    {t('common.apply', 'Appliquer')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </View>
+      )}
 
     </View>
   );
@@ -208,15 +564,25 @@ const styles = StyleSheet.create({
     backgroundColor: "#F7F6ED" 
   },
   
-  // Header styles
+  // Main ScrollView
+  mainScroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 100,
+  },
+
+  // Header styles - Fixed
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingTop: 40,
+    paddingTop: 50,
     paddingHorizontal: 16,
-    paddingBottom: 15,
+    paddingBottom: 12,
     backgroundColor: "#F7F6ED",
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0,0,0,0.05)",
   },
   locationButton: {
     flexDirection: "row",
@@ -269,27 +635,23 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-  searchText: { 
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: "#4A4459",
+  },
+  searchText: {
     fontSize: 14, 
     color: "#717182" 
   },
 
-  // Categories and Filters Section (Fixed)
-  categoriesAndFiltersSection: {
-    backgroundColor: "#F7F6ED",
-    paddingBottom: 12,
-    zIndex: 10,
+  // Categories Section
+  categoriesSection: {
+    paddingVertical: 4,
   },
-
-  categoriesScroll: {
-    marginTop: 16,
-    marginBottom: 16,
-    paddingLeft: 16,
-  },
-  categoriesContainer: {
-    flexDirection: "row",
+  categoriesContent: {
+    paddingHorizontal: 16,
     gap: 12,
-    paddingRight: 16,
   },
   categoryCard: {
     width: 90,
@@ -300,6 +662,12 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingTop: 8,
     paddingHorizontal: 6,
+    borderWidth: 2,
+    borderColor: "transparent",
+  },
+  categoryCardSelected: {
+    backgroundColor: "#E8F5E9",
+    borderColor: "#89A083",
   },
   categoryIcon: { 
     width: 56,
@@ -316,6 +684,10 @@ const styles = StyleSheet.create({
     marginTop: 8,
     height: 28,
   },
+  categoryTextSelected: {
+    color: "#89A083",
+    fontWeight: "700",
+  },
 
   filtersArrow: {
     fontSize: 16,
@@ -325,19 +697,21 @@ const styles = StyleSheet.create({
   // Filters styles
   filtersContainer: { 
     flexDirection: "row", 
-    justifyContent: "space-around", 
-    marginHorizontal: 16, 
-    marginBottom: 0,
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginHorizontal: 16,
+    marginBottom: 12,
   },
   filterButton: {
-    width: 120,
     flexDirection: "row",
-    backgroundColor: "#EAE9E1",
-    borderRadius: 15,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
     alignItems: "center",
-    justifyContent: "space-between",
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    gap: 6,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
   },
   filterText: { 
     fontSize: 15, 
@@ -352,6 +726,12 @@ const styles = StyleSheet.create({
   productsList: { 
     paddingHorizontal: 16,
     paddingTop: 10,
+  },
+
+  // Products container
+  productsContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
   },
 
   // Product card styles
@@ -389,11 +769,21 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     letterSpacing: -0.31,
   },
+  categoryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginBottom: 4,
+  },
   productCategory: {
     fontSize: 14,
     color: "rgba(74, 68, 89, 0.6)",
-    marginBottom: 4,
     letterSpacing: -0.15,
+  },
+  freshIcon: {
+    width: 14,
+    height: 14,
+    tintColor: "#81B29A",
   },
   productProducer: {
     fontSize: 14,
@@ -403,23 +793,28 @@ const styles = StyleSheet.create({
   },
   badgesContainer: {
     flexDirection: "row",
-    gap: 4,
-    marginBottom: 8,
+    flexWrap: "wrap",
+    gap: 6,
+    marginTop: 6,
+    marginBottom: 4,
   },
   badge: {
-    backgroundColor: "rgba(129, 178, 154, 0.1)",
-    borderRadius: 8,
+    backgroundColor: "rgba(129, 178, 154, 0.15)",
+    borderRadius: 6,
     paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: "rgba(129, 178, 154, 0.3)",
   },
   badgeText: {
-    fontSize: 12,
-    color: "#81B29A",
-    fontWeight: "500",
+    fontSize: 11,
+    color: "#5a9279",
+    fontWeight: "600",
+    letterSpacing: 0.2,
   },
   productFooter: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "flex-end",
     alignItems: "center",
   },
   distanceContainer: {
@@ -436,5 +831,268 @@ const styles = StyleSheet.create({
     color: "#E07A5F",
     fontWeight: "500",
     letterSpacing: -0.31,
+  },
+
+  // Price Filter Styles
+  priceFilterContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "#fff",
+    marginHorizontal: 16,
+    marginBottom: 12,
+    borderRadius: 12,
+  },
+  priceRangeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  priceInputContainer: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F8F9FA",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  priceLabel: {
+    fontSize: 14,
+    color: "#999",
+    marginRight: 8,
+  },
+  priceInput: {
+    flex: 1,
+    fontSize: 16,
+    color: "#4A4459",
+    paddingVertical: 4,
+  },
+  priceCurrency: {
+    fontSize: 14,
+    color: "#999",
+    marginLeft: 4,
+  },
+  priceSeparator: {
+    fontSize: 18,
+    color: "#999",
+  },
+  clearButton: {
+    backgroundColor: "#FFE0E0",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  clearButtonText: {
+    fontSize: 14,
+    color: "#E07A5F",
+    fontWeight: "600",
+  },
+
+  // Loading and Empty States
+  loadingContainer: {
+    paddingVertical: 60,
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: "#4A4459",
+  },
+  emptyContainer: {
+    paddingVertical: 60,
+    alignItems: "center",
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#999",
+    marginTop: 16,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: "#ccc",
+    marginTop: 8,
+  },
+  loadMoreButton: {
+    marginTop: 16,
+    marginBottom: 8,
+    paddingVertical: 14,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: "#89A083",
+    alignItems: "center",
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  loadMoreText: {
+    fontSize: 16,
+    color: "#89A083",
+    fontWeight: "600",
+  },
+
+  // Filters Wrapper
+  filtersWrapper: {
+    paddingHorizontal: 16,
+    paddingVertical: 2,
+  },
+
+  // Filter Selection Row - First Line (buttons)
+  filterSelectionRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 6,
+  },
+
+  // Active Filters Row - Second Line (selected chips)
+  activeFiltersRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+
+  // Filter Chip - Selected Filter (Vinted style)
+  filterChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#E8F5E9", // Pastel green
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    gap: 6,
+    borderWidth: 1,
+    borderColor: "#89A083",
+  },
+  filterChipText: {
+    fontSize: 13,
+    color: "#89A083",
+    fontWeight: "600",
+  },
+
+  // Filter Button Active State
+  filterButtonActive: {
+    backgroundColor: "#E8F5E9",
+    borderColor: "#89A083",
+  },
+  filterButtonText: {
+    fontSize: 13,
+    color: "#4A4459",
+    fontWeight: "500",
+  },
+  filterButtonTextActive: {
+    color: "#89A083",
+    fontWeight: "600",
+  },
+
+  // Price Modal - Vinted Style (Overlay)
+  priceModal: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1000,
+  },
+  priceModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  priceModalContent: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingTop: 20,
+    paddingBottom: 40,
+    paddingHorizontal: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 10,
+  },
+  priceModalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  priceModalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#4A4459",
+  },
+  priceInputsRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 24,
+  },
+  priceInputGroup: {
+    flex: 1,
+  },
+  priceInputLabel: {
+    fontSize: 12,
+    color: "#666",
+    fontWeight: "500",
+    marginBottom: 8,
+  },
+  priceInputField: {
+    backgroundColor: "#F8F9FA",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: "#4A4459",
+  },
+  priceModalApplyButton: {
+    backgroundColor: "#89A083",
+    borderRadius: 8,
+    paddingVertical: 14,
+    alignItems: "center",
+    marginTop: 8,
+  },
+  priceModalApplyText: {
+    fontSize: 16,
+    color: "#fff",
+    fontWeight: "600",
+  },
+
+
+  // Certifications
+  certificationsContainer: {
+    gap: 12,
+  },
+  certificationItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    gap: 12,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: "#E0E0E0",
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  checkboxChecked: {
+    backgroundColor: "#89A083",
+    borderColor: "#89A083",
+  },
+  certificationLabel: {
+    fontSize: 15,
+    color: "#4A4459",
+    flex: 1,
   },
 });

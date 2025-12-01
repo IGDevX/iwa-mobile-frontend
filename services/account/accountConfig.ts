@@ -41,6 +41,10 @@ export const ACCOUNT_ENDPOINTS = {
     GET_OR_CREATE_USER_BY_KEYCLOAK_ID: (keycloakId: string) =>
         `/internal/${keycloakId}`, // GET PRIVATE - crée le user s'il n'existe pas
 
+    // Endpoint interne pour récupérer le Keycloak ID à partir d'un User ID
+    GET_KEYCLOAK_ID_BY_USER_ID: (userId: number) =>
+        `/internal/user/${userId}/keycloak-id`, // GET INTERNAL - retourne le Keycloak ID
+
     // DEPRECATED: Ces endpoints n'existent pas sur le backend
     // GET_USER_BY_KEYCLOAK_ID: (keycloakId: string) =>
     //     `/user/keycloak/${keycloakId}`,

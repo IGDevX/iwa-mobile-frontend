@@ -12,6 +12,7 @@ import { TokenManager } from '../auth/tokenManager';
 
 export class HttpClient {
   private baseUrl: string;
+  private pendingGetRequests: Map<string, Promise<any>> = new Map();
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
@@ -22,25 +23,27 @@ export class HttpClient {
    */
   async request<T>(
     endpoint: string,
-    options: RequestInit = {},
-    requiresAuth: boolean = true
+    options: RequestInit = {}
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
+    console.log(`📡 [HTTP-CLIENT] ${options.method || 'GET'} ${url}`);
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...(options.headers as Record<string, string>),
     };
 
-    // Ajouter le token si la route nécessite une authentification
-    if (requiresAuth) {
-      const token = await TokenManager.getAccessToken();
-
-      if (!token) {
-        console.error('[HttpClient] Failed to get access token');
-        throw new Error('UNAUTHENTICATED');
-      }
-
+    // Toujours ajouter le token s'il existe (même pour routes publiques)
+    const token = await TokenManager.getAccessToken();
+    if (token) {
       headers['Authorization'] = `Bearer ${token}`;
+      console.log('🔐 [HTTP-CLIENT] Auth token added');
+    } else {
+      console.log('ℹ️ [HTTP-CLIENT] No token available (user not logged in)');
+    }
+
+    if (options.body) {
+      console.log('📦 [HTTP-CLIENT] Request body:', options.body);
     }
 
     const response = await fetch(url, {
@@ -48,20 +51,25 @@ export class HttpClient {
       headers,
     });
 
+    console.log(`📥 [HTTP-CLIENT] Response: ${response.status} ${response.statusText}`);
+
     // Gérer le cas 401 (token invalide)
-    if (response.status === 401 && requiresAuth) {
-      // Le token a été rejeté par le backend
-      const errorBody = await response.text();
-      console.error('[HttpClient] 401 Unauthorized from:', url);
-      console.error('[HttpClient] Response body:', errorBody);
-      console.error('[HttpClient] Response headers:', JSON.stringify(Object.fromEntries(response.headers.entries())));
-      // Le TokenManager a déjà tenté un refresh, si on est ici c'est que ça a échoué
-      await TokenManager.clearTokens();
-      throw new Error('UNAUTHENTICATED');
+    if (response.status === 401) {
+      // Si un token était présent, cela signifie qu'il est invalide/expiré
+      if (token) {
+        console.error('❌ [HTTP-CLIENT] 401 Unauthorized - token invalid, clearing tokens');
+        await TokenManager.clearTokens();
+        throw new Error('UNAUTHENTICATED');
+      } else {
+        // Pas de token = route nécessite authentification mais user pas connecté
+        console.warn('⚠️ [HTTP-CLIENT] 401 - Authentication required (user not logged in)');
+        throw new Error('AUTHENTICATION_REQUIRED');
+      }
     }
 
     if (!response.ok) {
       const errorText = await response.text();
+      console.error(`❌ [HTTP-CLIENT] Error ${response.status}:`, errorText);
       throw new Error(`HTTP ${response.status}: ${errorText}`);
     }
 
@@ -85,71 +93,75 @@ export class HttpClient {
   }
 
   /**
-   * GET request
+   * GET request with automatic deduplication
+   * If the same GET request is already pending, return the existing promise
    */
-  async get<T>(endpoint: string, requiresAuth: boolean = true): Promise<T> {
-    return this.request<T>(endpoint, { method: 'GET' }, requiresAuth);
+  async get<T>(endpoint: string): Promise<T> {
+    const cacheKey = endpoint;
+
+    // Check if the same GET request is already in progress
+    if (this.pendingGetRequests.has(cacheKey)) {
+      console.log(`⏳ [HTTP-CLIENT] GET already pending, reusing promise: ${endpoint}`);
+      return this.pendingGetRequests.get(cacheKey)! as Promise<T>;
+    }
+
+    // Create new request promise
+    const requestPromise = this.request<T>(endpoint, { method: 'GET' })
+      .finally(() => {
+        // Clean up the cache after request completes (success or failure)
+        this.pendingGetRequests.delete(cacheKey);
+      });
+
+    // Store the promise in cache
+    this.pendingGetRequests.set(cacheKey, requestPromise);
+
+    return requestPromise;
   }
 
   /**
    * POST request
    */
-  async post<T>(
-    endpoint: string,
-    body?: any,
-    requiresAuth: boolean = true
-  ): Promise<T> {
+  async post<T>(endpoint: string, body?: any): Promise<T> {
     return this.request<T>(
       endpoint,
       {
         method: 'POST',
         body: body ? JSON.stringify(body) : undefined,
-      },
-      requiresAuth
+      }
     );
   }
 
   /**
    * PUT request
    */
-  async put<T>(
-    endpoint: string,
-    body: any,
-    requiresAuth: boolean = true
-  ): Promise<T> {
+  async put<T>(endpoint: string, body: any): Promise<T> {
     return this.request<T>(
       endpoint,
       {
         method: 'PUT',
         body: JSON.stringify(body),
-      },
-      requiresAuth
+      }
     );
   }
 
   /**
    * PATCH request
    */
-  async patch<T>(
-    endpoint: string,
-    body: any,
-    requiresAuth: boolean = true
-  ): Promise<T> {
+  async patch<T>(endpoint: string, body: any): Promise<T> {
     return this.request<T>(
       endpoint,
       {
         method: 'PATCH',
         body: JSON.stringify(body),
-      },
-      requiresAuth
+      }
     );
   }
 
   /**
    * DELETE request
    */
-  async delete<T>(endpoint: string, requiresAuth: boolean = true): Promise<T> {
-    return this.request<T>(endpoint, { method: 'DELETE' }, requiresAuth);
+  async delete<T>(endpoint: string): Promise<T> {
+    return this.request<T>(endpoint, { method: 'DELETE' });
   }
 }
 
