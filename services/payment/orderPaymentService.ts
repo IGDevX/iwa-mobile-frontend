@@ -5,7 +5,7 @@
  */
 
 import type { PaymentRecord } from '../../components/PaymentContext';
-import { httpGet, httpPatch, httpPost } from '../shared/httpClient';
+import { paymentGet, paymentPatch, paymentPost } from './paymentHttpClient';
 
 // ============================================
 // Request/Response Types (matching backend DTOs)
@@ -15,7 +15,7 @@ export interface PaymentRecordRequest {
   paymentIntentId: string;
   amount: number; // Amount in cents
   currency: string;
-  status: 'pending' | 'succeeded' | 'failed' | 'canceled';
+  status: 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'CANCELED';
   paidBy: string; // Keycloak user ID
   paidTo: string; // Producer name
   paymentDate: string; // ISO string
@@ -33,7 +33,7 @@ export interface PaymentRecordResponse {
   paymentIntentId: string;
   amount: number;
   currency: string;
-  status: 'pending' | 'succeeded' | 'failed' | 'canceled';
+  status: 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'CANCELED';
   paidBy: string;
   paidTo: string;
   paymentDate: string;
@@ -65,14 +65,15 @@ export interface OrderStatusUpdateResponse {
 // ============================================
 
 // Use the API gateway base so frontend talks to gateway which routes to payment service
-const PAYMENT_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+import { API_GATEWAY_BASE_URL } from '../../constants/Config';
+
 
 const ORDER_PAYMENT_ENDPOINTS = {
   // Routes are prefixed with /payment so gateway will forward to payment-service
-  RECORD_PAYMENT: (orderId: string) => `${PAYMENT_BASE_URL}/payment/orders/${orderId}/payment`,
-  GET_PAYMENT_STATUS: (orderId: string) => `${PAYMENT_BASE_URL}/payment/orders/${orderId}/payment`,
-  UPDATE_ORDER_STATUS: (orderId: string) => `${PAYMENT_BASE_URL}/payment/orders/${orderId}/status`,
-  VERIFY_PAYMENT: (paymentIntentId: string) => `${PAYMENT_BASE_URL}/payment/payments/verify/${paymentIntentId}`,
+  RECORD_PAYMENT: (orderId: string) => `/orders/${orderId}/payment`,
+  GET_PAYMENT_STATUS: (orderId: string) => `/orders/${orderId}/payment`,
+  UPDATE_ORDER_STATUS: (orderId: string) => `/orders/${orderId}/status`,
+  VERIFY_PAYMENT: (paymentIntentId: string) => `/payments/verify/${paymentIntentId}`,
 } as const;
 
 // ============================================
@@ -119,10 +120,9 @@ export async function recordOrderPayment(
   try {
     console.log('[OrderPaymentService] Recording payment for order:', orderId);
     
-    const response = await httpPost<PaymentRecordResponse>(
+    const response = await paymentPost<PaymentRecordResponse>(
       ORDER_PAYMENT_ENDPOINTS.RECORD_PAYMENT(orderId),
-      paymentData,
-      { timeout: 10000 }
+      paymentData
     );
 
     console.log('[OrderPaymentService] Payment recorded successfully');
@@ -144,16 +144,15 @@ export async function getOrderPaymentStatus(
   try {
     console.log('[OrderPaymentService] Getting payment status for order:', orderId);
     
-    const response = await httpGet<PaymentRecordResponse>(
-      ORDER_PAYMENT_ENDPOINTS.GET_PAYMENT_STATUS(orderId),
-      { timeout: 5000 }
+    const response = await paymentGet<PaymentRecordResponse>(
+      ORDER_PAYMENT_ENDPOINTS.GET_PAYMENT_STATUS(orderId)
     );
 
     return response;
     
   } catch (error: any) {
-    // Return null if payment not found (404)
-    if (error.statusCode === 404) {
+    // Return null if payment not found (404) or JSON parse error
+    if (error.message?.includes('404') || error.message?.includes('JSON Parse error') || error.name === 'SyntaxError') {
       console.log('[OrderPaymentService] No payment found for order:', orderId);
       return null;
     }
@@ -173,13 +172,12 @@ export async function updateOrderStatusToPaid(
   try {
     console.log('[OrderPaymentService] Updating order status to paid:', orderId);
     
-    const response = await httpPatch<OrderStatusUpdateResponse>(
+    const response = await paymentPatch<OrderStatusUpdateResponse>(
       ORDER_PAYMENT_ENDPOINTS.UPDATE_ORDER_STATUS(orderId),
       {
         status: 'paid',
         paymentIntentId
-      } as OrderStatusUpdateRequest,
-      { timeout: 5000 }
+      } as OrderStatusUpdateRequest
     );
 
     console.log('[OrderPaymentService] Order status updated successfully');
@@ -201,10 +199,9 @@ export async function verifyPaymentWithStripe(
   try {
     console.log('[OrderPaymentService] Verifying payment with Stripe:', paymentIntentId);
     
-    const response = await httpPost<PaymentRecordResponse>(
+    const response = await paymentPost<PaymentRecordResponse>(
       ORDER_PAYMENT_ENDPOINTS.VERIFY_PAYMENT(paymentIntentId),
       {}, // Empty body for verification endpoint
-      { timeout: 10000 }
     );
 
     console.log('[OrderPaymentService] Payment verified successfully');
@@ -232,6 +229,8 @@ export function convertPaymentRecordToRequest(
     paymentDate: paymentRecord.paymentDate,
     paymentDueDate: paymentRecord.paymentDueDate,
     errorMessage: paymentRecord.errorMessage,
+    stripeAccountId: paymentRecord.stripeAccountId,
+    applicationFeeAmount: paymentRecord.applicationFeeAmount
   };
 }
 

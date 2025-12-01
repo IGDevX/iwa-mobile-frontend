@@ -1,65 +1,85 @@
 /**
- * Order API helper
- * Uses environment variables to determine gateway/base URL.
+ * Order Service Types (API v1)
  */
 
-const GATEWAY_BASE = (process.env.EXPO_PUBLIC_ORDER_URL)
-  || (process.env.EXPO_PUBLIC_API_BASE_URL ? `${process.env.EXPO_PUBLIC_API_BASE_URL}/order` : undefined)
-  || (process.env.EXPO_PUBLIC_PAYMENT_URL ? `${process.env.EXPO_PUBLIC_PAYMENT_URL}/order` : undefined)
-  || 'http://localhost:8080/order';
+// Order creation request
+export interface CreateOrderRequest {
+  producerInternalId: number;
+  producer_keycloak_id: string;
+  customerId: number;
+  consumer_keycloak_id: string;
+  deliveryMode?: 'pickup' | 'delivery';
+  items: OrderItemRequest[];
+  idempotencyKey?: string;
+}
 
-const ORDER_ENDPOINT = `${GATEWAY_BASE}/orders`;
+// Single item in an order
+export interface OrderItemRequest {
+  productId: number;
+  quantity: number;
+  unitPrice: number;
+}
 
-async function request(path: string, options: RequestInit = {}) {
-  const headers: Record<string,string> = {
-    'Content-Type': 'application/json',
-    ...(options.headers as Record<string,string> || {})
-  };
+// Response after creating an order
+export interface CreateOrderResponse {
+  id: number;
+  reference: string;
+}
 
-  const res = await fetch(path, { ...options, headers });
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    const err: any = new Error(`HTTP ${res.status} ${res.statusText}`);
-    err.status = res.status;
-    err.body = text;
-    throw err;
+// Payment intent response
+export interface PaymentIntentResponse {
+  paymentIntentId: string;
+  status: string;
+}
+
+// Payment confirmation request
+export interface PaymentConfirmationRequest {
+  paymentIntentId: string;
+  status: string;
+  errorMessage?: string;
+}
+
+// Order detail response
+export interface OrderDetailDto {
+  id: number;
+  reference: string;
+  producerKeycloakId: string;
+  consumerKeycloakId: string;
+  producerInternalId: number;
+  customerId: number;
+  status: 'accepted' | 'pending' | 'delivered' | 'not_delivered' | 'refused';
+  deliveryMode: 'pickup' | 'delivery';
+  totalAmount: number;
+  createdAt: string;
+  items: OrderItemDetailDto[];
+}
+
+// Order item detail response
+export interface OrderItemDetailDto {
+  productId: number;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+}
+
+// Standard API error
+export interface ApiErrorResponse {
+  error: string;
+  message: string;
+  statusCode: number;
+  timestamp?: string;
+  path?: string;
+}
+
+// Custom API error class
+export class ApiError extends Error {
+  statusCode: number;
+  response?: ApiErrorResponse;
+
+  constructor(message: string, statusCode: number, response?: ApiErrorResponse) {
+    super(message);
+    this.name = 'ApiError';
+    this.statusCode = statusCode;
+    this.response = response;
   }
-  if (res.status === 204) return null;
-  return res.json();
 }
-
-export async function createOrder(payload: any, idempotencyKey?: string) {
-  const headers: Record<string,string> = {};
-  if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey;
-  return request(ORDER_ENDPOINT, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(payload),
-  });
-}
-
-export async function listOrders(params: Record<string,string|number|undefined> = {}) {
-  const qs = Object.entries(params)
-    .filter(([,v]) => v !== undefined && v !== null)
-    .map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
-    .join('&');
-  const url = qs ? `${ORDER_ENDPOINT}?${qs}` : ORDER_ENDPOINT;
-  return request(url, { method: 'GET' });
-}
-
-export async function getOrderById(id: string) {
-  const url = `${ORDER_ENDPOINT}/${encodeURIComponent(id)}`;
-  return request(url, { method: 'GET' });
-}
-
-export async function createPaymentIntentForOrder(reference: string) {
-  const url = `${ORDER_ENDPOINT}/${encodeURIComponent(reference)}/payment-intent`;
-  return request(url, { method: 'POST' });
-}
-
-export default {
-  createOrder,
-  listOrders,
-  getOrderById,
-  createPaymentIntentForOrder,
-};

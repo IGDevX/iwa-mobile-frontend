@@ -335,6 +335,8 @@
     "pay_now": "Payer maintenant",
     "order_placed": "Commande passée",
     "order_accepted": "Commande acceptée",
+    "order_refused": "Commande refusée",
+    "awaiting_producer": "En attente de décision du producteur",
     "order_placed_on": "Commande passée le",
     "order_accepted_on": "Commande acceptée le",
     "delivery_date_time": "Date/heure de livraison",

@@ -36,6 +36,7 @@ export class HttpClient {
       const token = await TokenManager.getAccessToken();
 
       if (!token) {
+        console.error('[HttpClient] Failed to get access token');
         throw new Error('UNAUTHENTICATED');
       }
 
@@ -50,6 +51,10 @@ export class HttpClient {
     // Gérer le cas 401 (token invalide)
     if (response.status === 401 && requiresAuth) {
       // Le token a été rejeté par le backend
+      const errorBody = await response.text();
+      console.error('[HttpClient] 401 Unauthorized from:', url);
+      console.error('[HttpClient] Response body:', errorBody);
+      console.error('[HttpClient] Response headers:', JSON.stringify(Object.fromEntries(response.headers.entries())));
       // Le TokenManager a déjà tenté un refresh, si on est ici c'est que ça a échoué
       await TokenManager.clearTokens();
       throw new Error('UNAUTHENTICATED');
@@ -65,7 +70,18 @@ export class HttpClient {
       return undefined as T;
     }
 
-    return response.json();
+    // Parse JSON response safely
+    const text = await response.text();
+    if (!text) {
+      return undefined as T;
+    }
+
+    try {
+      return JSON.parse(text);
+    } catch (error) {
+      console.error('[HttpClient] Failed to parse JSON response:', text);
+      throw new Error('Invalid JSON response from server');
+    }
   }
 
   /**

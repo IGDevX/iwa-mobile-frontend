@@ -18,8 +18,8 @@ export default function StripeRefreshPage() {
   const [loading, setLoading] = useState(false);
 
   // URLs should match your configuration
-  const RETURN_URL = 'https://yourdomain.com/dashboard/stripe/return';
-  const REFRESH_URL = 'https://yourdomain.com/dashboard/stripe/refresh';
+  const RETURN_URL = process.env.EXPO_PUBLIC_STRIPE_RETURN_URL || 'exp://127.0.0.1:8081/--/producer/stripe-return';
+  const REFRESH_URL = process.env.EXPO_PUBLIC_STRIPE_REFRESH_URL || 'exp://127.0.0.1:8081/--/producer/stripe-refresh';
 
   const handleRefreshOnboarding = async () => {
     try {
