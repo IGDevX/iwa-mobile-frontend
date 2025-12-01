@@ -10,6 +10,7 @@ interface UsePaymentOptions {
   merchantDisplayName?: string;
   producerKeycloakId?: string; // For connected account payments
   orderId?: string; // For tracking the order
+  stripeAccountId: string,
   platformFeePercentage?: number; // Optional custom platform fee percentage
 }
 
@@ -23,6 +24,7 @@ export const usePayment = (options: UsePaymentOptions) => {
     currency = PAYMENT_CONFIG.DEFAULT_CURRENCY,
     merchantDisplayName = 'Your Business',
     producerKeycloakId,
+
     orderId,
     platformFeePercentage = PAYMENT_CONFIG.PLATFORM_FEE_PERCENTAGE,
   } = options;
@@ -76,7 +78,8 @@ export const usePayment = (options: UsePaymentOptions) => {
       });
 
       if (initError) {
-        console.error('[usePayment] Failed to initialize payment sheet:', initError);
+        console.log('initError raw:', initError);
+        console.error('Type:', typeof initError);
         Alert.alert('Payment Setup Error', initError.message || 'Failed to initialize payment');
         return { success: false, error: initError.message };
       }

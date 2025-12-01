@@ -370,6 +370,8 @@
     "pay_now": "Pay Now",
     "order_placed": "Order Placed",
     "order_accepted": "Order Accepted",
+    "order_refused": "Order Refused",
+    "awaiting_producer": "Awaiting producer decision",
     "order_placed_on": "Order placed on",
     "order_accepted_on": "Order accepted on",
     "delivery_date_time": "Delivery date/time",

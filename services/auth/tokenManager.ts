@@ -43,6 +43,7 @@ export class TokenManager {
       const payload = this.decodeToken(tokens.accessToken);
 
       if (!payload) {
+        console.error('[TokenManager] Invalid access token payload');
         throw new Error('Invalid access token');
       }
 
@@ -62,8 +63,10 @@ export class TokenManager {
       if (payload.sub && typeof payload.sub === 'string') {
         await SecureStore.setItemAsync(this.USER_ID_KEY, payload.sub);
       }
+
+      console.log('[TokenManager] Tokens saved successfully. Expires at:', new Date(payload.exp * 1000).toISOString());
     } catch (error) {
-      console.error('Error saving tokens:', error);
+      console.error('[TokenManager] Error saving tokens:', error);
       throw error;
     }
   }
@@ -76,19 +79,26 @@ export class TokenManager {
       const accessToken = await SecureStore.getItemAsync(this.ACCESS_TOKEN_KEY);
 
       if (!accessToken) {
+        console.log('[TokenManager] No access token found in storage');
         return null;
       }
 
       // Vérifier si le token est expiré ou va expirer bientôt
       if (this.isTokenExpired(accessToken)) {
+        console.log('[TokenManager] Token expired or expiring soon, attempting refresh...');
         // Tenter de rafraîchir le token
         const newToken = await this.refreshAccessToken();
+        if (newToken) {
+          console.log('[TokenManager] Token refreshed successfully');
+        } else {
+          console.log('[TokenManager] Token refresh failed - user needs to re-authenticate');
+        }
         return newToken;
       }
 
       return accessToken;
     } catch (error) {
-      console.error('Error getting access token:', error);
+      console.error('[TokenManager] Error getting access token:', error);
       return null;
     }
   }
@@ -166,10 +176,12 @@ export class TokenManager {
       const refreshToken = await SecureStore.getItemAsync(this.REFRESH_TOKEN_KEY);
 
       if (!refreshToken) {
+        console.log('[TokenManager] No refresh token available');
         await this.clearTokens();
         return null;
       }
 
+      console.log('[TokenManager] Calling Keycloak to refresh token...');
       const response = await fetch(
         `${this.KEYCLOAK_URL}/protocol/openid-connect/token`,
         {
@@ -187,11 +199,14 @@ export class TokenManager {
 
       if (!response.ok) {
         // Refresh token invalide/expiré
+        const errorText = await response.text();
+        console.error('[TokenManager] Token refresh failed:', response.status, errorText);
         await this.clearTokens();
         return null;
       }
 
       const data = await response.json();
+      console.log('[TokenManager] Keycloak returned new tokens');
 
       // Sauvegarder les nouveaux tokens
       await this.saveTokens({
@@ -202,7 +217,7 @@ export class TokenManager {
 
       return data.access_token;
     } catch (error) {
-      console.error('Error refreshing token:', error);
+      console.error('[TokenManager] Error refreshing token:', error);
       await this.clearTokens();
       return null;
     }
@@ -213,12 +228,13 @@ export class TokenManager {
    */
   static async clearTokens(): Promise<void> {
     try {
+      console.log('[TokenManager] Clearing all tokens');
       await SecureStore.deleteItemAsync(this.ACCESS_TOKEN_KEY);
       await SecureStore.deleteItemAsync(this.REFRESH_TOKEN_KEY);
       await SecureStore.deleteItemAsync(this.ID_TOKEN_KEY);
       await SecureStore.deleteItemAsync(this.USER_ID_KEY);
     } catch (error) {
-      console.error('Error clearing tokens:', error);
+      console.error('[TokenManager] Error clearing tokens:', error);
     }
   }
 

@@ -78,7 +78,18 @@ export class HttpClient {
       return undefined as T;
     }
 
-    return response.json();
+    // Parse JSON response safely
+    const text = await response.text();
+    if (!text) {
+      return undefined as T;
+    }
+
+    try {
+      return JSON.parse(text);
+    } catch (error) {
+      console.error('[HttpClient] Failed to parse JSON response:', text);
+      throw new Error('Invalid JSON response from server');
+    }
   }
 
   /**
