@@ -46,7 +46,7 @@ export default function OrderConfirmationScreen() {
         producer_keycloak_id: '195b8e84-514a-4912-a7f2-443c0fb131a8',
         customerId: internalUserId,
         consumer_keycloak_id: authState.userInfo.sub,
-        deliveryMode: deliveryMode || 'pickup',
+        deliveryMode: (deliveryMode as 'pickup' | 'delivery') || 'pickup',
         items: state.items.map(item => ({
           productId: 1,
           quantity: item.quantity,
