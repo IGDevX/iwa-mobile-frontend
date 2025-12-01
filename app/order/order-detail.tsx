@@ -598,24 +598,33 @@ export default function OrderDetailScreen() {
                 </View>
               </View>
             ) : orderDetails.status === 'delivered' ? (
-              // Show payment button only when delivered
-              <View style={styles.paymentRow}>
-                <View style={styles.paymentInfo}>
-                  <Image source={require("../../assets/images/icons8-error-96.png")} style={styles.paymentIcon} />
-                  <Text style={styles.paymentDueText}>
-                    {t('order_detail.payment_due', { date: formatPaymentDate(orderDetails.paymentDue) })}
+              // Show payment button only when delivered AND producer has Stripe account
+              !orderDetails.stripeAccountId || orderDetails.stripeAccountId === 'unknown' ? (
+                <View style={styles.paymentWaitingContainer}>
+                  <Ionicons name="alert-circle-outline" size={24} color="#DC2626" />
+                  <Text style={[styles.paymentWaitingText, { color: '#991B1B' }]}>
+                    Payment unavailable - Producer has not connected their Stripe account yet. Please contact the producer.
                   </Text>
                 </View>
-                <TouchableOpacity
-                  style={[styles.payButton, loading && styles.payButtonDisabled]}
-                  onPress={didTapCheckoutButton}
-                  disabled={loading}
-                >
-                  <Text style={styles.payButtonText}>
-                    {loading ? 'Processing...' : t('order_detail.pay_now')}
-                  </Text>
-                </TouchableOpacity>
-              </View>
+              ) : (
+                <View style={styles.paymentRow}>
+                  <View style={styles.paymentInfo}>
+                    <Image source={require("../../assets/images/icons8-error-96.png")} style={styles.paymentIcon} />
+                    <Text style={styles.paymentDueText}>
+                      {t('order_detail.payment_due', { date: formatPaymentDate(orderDetails.paymentDue) })}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={[styles.payButton, loading && styles.payButtonDisabled]}
+                    onPress={didTapCheckoutButton}
+                    disabled={loading}
+                  >
+                    <Text style={styles.payButtonText}>
+                      {loading ? 'Processing...' : t('order_detail.pay_now')}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )
             ) : (
               // Show waiting message for non-delivered orders
               <View style={styles.paymentWaitingContainer}>

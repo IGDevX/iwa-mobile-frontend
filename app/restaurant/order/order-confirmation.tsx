@@ -41,14 +41,25 @@ export default function OrderConfirmationScreen() {
       const userProfile = await getUserByKeycloakId(authState.userInfo.sub);
       const internalUserId = userProfile.id;
 
+      // Get producer info from the first item in cart
+      const firstItem = state.items[0];
+      if (!firstItem.producerId) {
+        Alert.alert("Error", "Producer information is missing. Please try adding items to cart again.");
+        return;
+      }
+
+      // Get producer's Keycloak ID from the internal ID
+      const { getKeycloakIdByUserId } = await import('../../../services/account/accountService');
+      const producerKeycloakId = await getKeycloakIdByUserId(firstItem.producerId);
+
       const orderPayload = {
-        producerInternalId: 6,
-        producer_keycloak_id: '195b8e84-514a-4912-a7f2-443c0fb131a8',
+        producerInternalId: firstItem.producerId,
+        producer_keycloak_id: producerKeycloakId,
         customerId: internalUserId,
         consumer_keycloak_id: authState.userInfo.sub,
         deliveryMode: (deliveryMode as 'pickup' | 'delivery') || 'pickup',
         items: state.items.map(item => ({
-          productId: 1,
+          productId: item.id,
           quantity: item.quantity,
           unitPrice: item.price,
         })),
