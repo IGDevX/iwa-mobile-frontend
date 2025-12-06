@@ -95,7 +95,33 @@
     "profile": "Profil",
     "cart": "Panier"
   },
-  
+
+  "search": {
+    "title": "Rechercher des produits",
+    "placeholder": "Rechercher des produits...",
+    "search": "Rechercher",
+    "show_filters": "Afficher les filtres",
+    "hide_filters": "Masquer les filtres",
+    "clear_filters": "Effacer tous les filtres",
+    "results_count": "{{count}} résultats",
+    "no_results": "Aucun produit trouvé",
+    "try_different": "Essayez d'ajuster votre recherche ou vos filtres",
+    "load_more": "Voir plus",
+    "error": "Échec de la recherche de produits. Veuillez réessayer.",
+    "filter": {
+      "title": "Filtres",
+      "category": "Catégorie",
+      "fresh": "Fraîcheur",
+      "price": "Fourchette de prix",
+      "certifications": "Certifications",
+      "min_price": "De",
+      "max_price": "À",
+      "all": "Tous",
+      "fresh_only": "Frais",
+      "not_fresh": "Non frais"
+    }
+  },
+
   "profile": {
     "title": "Mon Profil",
     "loading": "Chargement du profil...",
@@ -257,11 +283,22 @@
     "characteristics": "Caractéristiques",
     "producer_section": "Le producteur",
     "view_shop": "Voir la boutique",
+    "login_prompt_prefix": "Pour ajouter un produit au panier et parcourir les boutiques de producteurs, veuillez",
+    "login_prompt_link": "vous connecter",
     "stock_available": "Stock disponible :",
     "agriculture_bio": "Agriculture biologique certifiée",
     "no_pesticides": "Cultivé sans pesticides",
     "heritage_variety": "Variété ancienne",
     "daily_harvest": "Récolte du jour",
+    "fresh": "Frais",
+    "category": "Catégorie",
+    "shelf": "Rayon",
+    "certifications": "Certifications",
+    "created_at": "Créé le",
+    "updated_at": "Modifié le",
+    "not_found": "Produit introuvable",
+    "load_error": "Échec du chargement des détails du produit",
+    "information": "Informations",
     "add_product_title": "Ajouter un Produit",
     "product_name": "Nom du Produit",
     "product_name_placeholder": "Entrez le nom du produit",
@@ -335,6 +372,8 @@
     "pay_now": "Payer maintenant",
     "order_placed": "Commande passée",
     "order_accepted": "Commande acceptée",
+    "order_refused": "Commande refusée",
+    "awaiting_producer": "En attente de décision du producteur",
     "order_placed_on": "Commande passée le",
     "order_accepted_on": "Commande acceptée le",
     "delivery_date_time": "Date/heure de livraison",
@@ -406,19 +445,23 @@
     "terms_info": "Les informations des conditions d'utilisation seront affichées ici.",
     "help_info": "Contactez le support à support@yourapp.com ou visitez notre centre d'aide."
   },
-  
   "common": {
+    "loading": "Chargement...",
     "error": "Erreur",
     "ok": "OK",
     "cancel": "Annuler",
     "done": "Terminé",
     "delete": "Supprimer",
-    "success": "Succès"
+    "success": "Succès",
+    "apply": "Appliquer",
+    "go_back": "Retour",
+    "retry": "Réessayer"
   },
 
   "producer": {
     "shop": {
       "my_shop": "Ma boutique",
+      "producer_shop": "Boutique",
       "edit_mode": "Mode édition",
       "add_new_category": "Ajouter une nouvelle catégorie",
       "category_name": "Nom de la catégorie",
@@ -426,6 +469,9 @@
       "delete_category": "Supprimer la catégorie",
       "add_product": "Ajouter un produit"
     },
+    "new_shelf": "Nouveau rayon",
+    "shelf_name": "Nom du rayon",
+    "no_products": "Aucun produit pour le moment. Commencez par ajouter votre premier produit !",
     "cannot_add_own_product": "Vous ne pouvez pas ajouter vos propres produits au panier.",
     "delivery": "Livraison"
   },

@@ -1,15 +1,18 @@
 import React, { useContext, useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Alert } from "react-native";
 import { useTranslation } from "react-i18next";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useCart } from "../../../components/CartContext";
 import { AuthContext } from "../../../components/AuthContext";
 import Ionicons from '@expo/vector-icons/Ionicons';
+import orderService from '../../../services/order/orderService';
+import { getUserByKeycloakId } from '../../../services/account/accountService';
 
 export default function OrderConfirmationScreen() {
   const { t } = useTranslation();
   const { state } = useCart();
   const { state: authState } = useContext(AuthContext);
+  const { deliveryMode } = useLocalSearchParams<{ deliveryMode: string }>();
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -27,11 +30,61 @@ export default function OrderConfirmationScreen() {
     router.back();
   };
 
-  const handleConfirmOrder = () => {
-    // Process the order confirmation
+  const handleConfirmOrder = async () => {
+    if (state.items.length === 0) {
+      Alert.alert("Cart is empty", "Add items to your cart before placing an order.");
+      return;
+    }
+    if (!authState.userInfo?.sub) return;
 
-    // Navigate back to home and clear cart
-    router.push('../home/restaurant-home');
+    try {
+      const userProfile = await getUserByKeycloakId(authState.userInfo.sub);
+      const internalUserId = userProfile.id;
+
+      // Get producer info from the first item in cart
+      const firstItem = state.items[0];
+      if (!firstItem.producerId) {
+        Alert.alert("Error", "Producer information is missing. Please try adding items to cart again.");
+        return;
+      }
+
+      // Get producer's Keycloak ID from the internal ID
+      const { getKeycloakIdByUserId } = await import('../../../services/account/accountService');
+      const producerKeycloakId = await getKeycloakIdByUserId(firstItem.producerId);
+
+      const orderPayload = {
+        producerInternalId: firstItem.producerId,
+        producer_keycloak_id: producerKeycloakId,
+        customerId: internalUserId,
+        consumer_keycloak_id: authState.userInfo.sub,
+        deliveryMode: (deliveryMode as 'pickup' | 'delivery') || 'pickup',
+        items: state.items.map(item => ({
+          productId: item.id,
+          quantity: item.quantity,
+          unitPrice: item.price,
+        })),
+      };
+
+      console.log('Order payload:', JSON.stringify(orderPayload, null, 2));
+
+      const createdOrder = await orderService.createOrder(orderPayload);
+
+      // Navigate to order detail page using created order ID
+      router.push({
+        pathname: '/order/order-detail',
+        params: { id: createdOrder.id.toString() } // always pass as string
+      });
+
+    } catch (error: any) {
+      console.error('Failed to create order:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
+      if (error.response) {
+        console.error('Backend response:', error.response);
+        Alert.alert("Error", error.response.message || "Failed to create order. Please try again.");
+      } else {
+        Alert.alert("Error", "Failed to create order. Please try again.");
+      }
+    }
   };
 
   const getProducerName = (): string => {
@@ -46,7 +99,7 @@ export default function OrderConfirmationScreen() {
   };
 
   const getDeliveryFee = (): number => {
-    return 5.00; // Assuming delivery was selected
+    return deliveryMode === 'delivery' ? 5.00 : 0;
   };
 
   const getTotalWithDelivery = (): number => {

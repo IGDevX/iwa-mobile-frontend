@@ -5,7 +5,7 @@
  * Enables them to receive payments through the platform
  */
 
-import { httpDelete, httpGet, httpPost } from '../shared/httpClient';
+import { stripeDelete, stripeGet, stripePost } from './paymentHttpClient';
 
 /**
  * Types for Stripe Connect API requests and responses
@@ -62,19 +62,15 @@ export class StripeConnectError extends Error {
 }
 
 /**
- * Base URL for account service endpoints
- */
-const ACCOUNT_BASE_URL = process.env.EXPO_PUBLIC_ACCOUNT_SERVICE_URL || 'http://localhost:5001';
-
-/**
- * Stripe Connect API endpoints
+ * Stripe Connect API endpoints (relative paths)
+ * These will be appended to the base URL configured in paymentHttpClient
  */
 export const STRIPE_CONNECT_ENDPOINTS = {
-  CREATE_CONNECTED_ACCOUNT: `${ACCOUNT_BASE_URL}/api/v1/account/stripe/connected-account`,
-  GET_CONNECTED_ACCOUNT: `${ACCOUNT_BASE_URL}/api/v1/account/stripe/connected-account`,
-  REFRESH_ONBOARDING: `${ACCOUNT_BASE_URL}/api/v1/account/stripe/refresh-onboarding`,
-  SYNC_ACCOUNT_STATUS: `${ACCOUNT_BASE_URL}/api/v1/account/stripe/sync-status`,
-  DELETE_CONNECTED_ACCOUNT: `${ACCOUNT_BASE_URL}/api/v1/account/stripe/connected-account`,
+  CREATE_CONNECTED_ACCOUNT: '/connected-account',
+  GET_CONNECTED_ACCOUNT: '/connected-account',
+  REFRESH_ONBOARDING: '/refresh-onboarding',
+  SYNC_ACCOUNT_STATUS: '/sync-status',
+  DELETE_CONNECTED_ACCOUNT: '/connected-account',
 } as const;
 
 /**
@@ -95,7 +91,7 @@ export async function createConnectedAccount(
       businessType: 'individual'
     };
 
-    const response = await httpPost<ConnectedAccountCreateResponse>(
+    const response = await stripePost<ConnectedAccountCreateResponse>(
       STRIPE_CONNECT_ENDPOINTS.CREATE_CONNECTED_ACCOUNT,
       requestBody
     );
@@ -119,28 +115,34 @@ export async function createConnectedAccount(
  */
 export async function getConnectedAccount(): Promise<ConnectedAccountStatusResponse | null> {
   try {
-    const response = await httpGet<ConnectedAccountStatusResponse>(
+    const response = await stripeGet<ConnectedAccountStatusResponse>(
       STRIPE_CONNECT_ENDPOINTS.GET_CONNECTED_ACCOUNT
     );
-    
+
     return response;
   } catch (error) {
-    // Return null if no account exists (400/404 status)
-    if (error instanceof Error && 'statusCode' in error) {
-      const statusCode = (error as any).statusCode;
-      
-      if (statusCode === 400 || statusCode === 404) {
-        return null;
-      }
+    console.log('DEBUG: Raw error from getConnectedAccount():', error);
+
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    // Extract status code from message: "HTTP 404: {..}"
+    const match = errorMessage.match(/HTTP\s+(\d{3})/);
+    const statusCode = match ? Number(match[1]) : undefined;
+
+    if (statusCode === 400 || statusCode === 404) {
+      console.warn(
+        `[StripeConnect] No connected account found (${statusCode}). Raw:`,
+        errorMessage
+      );
+      return null;
     }
 
-    if (error instanceof Error) {
-      throw new StripeConnectError(
-        `Failed to get connected account: ${error.message}`,
-        'statusCode' in error ? (error as any).statusCode : undefined
-      );
-    }
-    throw new StripeConnectError('Failed to get connected account');
+    console.error('Failed to get connected account:', error);
+
+    throw new StripeConnectError(
+      `Failed to get connected account: ${errorMessage}`,
+      statusCode
+    );
   }
 }
 
@@ -161,7 +163,7 @@ export async function refreshOnboardingLink(
       refreshUrl,
     };
 
-    const response = await httpPost<OnboardingRefreshResponse>(
+    const response = await stripePost<OnboardingRefreshResponse>(
       STRIPE_CONNECT_ENDPOINTS.REFRESH_ONBOARDING,
       requestBody
     );
@@ -187,7 +189,7 @@ export async function refreshOnboardingLink(
  */
 export async function syncAccountStatus(): Promise<AccountSyncResponse> {
   try {
-    const response = await httpPost<AccountSyncResponse>(
+    const response = await stripePost<AccountSyncResponse>(
       STRIPE_CONNECT_ENDPOINTS.SYNC_ACCOUNT_STATUS
     );
 
@@ -210,7 +212,7 @@ export async function syncAccountStatus(): Promise<AccountSyncResponse> {
  */
 export async function deleteConnectedAccount(): Promise<void> {
   try {
-    await httpDelete<void>(STRIPE_CONNECT_ENDPOINTS.DELETE_CONNECTED_ACCOUNT);
+    await stripeDelete<void>(STRIPE_CONNECT_ENDPOINTS.DELETE_CONNECTED_ACCOUNT);
   } catch (error) {
     console.error('Failed to delete connected account:', error);
     if (error instanceof Error) {
@@ -231,7 +233,7 @@ export async function deleteConnectedAccount(): Promise<void> {
  */
 export function isAccountReadyForPayments(account: ConnectedAccountStatusResponse | null): boolean {
   return account?.onboardingComplete === true &&
-         account?.accountStatus === 'active';
+    account?.accountStatus === 'active';
 }/**
  * Get account status display message
  * 

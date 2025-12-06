@@ -4,17 +4,18 @@ import React, { createContext, ReactNode, useContext, useState } from 'react';
  * Payment record stored locally
  */
 export interface PaymentRecord {
-  paymentId: string; // Stripe payment intent ID
+  paymentId: string;
   orderId: string;
-  amount: number; // Amount in cents
+  amount: number;
   currency: string;
-  status: 'pending' | 'succeeded' | 'failed' | 'canceled';
-  paidBy: string; // User ID who made the payment
-  paidTo: string; // Producer/merchant name
-  paymentDate: string; // ISO date string when payment was completed
-  paymentDueDate: string; // ISO date string when payment should be completed
-  clientSecret?: string;
+  status: 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'CANCELED';
+  paidBy: string;
+  paidTo: string;
+  paymentDate: string;
+  paymentDueDate: string;
   errorMessage?: string;
+  stripeAccountId?: string;
+  applicationFeeAmount?: number;   
 }
 
 interface PaymentContextType {
@@ -56,7 +57,7 @@ export const PaymentProvider: React.FC<{ children: ReactNode }> = ({ children })
           ...payment,
           status,
           errorMessage,
-          paymentDate: status === 'succeeded' ? new Date().toISOString() : payment.paymentDate,
+          paymentDate: status === 'SUCCEEDED' ? new Date().toISOString() : payment.paymentDate,
         });
       }
       

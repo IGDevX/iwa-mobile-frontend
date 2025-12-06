@@ -54,7 +54,11 @@ export default function DeliveryModeScreen() {
 
   const handleConfirmOrder = () => {
     // Navigate to order confirmation page
-    router.push('/restaurant/order/order-confirmation');
+    router.push({
+      pathname: '/restaurant/order/order-confirmation',
+      params: { deliveryMode: selectedDeliveryMode }
+    });
+
   };
 
   const getProducerName = (): string => {

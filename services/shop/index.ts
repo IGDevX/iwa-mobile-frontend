@@ -12,15 +12,20 @@ export type {
   ProductCertificationResponse,
   ProductRequest,
   ProductResponse,
+  ProductSearchRequest,
   ProductUpdateRequest,
+  ShelfRequest,
   ShelfResponse,
   UnitResponse,
 } from './shopApi';
 
+
 // Export all service functions
 export {
   createProduct,
+  createShelf,
   deleteProduct,
+  deleteShelf,
   getAllCategories,
   getAllCertifications,
   getAllCurrencies,
@@ -29,9 +34,12 @@ export {
   getAllUnits,
   getCategory,
   getProduct,
+  getProduct as getProductById, // Alias pour plus de clarté
   getProductsByProducer,
   getShelvesByProducer,
+  searchProducts,
   updateProduct,
+  updateShelf,
 } from './shopService';
 
 // Export configuration

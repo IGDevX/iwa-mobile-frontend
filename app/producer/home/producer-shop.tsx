@@ -1,8 +1,10 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useFocusEffect } from '@react-navigation/native';
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useContext, useState } from "react";
+import React, { useCallback, useContext, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  ActivityIndicator,
   Alert,
   Image,
   ScrollView,
@@ -19,185 +21,8 @@ import { useNotifications } from '../../../hooks/useNotifications';
 import { useProfileCompletion } from '../../../hooks/useProfileCompletion';
 import { useProducerShopData } from '../../../hooks/useProducerShopData';
 import { getCompleteUserProfile } from '../../../services/account';
-import type { ProductResponse, ShelfResponse } from '../../../services/shop';
+import { createShelf, deleteProduct, deleteShelf, updateShelf, type ProductResponse, type ShelfResponse } from '../../../services/shop';
 
-// Mock producer data
-const mockProducer = {
-  name: "Ferme Bio Laurent",
-  responsibleName: "Laurent Dupont",
-  description: "Ferme responsable située à Loupian. Large variété de fruits et légumes issues de l'agriculture biologique.",
-  bannerImage: "https://www.pretajardiner.com/modules/ph_simpleblog/featured/12.jpg",
-  profileImage: "https://photo-cdn2.icons8.com/vVsONpHf7-sTgM9mNbSkmX0iCJP6YF9_Ux93NilJJkY/rs:fit:576:384/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvNTA1L2NkNjhm/ODcwLWVjMmMtNDU2/OC1hNmE5LTk3ZGQw/NWE3Mjc3Mi5qcGc.webp"
-};
-
-// Type definitions (keeping for backward compatibility with mock data during transition)
-interface Product {
-  id: number;
-  name: string;
-  image: string;
-  price: number;
-  priceDisplay: string;
-  unit: string;
-  category: string;
-}
-
-interface ProductsData {
-  [key: string]: Product[];
-}
-
-// Mock products data organized by category (sera remplacé par les vraies données)
-const mockProducts: ProductsData = {
-  "Légumes": [
-    {
-      id: 1,
-      name: "Tomates",
-      image: "https://photo-cdn2.icons8.com/6-T_VL6CNAS2Ye_pJTjt3Ng2XCJizRvKF6QbAJQCif4/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvOTU5L2NlNjZj/YTIxLTE4MmItNGI0/My1hMzY1LTI0YjA0/M2EyYjI5My5qcGc.webp",
-      price: 3.50,
-      priceDisplay: "3.50€/kg",
-      unit: "kg",
-      category: "Légumes"
-    },
-    {
-      id: 2,
-      name: "Carottes",
-      image: "https://photo-cdn2.icons8.com/b17y6AdWPJxou6nd6LjjL4z6QztACk3sOJn512kpyaQ/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvMjY5L2UzN2Qz/ZmFkLWQ4MDctNDEz/ZC1hYzFhLWVjZjJl/YmM4YjE5ZS5qcGc.webp",
-      price: 2.20,
-      priceDisplay: "2.20€/kg",
-      unit: "kg",
-      category: "Légumes"
-    },
-    {
-      id: 5,
-      name: "Courgettes",
-      image: "https://photo-cdn2.icons8.com/WzUVwZCBFjpGJa-vCYcBVrVYdK3zGDGkEGC2v3zZ0vI/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvOTIxL2YyNWRk/MWQxLWM0MmQtNDdl/Yi1iMGRmLWFkMzk0/YTRlMmNlZi5qcGc.webp",
-      price: 2.80,
-      priceDisplay: "2.80€/kg",
-      unit: "kg",
-      category: "Légumes"
-    },
-    {
-      id: 6,
-      name: "Poivrons",
-      image: "https://photo-cdn2.icons8.com/XEBnLz3xjwMuPGiXPSvWKJoKWPXmKT82ZqCXwBdvkts/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvNDU0LzZjNDA2/NjcyLTk3MjMtNGRh/YS05OWNhLTM2YWU4/MWY4YmViMS5qcGc.webp",
-      price: 4.20,
-      priceDisplay: "4.20€/kg",
-      unit: "kg",
-      category: "Légumes"
-    },
-    {
-      id: 7,
-      name: "Aubergines",
-      image: "https://photo-cdn2.icons8.com/GYaRDl_O0nH0xnvfp9YiC2JMbMYoZQfbeLY72kN8Fuw/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvOTg1LzgxZWNi/NjBjLWMzZTQtNDk5/NS05MzUzLTI0MjM2/ZGY4NTdiOS5qcGc.webp",
-      price: 3.80,
-      priceDisplay: "3.80€/kg",
-      unit: "kg",
-      category: "Légumes"
-    },
-    {
-      id: 8,
-      name: "Concombres",
-      image: "https://photo-cdn2.icons8.com/9Vj5Mwb0JZKzMgKqIakrTFXQ1xQp5kMl8tLNALaBHkI/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvMTA5My81ZjRi/MjViMC01MmE1LTQ4/ZTctYWJlZC1iOGMy/MjUyMDRmYmUuanBn.webp",
-      price: 1.90,
-      priceDisplay: "1.90€/kg",
-      unit: "kg",
-      category: "Légumes"
-    }
-  ],
-  "Fruits": [
-    {
-      id: 3,
-      name: "Pommes",
-      image: "https://photo-cdn2.icons8.com/V6OT-875dhasusUM-3l7Z4sCZuyC5koCOwIw7Cu4NC4/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvMjQxLzdiZWM5/ODU5LTFhNTgtNGNi/NC04ZTJhLThjNTNm/Nzk3MGNkZi5qcGc.webp",
-      price: 2.80,
-      priceDisplay: "2.80€/kg",
-      unit: "kg",
-      category: "Fruits"
-    },
-    {
-      id: 4,
-      name: "Citrons",
-      image: "https://photo-cdn2.icons8.com/V7Lh4btN4b-LJhjd0nAMbdX-ZPI-1I-IaB-G7tSvERA/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvNDkvYjY1OTNj/M2YtZGMzNC00MTg1/LWEzOTctMjVlYzYz/ZmIyZTEzLmpwZw.webp",
-      price: 3.20,
-      priceDisplay: "3.20€/kg",
-      unit: "kg",
-      category: "Fruits"
-    },
-    {
-      id: 9,
-      name: "Fraises",
-      image: "https://photo-cdn2.icons8.com/WiXYz-_2CPzrL2QkuN-_PeK9z3BjvgONIGFGE3CJBug/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvOTI0LzUwMzVh/YTE2LTA1NDQtNDM2/My05N2FjLTViM2Rh/NTdjNTgzNC5qcGc.webp",
-      price: 5.50,
-      priceDisplay: "5.50€/kg",
-      unit: "kg",
-      category: "Fruits"
-    },
-    {
-      id: 10,
-      name: "Oranges",
-      image: "https://photo-cdn2.icons8.com/I7TLiYFq_XLVGlmW8dkN8L0EG4e7q6GvJ8iCGRLXdvw/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvNjA5L2YyY2Uz/NjcyLWYzY2ItNGZm/MC04MzdkLTAyYzIy/N2VkZGU5Ni5qcGc.webp",
-      price: 3.00,
-      priceDisplay: "3.00€/kg",
-      unit: "kg",
-      category: "Fruits"
-    },
-    {
-      id: 11,
-      name: "Poires",
-      image: "https://photo-cdn2.icons8.com/xYJHEyQUF_qZo9MBzzNmzrLp0hOxkBRO5EXyXdZfKbE/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvODI0L2UzYzUx/NmE4LTA0ZTQtNGU1/Ny05N2RhLTQ0YTZj/Y2QyZjhmZC5qcGc.webp",
-      price: 3.40,
-      priceDisplay: "3.40€/kg",
-      unit: "kg",
-      category: "Fruits"
-    },
-    {
-      id: 12,
-      name: "Raisins",
-      image: "https://photo-cdn2.icons8.com/IuU5pVz-ZsxFDJ4t5i_GgfXJwLiAWwmAJa0LS2XrXAQ/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvOTc2L2RkYzIz/NmI3LTdhMjYtNDdh/Ny1iNzE1LTQyMTFl/MDI5OGYwZi5qcGc.webp",
-      price: 4.80,
-      priceDisplay: "4.80€/kg",
-      unit: "kg",
-      category: "Fruits"
-    }
-  ],
-  "Produits laitiers": [
-    {
-      id: 13,
-      name: "Fromage de chèvre",
-      image: "https://photo-cdn2.icons8.com/RvQXmn3v-FY4RZWZQ2ZUgPUbMd1EXCvGd1zRZHqD5JI/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvNTkvNTFjY2I5/MzAtNWYyOS00NTk4/LWIwMTgtYjc3ODJl/NjFmNmQ3LmpwZw.webp",
-      price: 6.50,
-      priceDisplay: "6.50€/pièce",
-      unit: "pièce",
-      category: "Produits laitiers"
-    },
-    {
-      id: 14,
-      name: "Yaourt nature",
-      image: "https://photo-cdn2.icons8.com/4qh7MnTtF0jn0BwcADVo8BxJ1aG_7YqKfmPiNQf8pLo/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvOTQ0LzA0YjVl/YTFhLWY4YzItNDMx/NC05NDQ1LWI3Mjdk/ODI2OTM3My5qcGc.webp",
-      price: 3.20,
-      priceDisplay: "3.20€/lot",
-      unit: "lot",
-      category: "Produits laitiers"
-    },
-    {
-      id: 15,
-      name: "Beurre fermier",
-      image: "https://photo-cdn2.icons8.com/eP_PZ9qLfJlREVVUiZvAWTfY4CRO1CdIFy2PqYpTzEE/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvMzg1LzI0MGE3/MzNiLTU1ZjEtNGUx/OC1iZDhjLWU5OGI5/ZDI5ZmRjZS5qcGc.webp",
-      price: 4.50,
-      priceDisplay: "4.50€/250g",
-      unit: "250g",
-      category: "Produits laitiers"
-    },
-    {
-      id: 16,
-      name: "Crème fraîche",
-      image: "https://photo-cdn2.icons8.com/dJnXfhWm9cBrWl8RrfwJrYzMGxEGqnq7vRg0e7g7Hcg/rs:fit:576:385/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvNTkvYTM5OTVm/M2MtOTY1MC00NWEy/LTgwNTAtYTY1NmE0/MTkzMzU2LmpwZw.webp",
-      price: 3.80,
-      priceDisplay: "3.80€/pot",
-      unit: "pot",
-      category: "Produits laitiers"
-    }
-  ]
-};
 
 export default function ProducerShopScreen() {
   const { t } = useTranslation();
@@ -207,16 +32,29 @@ export default function ProducerShopScreen() {
   const { hasUnreadNotifications } = useNotifications();
   const { isComplete: isProfileComplete, isLoading: isProfileLoading } = useProfileCompletion();
 
+  // Check if we're viewing another producer's shop (restaurateur mode)
+  const isViewMode = params.isViewMode === 'true';
+  const externalProducerKeycloakId = params.producerKeycloakId as string | undefined;
+  const externalProducerName = params.producerName as string | undefined;
+
+  console.log('🏪 [PRODUCER-SHOP] Initialization:', {
+    isViewMode,
+    externalProducerKeycloakId,
+    externalProducerName,
+    currentUserKeycloakId: authState.userInfo?.sub,
+  });
+
   // Récupération des données depuis le backend
   const {
     producerId,
     shelves,
     productsByShelf,
-    allProducts,
     isLoading: isLoadingShopData,
     error: shopDataError,
     refreshData,
-  } = useProducerShopData();
+  } = useProducerShopData({
+    externalProducerKeycloakId: isViewMode ? externalProducerKeycloakId : undefined,
+  });
 
   // Producer profile state
   const [producerProfile, setProducerProfile] = useState({
@@ -228,43 +66,15 @@ export default function ProducerShopScreen() {
 
   // Edit mode state
   const [isEditMode, setIsEditMode] = useState(false);
-  const [products, setProducts] = useState<ProductsData>(mockProducts);
-  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newShelfName, setNewShelfName] = useState('');
+  const [isCreatingShelf, setIsCreatingShelf] = useState(false);
 
-  // Helper function pour convertir ProductResponse en format utilisable par l'UI
-  const convertProductResponseToProduct = (productResponse: ProductResponse): Product => {
-    return {
-      id: productResponse.id,
-      name: productResponse.title,
-      image: productResponse.mainImageUrl || 'https://via.placeholder.com/150',
-      price: Number(productResponse.price),
-      priceDisplay: `${productResponse.price}€/${productResponse.unit.abbreviation || productResponse.unit.name}`,
-      unit: productResponse.unit.abbreviation || productResponse.unit.name,
-      category: productResponse.shelf.name,
-    };
-  };
+  // Shelf editing state
+  const [editingShelfId, setEditingShelfId] = useState<number | null>(null);
+  const [editingShelfName, setEditingShelfName] = useState('');
 
-  // Log les données chargées depuis le backend
-  React.useEffect(() => {
-    if (!isLoadingShopData) {
-      console.log('========================================');
-      console.log('📊 PRODUCER SHOP DATA LOADED:');
-      console.log('  - Producer ID:', producerId);
-      console.log('  - Shelves:', shelves.length);
-      console.log('  - Total Products:', allProducts.length);
-      console.log('  - Products by Shelf:', Object.keys(productsByShelf).length);
-      if (shopDataError) {
-        console.error('  - Error:', shopDataError);
-      }
-      console.log('========================================');
-
-      // Log détaillé des shelves et produits
-      shelves.forEach(shelf => {
-        const shelfProducts = productsByShelf[shelf.id] || [];
-        console.log(`📦 Shelf: ${shelf.name} (${shelfProducts.length} products)`);
-      });
-    }
-  }, [isLoadingShopData, producerId, shelves, allProducts, productsByShelf, shopDataError]);
+  // Track first load to avoid refreshing on initial mount
+  const isFirstLoad = useRef(true);
 
   // Determine if this is the producer's own shop
   const isOwnShop = authState.userInfo?.roles?.[0] === 'Producer';
@@ -309,40 +119,74 @@ export default function ProducerShopScreen() {
   };
 
   // Function to load producer profile data
-  const loadProducerProfile = async () => {
+  const loadProducerProfile = useCallback(async () => {
     try {
-      if (!authState.userInfo?.sub || !isOwnShop) {
+      // Determine which Keycloak ID to use
+      let keycloakIdToLoad: string;
+
+      if (isViewMode && externalProducerKeycloakId) {
+        // We're viewing another producer's shop
+        keycloakIdToLoad = externalProducerKeycloakId;
+        console.log('🔄 [PRODUCER-SHOP] Loading external producer profile:', keycloakIdToLoad);
+      } else if (isOwnShop && authState.isSignedIn && authState.userInfo?.sub) {
+        // We're viewing our own shop
+        keycloakIdToLoad = authState.userInfo.sub;
+        console.log('🔄 [PRODUCER-SHOP] Loading own producer profile:', keycloakIdToLoad);
+      } else {
+        // No valid scenario to load profile
         setIsLoadingProfile(false);
         return;
       }
 
-      const keycloakId = authState.userInfo.sub;
-
       // Use the combined function to get both Keycloak and Account Service data
-      const completeProfile = await getCompleteUserProfile(keycloakId, getKeycloakAdminToken);
+      const completeProfile = await getCompleteUserProfile(keycloakIdToLoad, getKeycloakAdminToken);
 
       // Set producer profile data (Keycloak + Account Service)
       setProducerProfile({
-        displayName: completeProfile.keycloak.displayName || mockProducer.name,
-        responsibleName: completeProfile.keycloak.responsibleName || mockProducer.responsibleName,
-        biography: completeProfile.accountService.biography || mockProducer.description,
+        displayName: completeProfile.keycloak.displayName || externalProducerName || '',
+        responsibleName: completeProfile.keycloak.responsibleName || '',
+        biography: completeProfile.accountService.biography || '',
       });
+
+      console.log('✅ [PRODUCER-SHOP] Producer profile loaded successfully');
     } catch (error) {
-      console.error('Error loading producer profile:', error);
-      // Keep mock data as fallback
+      console.error('❌ [PRODUCER-SHOP] Error loading producer profile:', error);
+      // Keep empty data on error
     } finally {
       setIsLoadingProfile(false);
     }
-  };
+  }, [authState.isSignedIn, authState.userInfo?.sub, isOwnShop, isViewMode, externalProducerKeycloakId, externalProducerName]);
 
   // Load profile data when component mounts or auth state changes
   React.useEffect(() => {
-    if (isOwnShop) {
+    // Load profile if:
+    // 1. Own shop and authenticated, OR
+    // 2. View mode with external producer Keycloak ID
+    if ((isOwnShop && authState.isSignedIn) || (isViewMode && externalProducerKeycloakId)) {
       loadProducerProfile();
     } else {
       setIsLoadingProfile(false);
     }
-  }, [authState.userInfo, isOwnShop]);
+  }, [authState.isSignedIn, authState.userInfo, isOwnShop, isViewMode, externalProducerKeycloakId, loadProducerProfile]);
+
+  // Rafraîchir les données quand on revient sur la page (après ajout de produit par exemple)
+  useFocusEffect(
+    useCallback(() => {
+      console.log('🔄 [PRODUCER-SHOP] useFocusEffect triggered');
+      console.log('🔄 [PRODUCER-SHOP] isFirstLoad:', isFirstLoad.current);
+
+      // Ne pas rafraîchir au premier chargement (déjà fait par useEffect)
+      if (isFirstLoad.current) {
+        console.log('🔄 [PRODUCER-SHOP] First load, skipping refresh');
+        isFirstLoad.current = false;
+        return;
+      }
+
+      // Rafraîchir les shelves et produits seulement quand on revient sur la page
+      console.log('🔄 [PRODUCER-SHOP] Refreshing shop data...');
+      refreshData();
+    }, [refreshData])
+  );
 
   const handleCartPress = () => {
     // Check if user is logged in
@@ -381,6 +225,10 @@ export default function ProducerShopScreen() {
       return;
     }
     setIsEditMode(value);
+    // Annuler l'édition en cours si on désactive le mode Edit
+    if (!value) {
+      handleCancelEditShelf();
+    }
   };
 
   const handleNotificationPress = () => {
@@ -392,26 +240,27 @@ export default function ProducerShopScreen() {
       // Handle product editing
       handleEditProduct(product);
     } else {
+      // Navigate to product detail page (centralisé)
+      console.log('👀 [PRODUCER-SHOP] Viewing product:', product.id);
       router.push({
-        pathname: '../../restaurant/order/product-detail',
+        pathname: '/restaurant/order/product-detail',
         params: {
-          productId: product.id,
-          productName: product.name,
-          productPrice: product.priceDisplay
+          productId: product.id.toString(),
+          fromShop: 'true', // Pour gérer le bouton retour
+          isOwner: isOwnShop ? 'true' : 'false'
         }
       });
     }
   };
 
   const handleEditProduct = (product: any) => {
-    Alert.alert(
-      t('producer.edit_product', 'Edit Product'),
-      `${t('producer.edit_product_message', 'Edit')} ${product.name}`,
-      [
-        { text: t('common.cancel', 'Cancel'), style: 'cancel' },
-        { text: t('producer.edit', 'Edit'), onPress: () => console.log('Edit product:', product.id) }
-      ]
-    );
+    console.log('✏️ [PRODUCER-SHOP] Editing product:', product.id);
+    router.push({
+      pathname: './edit-product',
+      params: {
+        product: JSON.stringify(product),
+      },
+    });
   };
 
   const handleDeleteProduct = (productId: number) => {
@@ -423,53 +272,194 @@ export default function ProducerShopScreen() {
         {
           text: t('producer.delete', 'Delete'),
           style: 'destructive',
-          onPress: () => {
-            // Remove product from category
-            const updatedProducts = { ...products };
-            Object.keys(updatedProducts).forEach(category => {
-              updatedProducts[category] = updatedProducts[category].filter(p => p.id !== productId);
-            });
-            setProducts(updatedProducts);
+          onPress: async () => {
+            try {
+              console.log('🗑️ [DELETE-PRODUCT] Deleting product:', productId);
+              await deleteProduct(productId);
+              console.log('✅ [DELETE-PRODUCT] Product deleted successfully');
+
+              // Rafraîchir les données
+              await refreshData();
+
+              Alert.alert(
+                t('producer.success', 'Success'),
+                t('producer.product_deleted', 'Product deleted successfully!')
+              );
+            } catch (error: any) {
+              console.error('❌ [DELETE-PRODUCT] Delete failed:', error);
+
+              // Gérer le cas 404 (produit déjà supprimé ou inexistant)
+              if (error.message && error.message.includes('404')) {
+                // Le produit n'existe plus, on rafraîchit quand même pour mettre à jour l'affichage
+                await refreshData();
+                Alert.alert(
+                  t('producer.info', 'Information'),
+                  t('producer.product_not_found', 'This product has already been deleted or does not exist.')
+                );
+              } else {
+                Alert.alert(
+                  t('producer.error', 'Error'),
+                  t('producer.product_deletion_failed', 'Failed to delete product. Please try again.')
+                );
+              }
+            }
           }
         }
       ]
     );
   };
 
-  const handleDeleteCategory = (categoryName: string) => {
+  const handleEditShelf = (shelfId: number, currentName: string) => {
+    setEditingShelfId(shelfId);
+    setEditingShelfName(currentName);
+  };
+
+  const handleCancelEditShelf = () => {
+    setEditingShelfId(null);
+    setEditingShelfName('');
+  };
+
+  const handleSaveShelfName = async (shelfId: number) => {
+    console.log('🔵 [EDIT-SHELF] Starting shelf update:', {
+      shelfId,
+      newName: editingShelfName.trim(),
+      producerId,
+    });
+
+    if (!editingShelfName.trim()) {
+      console.log('❌ [EDIT-SHELF] Validation failed: empty name');
+      Alert.alert(
+        t('producer.error', 'Error'),
+        t('producer.shelf_name_required', 'Please enter a shelf name')
+      );
+      return;
+    }
+
+    if (!producerId) {
+      console.log('❌ [EDIT-SHELF] Validation failed: no producerId');
+      Alert.alert(
+        t('producer.error', 'Error'),
+        t('producer.producer_id_missing', 'Producer ID not found')
+      );
+      return;
+    }
+
+    try {
+      console.log('📤 [EDIT-SHELF] Calling updateShelf API...');
+      const result = await updateShelf(shelfId, editingShelfName.trim(), producerId);
+      console.log('✅ [EDIT-SHELF] Update successful:', result);
+
+      // Rafraîchir les données
+      console.log('🔄 [EDIT-SHELF] Refreshing data...');
+      await refreshData();
+
+      // Réinitialiser l'état d'édition
+      setEditingShelfId(null);
+      setEditingShelfName('');
+
+      Alert.alert(
+        t('producer.success', 'Success'),
+        t('producer.shelf_updated', 'Shelf updated successfully!')
+      );
+    } catch (error) {
+      console.error('❌ [EDIT-SHELF] Update failed:', error);
+      console.error('❌ [EDIT-SHELF] Error details:', JSON.stringify(error, null, 2));
+      Alert.alert(
+        t('producer.error', 'Error'),
+        t('producer.shelf_update_failed', 'Failed to update shelf. Please try again.')
+      );
+    }
+  };
+
+  const handleDeleteShelf = async (shelfId: number, shelfName: string) => {
     Alert.alert(
-      t('producer.delete_category', 'Delete Category'),
-      t('producer.delete_category_message', `Are you sure you want to delete the category "${categoryName}"?`),
+      t('producer.delete_shelf', 'Delete Shelf'),
+      t('producer.delete_shelf_message', `Are you sure you want to delete the shelf "${shelfName}"?`),
       [
         { text: t('common.cancel', 'Cancel'), style: 'cancel' },
         {
           text: t('producer.delete', 'Delete'),
           style: 'destructive',
-          onPress: () => {
-            const updatedProducts = { ...products };
-            delete updatedProducts[categoryName];
-            setProducts(updatedProducts);
+          onPress: async () => {
+            try {
+              await deleteShelf(shelfId);
+
+              Alert.alert(
+                t('producer.success', 'Success'),
+                t('producer.shelf_deleted', 'Shelf deleted successfully!')
+              );
+
+              // Rafraîchir les données
+              await refreshData();
+            } catch (_error) {
+              Alert.alert(
+                t('producer.error', 'Error'),
+                t('producer.shelf_deletion_failed', 'Failed to delete shelf. Please try again.')
+              );
+            }
           }
         }
       ]
     );
   };
 
-  const handleAddProduct = (categoryName: string) => {
+  const handleAddProduct = (shelfId: number, shelfName: string) => {
+    if (!producerId) {
+      Alert.alert(
+        t('producer.error', 'Error'),
+        t('producer.producer_id_missing', 'Producer ID not found')
+      );
+      return;
+    }
+
     router.push({
       pathname: '/producer/home/add-product',
       params: {
-        categoryName: categoryName
+        shelfId: shelfId.toString(),
+        shelfName: shelfName,
+        producerId: producerId.toString(),
       }
     });
   };
 
-  const handleAddCategory = () => {
-    if (newCategoryName.trim()) {
-      const updatedProducts = { ...products };
-      updatedProducts[newCategoryName.trim()] = [];
-      setProducts(updatedProducts);
-      setNewCategoryName('');
+  const handleAddShelf = async () => {
+    if (!newShelfName.trim()) {
+      Alert.alert(
+        t('producer.error', 'Error'),
+        t('producer.shelf_name_required', 'Please enter a shelf name')
+      );
+      return;
+    }
+
+    if (!producerId) {
+      Alert.alert(
+        t('producer.error', 'Error'),
+        t('producer.producer_id_missing', 'Producer ID not found')
+      );
+      return;
+    }
+
+    setIsCreatingShelf(true);
+    try {
+      await createShelf(newShelfName.trim(), producerId);
+
+      // Rafraîchir les données pour afficher la nouvelle shelf
+      await refreshData();
+
+      // Réinitialiser le champ
+      setNewShelfName('');
+
+      Alert.alert(
+        t('producer.success', 'Success'),
+        t('producer.shelf_created', 'Shelf created successfully!')
+      );
+    } catch (_error) {
+      Alert.alert(
+        t('producer.error', 'Error'),
+        t('producer.shelf_creation_failed', 'Failed to create shelf. Please try again.')
+      );
+    } finally {
+      setIsCreatingShelf(false);
     }
   };
 
@@ -478,17 +468,24 @@ export default function ProducerShopScreen() {
     <View key={product.id} style={styles.productCard}>
       <TouchableOpacity
         style={styles.productCardContent}
-        onPress={() => handleProductPress(convertProductResponseToProduct(product))}
+        onPress={() => handleProductPress(product)}
       >
         <View style={styles.productImageContainer}>
-          <Image
-            source={{ uri: product.mainImageUrl || 'https://via.placeholder.com/150' }}
-            style={styles.productImage}
-          />
+          {product.mainImageUrl ? (
+            <Image
+              source={{ uri: product.mainImageUrl }}
+              style={styles.productImage}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={styles.productImagePlaceholder}>
+              <Ionicons name="image-outline" size={30} color="#89A083" />
+            </View>
+          )}
         </View>
         <Text style={styles.productName}>{product.title}</Text>
         <Text style={styles.productPrice}>
-          {product.price}€/{product.unit.abbreviation || product.unit.name}
+          {product.price}€/{product.unit.code || product.unit.label}
         </Text>
         {isEditMode && (
           <Text style={styles.stockText}>Stock: {product.title}</Text>
@@ -509,31 +506,68 @@ export default function ProducerShopScreen() {
   // Rendu d'une shelf (rayon) avec ses produits
   const renderShelf = (shelf: ShelfResponse) => {
     const shelfProducts = productsByShelf[shelf.id] || [];
-    const shelfName = shelf.name || shelf.label;
+    const shelfName = shelf.label;
+    const isEditing = editingShelfId === shelf.id;
 
     return (
-      <View key={shelf.id} style={styles.categorySection}>
-        <View style={styles.categoryHeader}>
-          <Text style={styles.categoryTitle}>{shelfName}</Text>
-          <View style={styles.categoryBadge}>
-            <Text style={styles.categoryBadgeText}>{shelfProducts.length}</Text>
-          </View>
+      <View key={shelf.id} style={styles.shelfSection}>
+        <View style={styles.shelfHeader}>
+          {isEditing ? (
+            <View style={styles.editShelfNameContainer}>
+              <TextInput
+                style={styles.editShelfNameInput}
+                value={editingShelfName}
+                onChangeText={setEditingShelfName}
+                placeholder={t('producer.shelf_name', 'Shelf Name')}
+                placeholderTextColor="rgba(74, 68, 89, 0.5)"
+                autoFocus
+              />
+              <TouchableOpacity
+                style={styles.cancelShelfButton}
+                onPress={handleCancelEditShelf}
+              >
+                <Ionicons name="close" size={20} color="#FFFFFF" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.validateShelfButton}
+                onPress={() => handleSaveShelfName(shelf.id)}
+              >
+                <Ionicons name="checkmark" size={20} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <>
+              <Text style={styles.shelfTitle}>{shelfName}</Text>
+              <View style={styles.shelfBadge}>
+                <Text style={styles.shelfBadgeText}>{shelfProducts.length}</Text>
+              </View>
+            </>
+          )}
         </View>
 
-        {isEditMode && isOwnShop && (
+        {isEditMode && isOwnShop && !isEditing && (
           <View style={styles.editActions}>
             <TouchableOpacity
-              style={styles.deleteCategory}
-              onPress={() => handleDeleteCategory(shelfName)}
+              style={styles.editShelfButton}
+              onPress={() => handleEditShelf(shelf.id, shelfName)}
             >
-              <Text style={styles.deleteCategoryText}>
-                {t('producer.delete_category', 'Delete Shelf')}
+              <Text style={styles.editShelfText}>
+                {t('producer.edit_shelf', 'Edit Shelf')}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.deleteShelf}
+              onPress={() => handleDeleteShelf(shelf.id, shelfName)}
+            >
+              <Text style={styles.deleteShelfText}>
+                {t('producer.delete_shelf', 'Delete Shelf')}
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.addProduct}
-              onPress={() => handleAddProduct(shelfName)}
+              onPress={() => handleAddProduct(shelf.id, shelfName)}
             >
               <Text style={styles.addProductText}>
                 {t('producer.add_product', 'Add Product')}
@@ -553,76 +587,28 @@ export default function ProducerShopScreen() {
     );
   };
 
-  // Rendu d'un produit mock (ancienne version, conservée pour compatibilité)
-  const renderProductCard = (product: Product) => (
-    <View key={product.id} style={styles.productCard}>
-      <TouchableOpacity
-        style={styles.productCardContent}
-        onPress={() => handleProductPress(product)}
-      >
-        <View style={styles.productImageContainer}>
-          <Image source={{ uri: product.image }} style={styles.productImage} />
-        </View>
-        <Text style={styles.productName}>{product.name}</Text>
-        <Text style={styles.productPrice}>{product.priceDisplay}</Text>
-        {isEditMode && (
-          <Text style={styles.stockText}>Stock: 10 kg</Text>
-        )}
-      </TouchableOpacity>
 
-      {isEditMode && isOwnShop && (
-        <TouchableOpacity
-          style={styles.deleteProductButton}
-          onPress={() => handleDeleteProduct(product.id)}
-        >
-          <Ionicons name="close-circle" size={20} color="#ff4444" />
-        </TouchableOpacity>
-      )}
-    </View>
-  );
-
-  const renderCategory = (categoryName: string, categoryProducts: Product[]) => (
-    <View key={categoryName} style={styles.categorySection}>
-      <View style={styles.categoryHeader}>
-        <Text style={styles.categoryTitle}>{categoryName}</Text>
-        <View style={styles.categoryBadge}>
-          <Text style={styles.categoryBadgeText}>{categoryProducts.length}</Text>
-        </View>
-      </View>
-
-      {isEditMode && isOwnShop && (
-        <View style={styles.editActions}>
-          <TouchableOpacity
-            style={styles.deleteCategory}
-            onPress={() => handleDeleteCategory(categoryName)}
-          >
-            <Text style={styles.deleteCategoryText}>{t('producer.delete_category', 'Delete Category')}</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.addProduct}
-            onPress={() => handleAddProduct(categoryName)}
-          >
-            <Text style={styles.addProductText}>{t('producer.add_product', 'Add Product')}</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.productsScrollContainer}
-      >
-        {categoryProducts.map(renderProductCard)}
-      </ScrollView>
-    </View>
-  );
 
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>{t('producer.shop.my_shop', 'My Shop')}</Text>
+        {/* Back button for visitors (view mode) */}
+        {isViewMode && (
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="chevron-back" size={24} color="#4A4459" />
+          </TouchableOpacity>
+        )}
+
+        <Text style={styles.title}>
+          {isViewMode
+            ? (externalProducerName || t('producer.shop.producer_shop', 'Boutique'))
+            : t('producer.shop.my_shop', 'My Shop')
+          }
+        </Text>
 
         {isOwnShop && (
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -666,46 +652,60 @@ export default function ProducerShopScreen() {
         )}
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Banner Image */}
-        <Image source={{ uri: mockProducer.bannerImage }} style={styles.bannerImage} />
-
-        {/* Producer Info */}
-        <View style={styles.producerSection}>
-          <Image source={{ uri: mockProducer.profileImage }} style={styles.profileImage} />
-
-          <View style={styles.producerInfo}>
-            <Text style={styles.producerName}>
-              {isLoadingProfile ? mockProducer.name : (producerProfile.displayName || mockProducer.name)}
-            </Text>
-            <Text style={styles.responsibleName}>
-              {isLoadingProfile ? mockProducer.responsibleName : (producerProfile.responsibleName || mockProducer.responsibleName)}
-            </Text>
-          </View>
+      {/* Loading State */}
+      {(isLoadingProfile || isLoadingShopData) ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#89A083" />
+          <Text style={styles.loadingText}>{t('common.loading', 'Chargement...')}</Text>
         </View>
+      ) : (
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          {/* Producer Info */}
+          <View style={styles.producerSection}>
+            {producerProfile.displayName && (
+              <View style={styles.producerInfo}>
+                <Text style={styles.producerName}>
+                  {producerProfile.displayName}
+                </Text>
+                {producerProfile.responsibleName && (
+                  <Text style={styles.responsibleName}>
+                    {producerProfile.responsibleName}
+                  </Text>
+                )}
+              </View>
+            )}
+          </View>
 
-        {/* Description */}
-        <Text style={styles.description}>
-          {isLoadingProfile ? mockProducer.description : (producerProfile.biography || mockProducer.description)}
-        </Text>
+          {/* Description */}
+          {producerProfile.biography ? (
+            <Text style={styles.description}>
+              {producerProfile.biography}
+            </Text>
+          ) : (
+            <Text style={[styles.description, styles.noBiography]}>
+            Pas de biographie
+          </Text>
+        )}
 
-        {/* New Category Section - Edit Mode Only */}
+        {/* New Shelf Section - Edit Mode Only */}
         {isEditMode && isOwnShop && (
-          <View style={styles.newCategorySection}>
-            <Text style={styles.newCategoryTitle}>{t('producer.new_category', 'New Category')}</Text>
-            <View style={styles.newCategoryInput}>
+          <View style={styles.newShelfSection}>
+            <Text style={styles.newShelfTitle}>{t('producer.new_shelf', 'New Shelf')}</Text>
+            <View style={styles.newShelfInput}>
               <TextInput
-                style={styles.categoryInput}
-                placeholder={t('producer.category_name', 'Category Name')}
-                value={newCategoryName}
-                onChangeText={setNewCategoryName}
+                style={styles.shelfInput}
+                placeholder={t('producer.shelf_name', 'Shelf Name')}
+                value={newShelfName}
+                onChangeText={setNewShelfName}
                 placeholderTextColor="rgba(74, 68, 89, 0.5)"
+                editable={!isCreatingShelf}
               />
               <TouchableOpacity
-                style={styles.addCategoryButton}
-                onPress={handleAddCategory}
+                style={[styles.addShelfButton, isCreatingShelf && styles.buttonDisabled]}
+                onPress={handleAddShelf}
+                disabled={isCreatingShelf}
               >
-                <Ionicons name="add" size={20} color="#89A083" />
+                <Ionicons name="add" size={20} color={isCreatingShelf ? "#999" : "#89A083"} />
               </TouchableOpacity>
             </View>
           </View>
@@ -737,20 +737,18 @@ export default function ProducerShopScreen() {
             // Afficher les vraies données du backend
             shelves.map(renderShelf)
           ) : (
-            // Fallback sur les mocks si pas de données
-            <View>
-              <Text style={{ padding: 20, color: '#4A4459', fontSize: 14, textAlign: 'center' }}>
+            // Pas de produits
+            <View style={{ padding: 20, alignItems: 'center' }}>
+              <Text style={{ color: '#4A4459', fontSize: 14, textAlign: 'center' }}>
                 {t('producer.no_products', 'No products yet. Start by adding your first product!')}
               </Text>
-              {Object.entries(products).map(([categoryName, categoryProducts]) =>
-                renderCategory(categoryName, categoryProducts)
-              )}
             </View>
           )}
         </View>
 
-        <View style={{ height: 100 }} />
-      </ScrollView>
+          <View style={{ height: 100 }} />
+        </ScrollView>
+      )}
     </View>
   );
 }
@@ -771,10 +769,18 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     backgroundColor: "#F7F6ED",
   },
+  backButton: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 8,
+  },
   title: {
     fontSize: 20,
     fontWeight: "600",
     color: "#4A4459",
+    flex: 1,
   },
   cartButton: {
     width: 40,
@@ -864,32 +870,50 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 24,
   },
+  noBiography: {
+    color: "#999999",
+    fontStyle: "italic",
+  },
+
+  // Loading state
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 100,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#4A4459',
+    fontWeight: '500',
+  },
 
   // Products section
   productsSection: {
     paddingHorizontal: 24,
   },
-  categorySection: {
+  shelfSection: {
     marginBottom: 32,
   },
-  categoryHeader: {
+  shelfHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 16,
   },
-  categoryTitle: {
+  shelfTitle: {
     fontSize: 20,
     fontWeight: "bold",
     color: "#4A4459",
   },
-  categoryBadge: {
+  shelfBadge: {
     backgroundColor: "#EAE9E1",
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 4,
   },
-  categoryBadgeText: {
+  shelfBadgeText: {
     fontSize: 14,
     color: "#4A4459",
     fontWeight: "500",
@@ -926,11 +950,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 12,
+    overflow: "hidden",
   },
   productImage: {
     width: 60,
     height: 60,
     borderRadius: 30,
+  },
+  productImagePlaceholder: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "#EAE9E1",
+    alignItems: "center",
+    justifyContent: "center",
   },
   productName: {
     fontSize: 14,
@@ -1006,13 +1039,13 @@ const styles = StyleSheet.create({
     gap: 12,
     marginBottom: 12,
   },
-  deleteCategory: {
+  deleteShelf: {
     backgroundColor: "#fcdcdc",
     borderRadius: 16,
     paddingHorizontal: 12,
     paddingVertical: 3,
   },
-  deleteCategoryText: {
+  deleteShelfText: {
     fontSize: 12,
     color: "#660101",
     fontWeight: "500",
@@ -1028,24 +1061,69 @@ const styles = StyleSheet.create({
     color: "#016630",
     fontWeight: "500",
   },
-  newCategorySection: {
+  editShelfButton: {
+    backgroundColor: "#dbeafe",
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 3,
+  },
+  editShelfText: {
+    fontSize: 12,
+    color: "#1e40af",
+    fontWeight: "500",
+  },
+  editShelfNameContainer: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  editShelfNameInput: {
+    flex: 1,
+    height: 36,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#4A4459",
+    borderWidth: 2,
+    borderColor: "#4A90E2",
+  },
+  cancelShelfButton: {
+    width: 36,
+    height: 36,
+    backgroundColor: "#E07A5F",
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  validateShelfButton: {
+    width: 36,
+    height: 36,
+    backgroundColor: "#4A90E2",
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  newShelfSection: {
     backgroundColor: "#EAE9E1",
     borderRadius: 15,
     padding: 16,
     marginHorizontal: 24,
     marginBottom: 16,
   },
-  newCategoryTitle: {
+  newShelfTitle: {
     fontSize: 16,
     fontWeight: "500",
     color: "#4A4459",
     marginBottom: 12,
   },
-  newCategoryInput: {
+  newShelfInput: {
     flexDirection: "row",
     gap: 8,
   },
-  categoryInput: {
+  shelfInput: {
     flex: 1,
     height: 37,
     backgroundColor: "#FFFFFF",
@@ -1054,12 +1132,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#4A4459",
   },
-  addCategoryButton: {
+  addShelfButton: {
     width: 48,
     height: 37,
     backgroundColor: "#FFFFFF",
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
+  },
+  buttonDisabled: {
+    opacity: 0.5,
   },
 });

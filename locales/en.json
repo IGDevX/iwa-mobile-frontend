@@ -95,7 +95,33 @@
     "profile": "Profile",
     "cart": "Cart"
   },
-  
+
+  "search": {
+    "title": "Search Products",
+    "placeholder": "Search products...",
+    "search": "Search",
+    "show_filters": "Show Filters",
+    "hide_filters": "Hide Filters",
+    "clear_filters": "Clear All Filters",
+    "results_count": "{{count}} results",
+    "no_results": "No products found",
+    "try_different": "Try adjusting your search or filters",
+    "load_more": "Load More",
+    "error": "Failed to search products. Please try again.",
+    "filter": {
+      "title": "Filters",
+      "category": "Category",
+      "fresh": "Freshness",
+      "price": "Price Range",
+      "certifications": "Certifications",
+      "min_price": "From",
+      "max_price": "To",
+      "all": "All",
+      "fresh_only": "Fresh",
+      "not_fresh": "Not Fresh"
+    }
+  },
+
   "profile": {
     "title": "My Profile",
     "loading": "Loading profile...",
@@ -257,11 +283,20 @@
     "characteristics": "Characteristics",
     "producer_section": "Producer",
     "view_shop": "View shop",
+    "login_prompt_prefix": "To add products to cart and browse producer shops, please",
+    "login_prompt_link": "sign in",
     "stock_available": "Stock available:",
     "agriculture_bio": "Certified organic farming",
     "no_pesticides": "Grown without pesticides",
     "heritage_variety": "Heritage variety",
     "daily_harvest": "Daily harvest",
+    "fresh": "Fresh",
+    "category": "Category",
+    "shelf": "Shelf",
+    "certifications": "Certifications",
+    "created_at": "Created",
+    "updated_at": "Updated",
+    "not_found": "Product not found",
     "add_product_title": "Add Product",
     "product_name": "Product Name",
     "product_name_placeholder": "Enter product name",
@@ -335,6 +370,8 @@
     "pay_now": "Pay Now",
     "order_placed": "Order Placed",
     "order_accepted": "Order Accepted",
+    "order_refused": "Order Refused",
+    "awaiting_producer": "Awaiting producer decision",
     "order_placed_on": "Order placed on",
     "order_accepted_on": "Order accepted on",
     "delivery_date_time": "Delivery date/time",
@@ -406,19 +443,23 @@
     "terms_info": "Terms of service information will be displayed here.",
     "help_info": "Contact support at support@yourapp.com or visit our help center."
   },
-  
   "common": {
+    "loading": "Loading...",
     "error": "Error",
     "ok": "OK",
     "cancel": "Cancel",
     "done": "Done",
     "delete": "Delete",
-    "success": "Success"
+    "success": "Success",
+    "apply": "Apply",
+    "go_back": "Go Back",
+    "retry": "Retry"
   },
 
   "producer": {
     "shop": {
       "my_shop": "My Shop",
+      "producer_shop": "Shop",
       "edit_mode": "Edit mode",
       "add_new_category": "Add new category",
       "category_name": "Category name",
@@ -426,6 +467,9 @@
       "delete_category": "Delete category",
       "add_product": "Add product"
     },
+    "new_shelf": "New Shelf",
+    "shelf_name": "Shelf Name",
+    "no_products": "No products yet. Start by adding your first product!",
     "cannot_add_own_product": "You cannot add your own products to cart.",
     "delivery": "Delivery"
   },

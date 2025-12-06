@@ -133,9 +133,24 @@ export async function getMyProfile(): Promise<UserProfileResponse> {
 }
 
 /**
- * Get producer's public profile
+ * Get producer's public profile by producer account ID
+ * Use this when you have the producer account ID (e.g., from a product's producerId)
  *
- * @param id - Producer ID
+ * @param producerId - Producer account ID (not user ID)
+ * @returns Public producer profile
+ */
+export async function getProducerById(
+    producerId: number
+): Promise<ProducerPublicProfileResponse> {
+    return accountGet<ProducerPublicProfileResponse>(
+        ACCOUNT_ENDPOINTS.GET_PRODUCER_BY_ID(producerId)
+    );
+}
+
+/**
+ * Get producer's public profile by user/keycloak ID
+ *
+ * @param id - User/Keycloak ID
  * @returns Public producer profile
  */
 export async function getProducerPublicProfile(
@@ -185,6 +200,40 @@ export async function getUserByKeycloakId(
         console.error('[getUserByKeycloakId] Failed:', error);
         if (error instanceof ApiError) {
             console.error('[getUserByKeycloakId] API Error Details:', {
+                status: error.statusCode,
+                message: error.message,
+                response: error.response
+            });
+        }
+        throw error;
+    }
+}
+
+/**
+ * Get Keycloak ID from Account Service User ID
+ *
+ * IMPORTANT: Utilise le nouvel endpoint /internal/user/{userId}/keycloak-id
+ * pour obtenir le Keycloak ID à partir d'un Account Service User ID.
+ * Ceci permet ensuite d'utiliser getCompleteUserProfile() pour récupérer
+ * toutes les informations du producteur.
+ *
+ * @param userId - Account Service User ID (ex: producerId d'un produit)
+ * @returns Keycloak ID string
+ * @throws ApiError if the request fails
+ */
+export async function getKeycloakIdByUserId(
+    userId: number
+): Promise<string> {
+    const endpoint = ACCOUNT_ENDPOINTS.GET_KEYCLOAK_ID_BY_USER_ID(userId);
+
+    try {
+        const response = await accountGet<{ userId: number; keycloakId: string }>(endpoint);
+        console.log(`✅ [getKeycloakIdByUserId] Keycloak ID retrieved for userId ${userId}:`, response.keycloakId);
+        return response.keycloakId;
+    } catch (error) {
+        console.error(`❌ [getKeycloakIdByUserId] Failed to get Keycloak ID for userId ${userId}:`, error);
+        if (error instanceof ApiError) {
+            console.error('[getKeycloakIdByUserId] API Error Details:', {
                 status: error.statusCode,
                 message: error.message,
                 response: error.response

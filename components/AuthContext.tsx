@@ -15,6 +15,7 @@ interface UserInfo {
 interface AuthState {
   isSignedIn: boolean
   accessToken: string | null
+  refreshToken: string | null
   idToken: string | null
   userInfo: UserInfo | null
 }
@@ -38,6 +39,7 @@ interface AuthAction {
 const initialState: AuthState = {
   isSignedIn: false,
   accessToken: null,
+  refreshToken: null,
   idToken: null,
   userInfo: null,
 }
@@ -116,6 +118,7 @@ const AuthContext = createContext<AuthContextType>({
           ...previousState,
           isSignedIn: true,
           accessToken: action.payload.access_token,
+          refreshToken: action.payload.refresh_token,
           idToken: action.payload.id_token,
         }
       case 'USER_INFO':
@@ -135,6 +138,7 @@ const AuthContext = createContext<AuthContextType>({
           ...previousState,
           isSignedIn: true,
           accessToken: action.payload.accessToken,
+          refreshToken: action.payload.refreshToken,
           idToken: action.payload.idToken,
           userInfo: action.payload.userInfo,
         }
@@ -145,25 +149,30 @@ const AuthContext = createContext<AuthContextType>({
     }
   }, initialState)
 
-  // Save authentication data to AsyncStorage
-  const saveAuthData = async (accessToken: string, idToken: string, userInfo: UserInfo) => {
+  // Save authentication data using TokenManager
+  const saveAuthData = async (accessToken: string, refreshToken: string, idToken: string, userInfo: UserInfo) => {
     try {
-      await AsyncStorage.multiSet([
-        [AUTH_TOKEN_KEY, accessToken],
-        [AUTH_ID_TOKEN_KEY, idToken],
-        [AUTH_USER_INFO_KEY, JSON.stringify(userInfo)]
-      ])
+      const { TokenManager } = await import('../services/auth/tokenManager');
+      await TokenManager.saveTokens({
+        accessToken,
+        refreshToken,
+        idToken,
+      });
+      // Save userInfo separately in AsyncStorage for quick access
+      await AsyncStorage.setItem(AUTH_USER_INFO_KEY, JSON.stringify(userInfo));
     } catch (error) {
-      console.error('Error saving auth data:', error)
+      console.error('Error saving auth data:', error);
     }
   }
 
-  // Clear authentication data from AsyncStorage
+  // Clear authentication data using TokenManager
   const clearAuthData = async () => {
     try {
-      await AsyncStorage.multiRemove([AUTH_TOKEN_KEY, AUTH_ID_TOKEN_KEY, AUTH_USER_INFO_KEY])
+      const { TokenManager } = await import('../services/auth/tokenManager');
+      await TokenManager.clearTokens();
+      await AsyncStorage.removeItem(AUTH_USER_INFO_KEY);
     } catch (error) {
-      console.error('Error clearing auth data:', error)
+      console.error('Error clearing auth data:', error);
     }
   }
 
@@ -171,28 +180,29 @@ const AuthContext = createContext<AuthContextType>({
   useEffect(() => {
     const restoreAuthState = async () => {
       try {
-        const [[, accessToken], [, idToken], [, userInfoString]] = await AsyncStorage.multiGet([
-          AUTH_TOKEN_KEY,
-          AUTH_ID_TOKEN_KEY,
-          AUTH_USER_INFO_KEY
-        ])
+        const { TokenManager } = await import('../services/auth/tokenManager');
 
-        if (accessToken && idToken && userInfoString) {
-          const userInfo = JSON.parse(userInfoString)
+        const accessToken = await TokenManager.getAccessToken();
+        const refreshToken = await TokenManager.getRefreshToken();
+        const idToken = await TokenManager.getIdToken();
+        const userInfoString = await AsyncStorage.getItem(AUTH_USER_INFO_KEY);
+
+        if (accessToken && userInfoString) {
+          const userInfo = JSON.parse(userInfoString);
           dispatch({
             type: 'RESTORE_TOKEN',
-            payload: { accessToken, idToken, userInfo }
-          })
+            payload: { accessToken, refreshToken, idToken, userInfo }
+          });
         }
       } catch (error) {
-        console.error('Error restoring auth state:', error)
+        console.error('Error restoring auth state:', error);
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
+    };
 
-    restoreAuthState()
-  }, [])
+    restoreAuthState();
+  }, []);
 
   useEffect(() => {
     const getToken = async ({ code, codeVerifier, redirectUri }: { 
@@ -229,6 +239,16 @@ const AuthContext = createContext<AuthContextType>({
         if (response.ok) {
           const payload = await response.json()
           dispatch({ type: 'SIGN_IN', payload })
+
+          // Sauvegarder les tokens avec TokenManager
+          if (payload.access_token && payload.refresh_token) {
+            const { TokenManager } = await import('../services/auth/tokenManager');
+            await TokenManager.saveTokens({
+              accessToken: payload.access_token,
+              refreshToken: payload.refresh_token,
+              idToken: payload.id_token || undefined,
+            });
+          }
         }
       } catch (e) {
         console.warn(e)
@@ -275,10 +295,10 @@ const AuthContext = createContext<AuthContextType>({
 
   // Save auth data when user info is complete
   useEffect(() => {
-    if (authState.isSignedIn && authState.accessToken && authState.idToken && authState.userInfo) {
-      saveAuthData(authState.accessToken, authState.idToken, authState.userInfo)
+    if (authState.isSignedIn && authState.accessToken && authState.refreshToken && authState.idToken && authState.userInfo) {
+      saveAuthData(authState.accessToken, authState.refreshToken, authState.idToken, authState.userInfo)
     }
-  }, [authState.isSignedIn, authState.accessToken, authState.idToken, authState.userInfo])
+  }, [authState.isSignedIn, authState.accessToken, authState.refreshToken, authState.idToken, authState.userInfo])
 
   const authContext = useMemo(
     () => ({
@@ -298,7 +318,7 @@ const AuthContext = createContext<AuthContextType>({
           roles: userInfo.roles || [],
           sub: userInfo.sub
         };
-        saveAuthData(tokens.access_token, tokens.id_token, processedUserInfo);
+        saveAuthData(tokens.access_token, tokens.refresh_token, tokens.id_token, processedUserInfo);
       },
       signUpWithCredentials: async (email: string, password: string, role: string) => {
         try {
@@ -475,18 +495,11 @@ const AuthContext = createContext<AuthContextType>({
 
           // Step 6: Create base user in Account Service
           // L'endpoint /internal va créer le user de base automatiquement lors de la première connexion
-          // Pas besoin de le faire maintenant, on le fera après la vérification de l'email
+          // On ne peut pas l'appeler maintenant car l'utilisateur n'est pas encore connecté (pas de token JWT)
+          // Le user sera créé automatiquement à la première connexion
           if (userId) {
-            try {
-              // Créer le user de base via /internal (auto-création idempotente)
-              const { getUserByKeycloakId } = await import('../services/account');
-              const accountResult = await getUserByKeycloakId(userId);
-              console.log('Base user profile created in account service, ID:', accountResult.id);
-            } catch (accountError) {
-              // Don't fail the registration if account service fails
-              // Le user sera créé automatiquement à la prochaine connexion
-              console.warn('Failed to create base user profile (will be auto-created on login):', accountError);
-            }
+            console.log('User created in Keycloak with ID:', userId);
+            console.log('Base user profile will be auto-created on first login');
           }
 
           return {

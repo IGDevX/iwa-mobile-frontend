@@ -5,7 +5,7 @@
  * Récupère les shelves et les produits organisés par shelf
  */
 
-import { useContext, useEffect, useState } from 'react';
+import { useCallback, useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../components/AuthContext';
 import { getUserByKeycloakId } from '../services/account';
 import {
@@ -29,7 +29,11 @@ interface UseProducerShopDataReturn {
   refreshData: () => Promise<void>;
 }
 
-export function useProducerShopData(): UseProducerShopDataReturn {
+interface UseProducerShopDataParams {
+  externalProducerKeycloakId?: string; // Optional: Keycloak ID of another producer to view their shop
+}
+
+export function useProducerShopData(params?: UseProducerShopDataParams): UseProducerShopDataReturn {
   const { state: authState } = useContext(AuthContext);
   const [producerId, setProducerId] = useState<number | null>(null);
   const [shelves, setShelves] = useState<ShelfResponse[]>([]);
@@ -38,55 +42,39 @@ export function useProducerShopData(): UseProducerShopDataReturn {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fonction pour récupérer les données
-  const fetchData = async () => {
+  // Fonction pour récupérer les données (mémorisée avec useCallback)
+  const fetchData = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
 
       // 1. Récupérer le Producer ID depuis le Keycloak ID
-      const keycloakId = authState.userInfo?.sub;
+      // Use external producer Keycloak ID if provided, otherwise use current user's
+      const keycloakId = params?.externalProducerKeycloakId || authState.userInfo?.sub;
       if (!keycloakId) {
-        throw new Error('User not authenticated');
+        throw new Error('User not authenticated or no producer ID provided');
       }
 
-      console.log('🔄 [PRODUCER SHOP] Fetching producer ID for keycloakId:', keycloakId);
+      console.log('🔄 [useProducerShopData] Fetching data for Keycloak ID:', keycloakId);
+      console.log('🔄 [useProducerShopData] Is external producer:', !!params?.externalProducerKeycloakId);
+
       const profile = await getUserByKeycloakId(keycloakId);
       const fetchedProducerId = profile.id;
       setProducerId(fetchedProducerId);
-      console.log('✅ [PRODUCER SHOP] Producer ID:', fetchedProducerId);
+
+      console.log('✅ [useProducerShopData] Producer ID retrieved:', fetchedProducerId);
 
       // 2. Récupérer les shelves du producteur
-      console.log('🔄 [PRODUCER SHOP] Fetching shelves for producer:', fetchedProducerId);
       const shelvesData = await getShelvesByProducer(fetchedProducerId);
 
-      // Normaliser les shelves pour ajouter name depuis label si nécessaire
-      const normalizedShelves = shelvesData.map(shelf => ({
-        ...shelf,
-        name: shelf.name || shelf.label, // Utiliser label si name n'existe pas
-      }));
-
-      // Trier les shelves par displayOrder si disponible, sinon par id
-      const sortedShelves = normalizedShelves.sort((a, b) =>
-        (a.displayOrder || a.id) - (b.displayOrder || b.id)
-      );
+      // Trier les shelves par id (displayOrder n'existe pas dans ShelfResponse)
+      const sortedShelves = shelvesData.sort((a, b) => a.id - b.id);
       setShelves(sortedShelves);
-      console.log('✅ [PRODUCER SHOP] Shelves loaded:', sortedShelves.length);
 
       // 3. Récupérer tous les produits du producteur
-      console.log('🔄 [PRODUCER SHOP] Fetching products for producer:', fetchedProducerId);
-      console.log('📍 [PRODUCER SHOP] Using endpoint:', `GET /shop/products/producer/${fetchedProducerId}`);
       const productsData = await getProductsByProducer(fetchedProducerId);
-      setAllProducts(productsData);
-      console.log('✅ [PRODUCER SHOP] Products loaded:', productsData.length);
 
-      if (productsData.length > 0) {
-        console.log('📦 [PRODUCER SHOP] Sample product:', {
-          id: productsData[0].id,
-          title: productsData[0].title,
-          shelf: productsData[0].shelf.label,
-        });
-      }
+      setAllProducts(productsData);
 
       // 4. Organiser les produits par shelf
       const organizedProducts: ProductsByShelf = {};
@@ -102,33 +90,33 @@ export function useProducerShopData(): UseProducerShopDataReturn {
         if (organizedProducts[shelfId]) {
           organizedProducts[shelfId].push(product);
         } else {
-          // Si le shelf n'existe pas dans notre liste, on le crée
           organizedProducts[shelfId] = [product];
         }
       });
 
+
       setProductsByShelf(organizedProducts);
-      console.log('✅ [PRODUCER SHOP] Products organized by shelf');
 
     } catch (err) {
-      console.error('❌ [PRODUCER SHOP] Error fetching data:', err);
       setError(err instanceof Error ? err.message : 'Failed to load shop data');
+      console.error('❌ [useProducerShopData] Error:', err);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [authState.userInfo?.sub, params?.externalProducerKeycloakId]); // Dépendances stables
+
+  // Fonction pour rafraîchir les données (utilise fetchData qui est stable)
+  const refreshData = useCallback(async () => {
+    await fetchData();
+  }, [fetchData]);
 
   // Charger les données au montage
   useEffect(() => {
     if (authState.isSignedIn && authState.userInfo?.sub) {
       fetchData();
     }
-  }, [authState.isSignedIn, authState.userInfo?.sub]);
+  }, [authState.isSignedIn, authState.userInfo?.sub, fetchData]);
 
-  // Fonction pour rafraîchir les données
-  const refreshData = async () => {
-    await fetchData();
-  };
 
   return {
     producerId,

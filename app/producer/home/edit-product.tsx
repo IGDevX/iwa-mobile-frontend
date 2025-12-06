@@ -1,7 +1,7 @@
 /**
- * Add Product Screen
+ * Edit Product Screen
  *
- * Page pour ajouter un nouveau produit avec possibilité d'upload d'image
+ * Page pour modifier un produit existant avec possibilité de changer l'image
  */
 
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -24,7 +24,7 @@ import {
 import { AuthContext } from '../../../components/AuthContext';
 import { uploadProductImage } from '../../../services/image';
 import {
-  createProduct,
+  updateProduct,
   getAllCategories,
   getAllCertifications,
   getAllCurrencies,
@@ -35,21 +35,26 @@ import {
   type UnitResponse,
 } from '../../../services/shop';
 
-export default function AddProductScreen() {
+export default function EditProductScreen() {
   const { t } = useTranslation();
   const params = useLocalSearchParams();
   const { state: authState } = useContext(AuthContext);
 
-  // Form state
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [price, setPrice] = useState('');
-  const [selectedCurrencyId, setSelectedCurrencyId] = useState<number | null>(null);
-  const [selectedUnitId, setSelectedUnitId] = useState<number | null>(null);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
-  const [selectedCertifications, setSelectedCertifications] = useState<number[]>([]);
-  const [isFresh, setIsFresh] = useState(false);
-  const [imageUri, setImageUri] = useState<string | null>(null);
+  // Parse product data from params
+  const productData = params.product ? JSON.parse(params.product as string) : null;
+
+  // Form state - Pré-remplir avec les données existantes
+  const [title, setTitle] = useState(productData?.title || '');
+  const [description, setDescription] = useState(productData?.description || '');
+  const [price, setPrice] = useState(productData?.price?.toString() || '');
+  const [selectedCurrencyId, setSelectedCurrencyId] = useState<number | null>(productData?.currency?.id || null);
+  const [selectedUnitId, setSelectedUnitId] = useState<number | null>(productData?.unit?.id || null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(productData?.category?.id || null);
+  const [selectedCertifications, setSelectedCertifications] = useState<number[]>(
+    productData?.certifications?.map((c: any) => c.id) || []
+  );
+  const [isFresh, setIsFresh] = useState(productData?.isFresh || false);
+  const [imageUri, setImageUri] = useState<string | null>(productData?.mainImageUrl || null);
   const [imageFile, setImageFile] = useState<{ uri: string; name: string; type: string } | null>(null);
 
   // Reference data
@@ -58,16 +63,12 @@ export default function AddProductScreen() {
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [certifications, setCertifications] = useState<ProductCertificationResponse[]>([]);
 
-  // Shelf ID récupéré depuis les params (shelf où on a cliqué "Add Product")
-  const [shelfId, setShelfId] = useState<number | null>(null);
-  const [shelfName, setShelfName] = useState<string>('');
+  // Shelf info (read-only depuis product data)
+  const [shelfName] = useState<string>(productData?.shelf?.label || '');
 
   // Loading states
   const [isLoadingData, setIsLoadingData] = useState(true);
-  const [isCreating, setIsCreating] = useState(false);
-
-  // Producer ID (from AuthContext or passed via params)
-  const [producerId, setProducerId] = useState<number | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   // Dropdown expansion states
   const [expandCurrency, setExpandCurrency] = useState(false);
@@ -94,14 +95,6 @@ export default function AddProductScreen() {
       setUnits(unitsData);
       setCategories(categoriesData);
       setCertifications(certificationsData);
-
-      // Set default Euro
-      if (currenciesData.length > 0) {
-        const euro = currenciesData.find(c => c.code === 'EUR');
-        setSelectedCurrencyId(euro?.id || currenciesData[0].id);
-      }
-
-
     } catch (error) {
       Alert.alert(
         t('common.error', 'Error'),
@@ -111,23 +104,6 @@ export default function AddProductScreen() {
       setIsLoadingData(false);
     }
   }
-
-  // Get shelf ID and producer ID from params
-  useEffect(() => {
-    const shelfIdParam = params.shelfId as string;
-    const shelfNameParam = params.shelfName as string;
-    const producerIdParam = params.producerId as string;
-
-    if (shelfIdParam) {
-      setShelfId(parseInt(shelfIdParam));
-    }
-    if (shelfNameParam) {
-      setShelfName(shelfNameParam);
-    }
-    if (producerIdParam) {
-      setProducerId(parseInt(producerIdParam));
-    }
-  }, [params]);
 
   // Pick image from gallery
   async function handlePickImage() {
@@ -198,81 +174,82 @@ export default function AddProductScreen() {
       return false;
     }
 
-    if (!shelfId) {
-      Alert.alert(t('common.error', 'Error'), t('producer.shelf_required', 'Shelf ID is missing'));
-      return false;
-    }
-
     if (!selectedCategoryId) {
       Alert.alert(t('common.error', 'Error'), t('producer.category_required', 'Please select a category'));
-      return false;
-    }
-
-    if (!producerId) {
-      Alert.alert(t('common.error', 'Error'), t('producer.producer_id_missing', 'Producer ID not found'));
       return false;
     }
 
     return true;
   }
 
-  // Handle product creation
-  async function handleCreateProduct() {
+  // Handle product update
+  async function handleUpdateProduct() {
     if (!validateForm()) return;
 
-    setIsCreating(true);
+    setIsUpdating(true);
 
     try {
-      let mainImageId: string | undefined;
-      let mainImageUrl: string | undefined;
+      let mainImageId: string | undefined = productData?.mainImageId;
+      let mainImageUrl: string | undefined = productData?.mainImageUrl;
 
-      // Step 1: Upload image if selected
-      if (imageFile && producerId) {
+      // Step 1: Upload new image if selected
+      if (imageFile && productData?.id) {
         try {
-          console.log('📸 [ADD-PRODUCT] Uploading image...');
+          console.log('📸 [EDIT-PRODUCT] Uploading new image...');
+          console.log('📸 [EDIT-PRODUCT] Product ID:', productData.id);
+          console.log('📸 [EDIT-PRODUCT] User ID:', authState.userInfo?.sub);
+
           const uploadResponse = await uploadProductImage(
             imageFile,
-            'temp-product-id', // Temporary ID, sera remplacé côté backend
+            productData.id.toString(),
             authState.userInfo?.sub || 'unknown'
           );
 
-          console.log('📸 [ADD-PRODUCT] Upload response:', uploadResponse);
+          console.log('✅ [EDIT-PRODUCT] Upload successful:', uploadResponse);
+          console.log('📸 [EDIT-PRODUCT] Image data extracted:', {
+            imageId: uploadResponse.imageId,
+            imageUrl: uploadResponse.url
+          });
 
           mainImageId = uploadResponse.imageId;
           mainImageUrl = uploadResponse.url;
-
-          console.log('📸 [ADD-PRODUCT] Image data extracted:', {
-            mainImageId,
-            mainImageUrl
-          });
         } catch (uploadError) {
-          console.error('❌ [ADD-PRODUCT] Image upload error:', uploadError);
+          console.error('❌ [EDIT-PRODUCT] Image upload error:', uploadError);
           Alert.alert(
             t('producer.warning', 'Warning'),
-            t('producer.image_upload_failed', 'Failed to upload image, but product will be created without image')
+            t('producer.image_upload_failed', 'Failed to upload image, product will be updated without new image')
           );
         }
+      } else if (!imageFile) {
+        console.log('ℹ️ [EDIT-PRODUCT] No new image selected, keeping existing image');
       }
 
-      // Step 2: Create product
-      const productData = {
+      // Step 2: Update product
+      const updateData = {
         title: title.trim(),
         description: description.trim() || undefined,
         price: parseFloat(price),
         currencyId: selectedCurrencyId!,
         unitId: selectedUnitId!,
-        shelfId: shelfId!,
+        shelfId: productData?.shelf?.id,
         categoryId: selectedCategoryId!,
         certificationIds: selectedCertifications.length > 0 ? selectedCertifications : undefined,
         isFresh,
         mainImageId,
         mainImageUrl,
-        producerId: producerId!,
+        producerId: productData?.producerId,
       };
 
-      console.log('📦 [ADD-PRODUCT] Creating product with data:', JSON.stringify(productData, null, 2));
+      console.log('📦 [EDIT-PRODUCT] Updating product with data:');
+      console.log('  - Product ID:', productData.id);
+      console.log('  - Title:', updateData.title);
+      console.log('  - mainImageId:', updateData.mainImageId);
+      console.log('  - mainImageUrl:', updateData.mainImageUrl);
+      console.log('  - Full data:', JSON.stringify(updateData, null, 2));
 
-      await createProduct(productData);
+      await updateProduct(productData.id, updateData);
+
+      console.log('✅ [EDIT-PRODUCT] Product updated successfully');
 
       // Naviguer en arrière immédiatement
       router.back();
@@ -281,16 +258,16 @@ export default function AddProductScreen() {
       setTimeout(() => {
         Alert.alert(
           t('producer.success', 'Success'),
-          t('producer.product_created', 'Product created successfully!')
+          t('producer.product_updated', 'Product updated successfully!')
         );
       }, 300);
     } catch (error) {
       Alert.alert(
         t('common.error', 'Error'),
-        t('producer.product_creation_failed', 'Failed to create product. Please try again.')
+        t('producer.product_update_failed', 'Failed to update product. Please try again.')
       );
     } finally {
-      setIsCreating(false);
+      setIsUpdating(false);
     }
   }
 
@@ -310,7 +287,7 @@ export default function AddProductScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#4A4459" />
         </TouchableOpacity>
-        <Text style={styles.title}>{t('producer.add_product', 'Add Product')}</Text>
+        <Text style={styles.title}>{t('producer.edit_product', 'Edit Product')}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -458,7 +435,7 @@ export default function AddProductScreen() {
             )}
           </View>
 
-          {/* Shelf (read-only, passed from previous screen) */}
+          {/* Shelf (read-only, depuis product data) */}
           <Text style={styles.label}>{t('producer.shelf', 'Shelf')} *</Text>
           <View style={styles.readOnlyField}>
             <Text style={styles.readOnlyFieldText}>{shelfName || t('producer.no_shelf', 'No shelf selected')}</Text>
@@ -542,16 +519,16 @@ export default function AddProductScreen() {
           </View>
         </View>
 
-        {/* Create Button */}
+        {/* Update Button */}
         <TouchableOpacity
-          style={[styles.createButton, isCreating && styles.createButtonDisabled]}
-          onPress={handleCreateProduct}
-          disabled={isCreating}
+          style={[styles.createButton, isUpdating && styles.createButtonDisabled]}
+          onPress={handleUpdateProduct}
+          disabled={isUpdating}
         >
-          {isCreating ? (
+          {isUpdating ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.createButtonText}>{t('producer.create_product', 'Create Product')}</Text>
+            <Text style={styles.createButtonText}>{t('producer.update_product', 'Update Product')}</Text>
           )}
         </TouchableOpacity>
 

@@ -70,6 +70,9 @@ export interface UserProfileResponse {
   professions?: Profession[];
   serviceType?: string;
   cuisineType?: string;
+  stripeAccountId: string,
+  stripeAccountStatus: string,
+  stripeOnboardingComplete: boolean,
   hygieneCertifications?: string;
   awards?: string;
   createdAt?: string;

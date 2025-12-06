@@ -17,7 +17,6 @@ import {
     type RestaurantProfileRequest,
     type UserProfileResponse,
 } from '../services/account';
-import { setTokenProvider } from '../services/shared/httpClient';
 import { getPendingNotificationCount, retryPendingNotifications } from '../services/shared/retryQueue';
 
 export function useAccountService() {
@@ -25,12 +24,6 @@ export function useAccountService() {
   const [pendingCount, setPendingCount] = useState(0);
   const [isRetrying, setIsRetrying] = useState(false);
 
-  // Initialize token provider when auth state changes
-  useEffect(() => {
-    setTokenProvider(async () => {
-      return state.accessToken;
-    });
-  }, [state.accessToken]);
 
   // Retry pending notifications on mount and when coming online
   useEffect(() => {
