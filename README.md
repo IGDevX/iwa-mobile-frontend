@@ -31,27 +31,3 @@ Restaurant Owner :
    username : pourungen@gmail.com
    pwd : test
 
-## Git
-
-1. Initiate and Update to pull latest submodule version (DO THIS ONLY THE FIRST TIME)
-   ```bash
-   git submodule init
-   git submodule update
-   ```
-
-2. Move to needed submodule folder (-b : create new branch if needed)
-   ```bash
-   cd <branch name>
-   git checkout -b <branch name>
-   ```
-
-3. Add and Commit your modification
-   ```bash
-   git add .
-   git commit -m "<type>: <description>" 
-   ```
-
-4. Push your modifications
-   ```bash
-   git push --set-upstream origin frontend-expo-setup
-   ```
