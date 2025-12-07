@@ -31,7 +31,7 @@ export class TokenManager {
   private static readonly ID_TOKEN_KEY = 'id_token';
   private static readonly USER_ID_KEY = 'user_id';
 
-  private static readonly KEYCLOAK_URL = process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG || '';
+  private static readonly KEYCLOAK_URL = process.env.EXPO_PUBLIC_KEYCLOAK_URL || '';
   private static readonly CLIENT_ID = process.env.EXPO_PUBLIC_KEYCLOAK_CLIENT_ID || '';
   private static readonly REFRESH_THRESHOLD = 30; // Refresh 30 secondes avant expiration
 
@@ -257,4 +257,3 @@ export class TokenManager {
     return this.decodeToken(token);
   }
 }
-

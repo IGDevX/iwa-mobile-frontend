@@ -521,7 +521,7 @@ export async function getCompleteUserProfile(
         }
 
         const targetRealm = process.env.EXPO_PUBLIC_KEYCLOAK_REALM || 'marche-conclu';
-        const keycloakUrl = `${process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG}/admin/realms/${targetRealm}/users/${keycloakId}`;
+        const keycloakUrl = `${process.env.EXPO_PUBLIC_KEYCLOAK_BASE_URL}/admin/realms/${targetRealm}/users/${keycloakId}`;
 
         // Create abort controller for timeout
         const controller = new AbortController();
@@ -610,7 +610,7 @@ export async function updateCompleteUserProfile(
 
         // Get current user data to preserve existing attributes
         const getCurrentUserResponse = await fetch(
-            `${process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG}/admin/realms/${targetRealm}/users/${keycloakId}`,
+            `${process.env.EXPO_PUBLIC_KEYCLOAK_BASE_URL}/admin/realms/${targetRealm}/users/${keycloakId}`,
             {
                 headers: {
                     'Authorization': `Bearer ${adminToken}`,
@@ -639,7 +639,7 @@ export async function updateCompleteUserProfile(
 
         // Update Keycloak user
         const updateKeycloakResponse = await fetch(
-            `${process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG}/admin/realms/${targetRealm}/users/${keycloakId}`,
+            `${process.env.EXPO_PUBLIC_KEYCLOAK_BASE_URL}/admin/realms/${targetRealm}/users/${keycloakId}`,
             {
                 method: 'PUT',
                 headers: {

@@ -61,12 +61,14 @@ const AuthContext = createContext<AuthContextType>({
 })
 
 // Helper function to get Keycloak admin token
-  const getKeycloakAdminToken = async (): Promise<string | null> => {
-    try {
-      const adminUsername = process.env.EXPO_PUBLIC_KEYCLOAK_ADMIN_USERNAME || 'admin';
-      const adminPassword = process.env.EXPO_PUBLIC_KEYCLOAK_ADMIN_PASSWORD || 'admin';
-      const adminRealm = process.env.EXPO_PUBLIC_KEYCLOAK_ADMIN_REALM || 'master';
-      const baseUrl = process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG;    const formData = new URLSearchParams();
+const getKeycloakAdminToken = async (): Promise<string | null> => {
+  try {
+    const adminUsername = process.env.EXPO_PUBLIC_KEYCLOAK_ADMIN_USERNAME || 'admin';
+    const adminPassword = process.env.EXPO_PUBLIC_KEYCLOAK_ADMIN_PASSWORD || 'admin';
+    const adminRealm = process.env.EXPO_PUBLIC_KEYCLOAK_ADMIN_REALM || 'master';
+    const baseUrl = process.env.EXPO_PUBLIC_KEYCLOAK_BASE_URL;
+
+    const formData = new URLSearchParams();
     formData.append('grant_type', 'password');
     formData.append('client_id', 'admin-cli');
     formData.append('username', adminUsername);
@@ -97,8 +99,10 @@ const AuthContext = createContext<AuthContextType>({
     console.error('Error getting admin token:', error);
     return null;
   }
-};const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const discovery = useAutoDiscovery(process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG || '')
+};
+
+const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const discovery = useAutoDiscovery(process.env.EXPO_PUBLIC_KEYCLOAK_URL || '')
   const redirectUri = makeRedirectUri()
   const [request, response, promptAsync] = useAuthRequest(
     {
@@ -226,7 +230,7 @@ const AuthContext = createContext<AuthContextType>({
         }
 
         const response = await fetch(
-          `${process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG}/protocol/openid-connect/token`,
+          `${process.env.EXPO_PUBLIC_KEYCLOAK_URL}/protocol/openid-connect/token`,
           {
             method: 'POST',
             headers: {
@@ -271,7 +275,7 @@ const AuthContext = createContext<AuthContextType>({
       try {
         const accessToken = authState.accessToken
         const response = await fetch(
-          `${process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG}/protocol/openid-connect/userinfo`,
+          `${process.env.EXPO_PUBLIC_KEYCLOAK_URL}/protocol/openid-connect/userinfo`,
           {
             method: 'GET',
             headers: {
@@ -346,7 +350,7 @@ const AuthContext = createContext<AuthContextType>({
           };
 
           const createUserResponse = await fetch(
-            `${process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG}/admin/realms/${targetRealm}/users`,
+            `${process.env.EXPO_PUBLIC_KEYCLOAK_BASE_URL}/admin/realms/${targetRealm}/users`,
             {
               method: 'POST',
               headers: {
@@ -380,7 +384,7 @@ const AuthContext = createContext<AuthContextType>({
           } else {
             // Fallback: search for the user
             const searchResponse = await fetch(
-              `${process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG}/admin/realms/${targetRealm}/users?username=${encodeURIComponent(email)}`,
+              `${process.env.EXPO_PUBLIC_KEYCLOAK_BASE_URL}/admin/realms/${targetRealm}/users?username=${encodeURIComponent(email)}`,
               {
                 headers: {
                   'Authorization': `Bearer ${adminToken}`,
@@ -403,7 +407,7 @@ const AuthContext = createContext<AuthContextType>({
               // First, get the client's internal ID using its clientId
               const clientId = process.env.EXPO_PUBLIC_KEYCLOAK_CLIENT_ID || 'rn-expo-app';
               const clientsResponse = await fetch(
-                `${process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG}/admin/realms/${targetRealm}/clients?clientId=${clientId}`,
+                `${process.env.EXPO_PUBLIC_KEYCLOAK_BASE_URL}/admin/realms/${targetRealm}/clients?clientId=${clientId}`,
                 {
                   headers: {
                     'Authorization': `Bearer ${adminToken}`,
@@ -427,7 +431,7 @@ const AuthContext = createContext<AuthContextType>({
 
               // Get available client roles for rn-expo-app
               const clientRolesResponse = await fetch(
-                `${process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG}/admin/realms/${targetRealm}/clients/${clientUUID}/roles`,
+                `${process.env.EXPO_PUBLIC_KEYCLOAK_BASE_URL}/admin/realms/${targetRealm}/clients/${clientUUID}/roles`,
                 {
                   headers: {
                     'Authorization': `Bearer ${adminToken}`,
@@ -443,7 +447,7 @@ const AuthContext = createContext<AuthContextType>({
                 if (targetRole) {
                   // Assign the client role to the user
                   const assignRoleResponse = await fetch(
-                    `${process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG}/admin/realms/${targetRealm}/users/${userId}/role-mappings/clients/${clientUUID}`,
+                    `${process.env.EXPO_PUBLIC_KEYCLOAK_BASE_URL}/admin/realms/${targetRealm}/users/${userId}/role-mappings/clients/${clientUUID}`,
                     {
                       method: 'POST',
                       headers: {
@@ -476,7 +480,7 @@ const AuthContext = createContext<AuthContextType>({
           // Step 5: Send verification email
           if (userId) {
             const emailResponse = await fetch(
-              `${process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG}/admin/realms/${targetRealm}/users/${userId}/send-verify-email`,
+              `${process.env.EXPO_PUBLIC_KEYCLOAK_BASE_URL}/admin/realms/${targetRealm}/users/${userId}/send-verify-email`,
               {
                 method: 'PUT',
                 headers: {
@@ -520,7 +524,7 @@ const AuthContext = createContext<AuthContextType>({
         try {
           const idToken = authState.idToken
           await fetch(
-            `${process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG}/protocol/openid-connect/logout?id_token_hint=${idToken}`
+            `${process.env.EXPO_PUBLIC_KEYCLOAK_URL}/protocol/openid-connect/logout?id_token_hint=${idToken}`
           )
           await clearAuthData()
           dispatch({ type: 'SIGN_OUT' })
@@ -546,7 +550,7 @@ const AuthContext = createContext<AuthContextType>({
           const userRole = authState.userInfo.roles?.[0] || 'Producer';
 
           const response = await fetch(
-            `${process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG}/admin/realms/${targetRealm}/users/${userId}`,
+            `${process.env.EXPO_PUBLIC_KEYCLOAK_BASE_URL}/admin/realms/${targetRealm}/users/${userId}`,
             {
               headers: {
                 'Authorization': `Bearer ${adminToken}`,

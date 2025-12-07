@@ -8,6 +8,7 @@
  * - Retry après refresh
  */
 
+import { API_TIMEOUT } from '../../constants/Config';
 import { TokenManager } from '../auth/tokenManager';
 
 export class HttpClient {
@@ -46,10 +47,25 @@ export class HttpClient {
       console.log('📦 [HTTP-CLIENT] Request body:', options.body);
     }
 
-    const response = await fetch(url, {
-      ...options,
-      headers,
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
+
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        ...options,
+        headers,
+        signal: controller.signal,
+      });
+    } catch (error: any) {
+      if (error?.name === 'AbortError') {
+        console.error(`⏱️ [HTTP-CLIENT] Request timed out after ${API_TIMEOUT}ms: ${url}`);
+        throw new Error('REQUEST_TIMEOUT');
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     console.log(`📥 [HTTP-CLIENT] Response: ${response.status} ${response.statusText}`);
 
@@ -164,4 +180,3 @@ export class HttpClient {
     return this.request<T>(endpoint, { method: 'DELETE' });
   }
 }
-

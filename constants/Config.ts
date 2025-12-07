@@ -7,7 +7,7 @@
 
 // API Gateway base URL (Architecture centralisée)
 // Tous les services sont accessibles via la Gateway
-export const API_GATEWAY_BASE_URL = process.env.EXPO_PUBLIC_URL_GATEWAY_DEV || 'http://localhost:8080';
+export const API_GATEWAY_BASE_URL = process.env.EXPO_PUBLIC_API_GATEWAY_URL || 'http://localhost:8080';
 
 
 // Request timeout in milliseconds

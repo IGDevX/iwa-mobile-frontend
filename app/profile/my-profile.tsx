@@ -186,7 +186,7 @@ export default function ProfilePage() {
             const adminUsername = process.env.EXPO_PUBLIC_KEYCLOAK_ADMIN_USERNAME || 'admin';
             const adminPassword = process.env.EXPO_PUBLIC_KEYCLOAK_ADMIN_PASSWORD || 'admin';
             const adminRealm = process.env.EXPO_PUBLIC_KEYCLOAK_ADMIN_REALM || 'master';
-            const baseUrl = process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG;
+            const baseUrl = process.env.EXPO_PUBLIC_KEYCLOAK_BASE_URL;
 
             const formData = new URLSearchParams();
             formData.append('grant_type', 'password');

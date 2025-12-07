@@ -99,7 +99,7 @@ export default function EditProfilePage() {
             const adminUsername = process.env.EXPO_PUBLIC_KEYCLOAK_ADMIN_USERNAME || 'admin';
             const adminPassword = process.env.EXPO_PUBLIC_KEYCLOAK_ADMIN_PASSWORD || 'admin';
             const adminRealm = process.env.EXPO_PUBLIC_KEYCLOAK_ADMIN_REALM || 'master';
-            const baseUrl = process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG;
+            const baseUrl = process.env.EXPO_PUBLIC_KEYCLOAK_BASE_URL;
 
             const formData = new URLSearchParams();
             formData.append('grant_type', 'password');
@@ -238,7 +238,7 @@ export default function EditProfilePage() {
 
             // Get current user data to preserve existing attributes and fields
             const getCurrentUserResponse = await fetch(
-                `${process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG}/admin/realms/${targetRealm}/users/${keycloakId}`,
+                `${process.env.EXPO_PUBLIC_KEYCLOAK_BASE_URL}/admin/realms/${targetRealm}/users/${keycloakId}`,
                 {
                     headers: {
                         'Authorization': `Bearer ${adminToken}`,
@@ -267,7 +267,7 @@ export default function EditProfilePage() {
 
             // Update Keycloak user - IMPORTANT: Preserve email and other core fields
             const updateKeycloakResponse = await fetch(
-                `${process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG}/admin/realms/${targetRealm}/users/${keycloakId}`,
+                `${process.env.EXPO_PUBLIC_KEYCLOAK_BASE_URL}/admin/realms/${targetRealm}/users/${keycloakId}`,
                 {
                     method: 'PUT',
                     headers: {

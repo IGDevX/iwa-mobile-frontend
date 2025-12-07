@@ -49,7 +49,7 @@ export default function CompletePage() {
             const userId = state.userInfo.sub;
 
             const response = await fetch(
-                `${process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG}/admin/realms/${targetRealm}/users/${userId}`,
+                `${process.env.EXPO_PUBLIC_KEYCLOAK_BASE_URL}/admin/realms/${targetRealm}/users/${userId}`,
                 {
                     headers: {
                         'Authorization': `Bearer ${adminToken}`,
@@ -147,7 +147,7 @@ export default function CompletePage() {
 
             // First, get the current user data to preserve existing attributes
             const getCurrentUserResponse = await fetch(
-                `${process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG}/admin/realms/${targetRealm}/users/${userId}`,
+                `${process.env.EXPO_PUBLIC_KEYCLOAK_BASE_URL}/admin/realms/${targetRealm}/users/${userId}`,
                 {
                     headers: {
                         'Authorization': `Bearer ${adminToken}`,
@@ -186,7 +186,7 @@ export default function CompletePage() {
 
             // Update user in Keycloak
             const updateResponse = await fetch(
-                `${process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG}/admin/realms/${targetRealm}/users/${userId}`,
+                `${process.env.EXPO_PUBLIC_KEYCLOAK_BASE_URL}/admin/realms/${targetRealm}/users/${userId}`,
                 {
                     method: 'PUT',
                     headers: {
@@ -217,7 +217,7 @@ export default function CompletePage() {
             const adminUsername = process.env.EXPO_PUBLIC_KEYCLOAK_ADMIN_USERNAME || 'admin';
             const adminPassword = process.env.EXPO_PUBLIC_KEYCLOAK_ADMIN_PASSWORD || 'admin';
             const adminRealm = process.env.EXPO_PUBLIC_KEYCLOAK_ADMIN_REALM || 'master';
-            const baseUrl = process.env.EXPO_PUBLIC_KEYCLOAK_URL_REG;
+            const baseUrl = process.env.EXPO_PUBLIC_KEYCLOAK_BASE_URL;
 
             const formData = new URLSearchParams();
             formData.append('grant_type', 'password');
